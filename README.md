@@ -1,0 +1,2 @@
+# time_tracking_system_prototype
+Szakdolgozat: Webalapú munkaidő nyilvántartó rendszer prototípusa
