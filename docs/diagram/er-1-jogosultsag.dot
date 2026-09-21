@@ -1,0 +1,36 @@
+graph ER {
+  fontname="Helvetica";
+  graph [rankdir=LR, splines=spline, nodesep=0.3, ranksep=1.0, pack=true, packmode=array, bgcolor="white", pad=0.3];
+  node [fontname="Helvetica", fontsize=10];
+  edge [fontname="Helvetica", fontsize=9, color="#555555"];
+
+  // fókuszban lévő egyedek, minden attribútummal
+  "UserRoles" [shape=box, style="filled,bold", fillcolor="#DCE9F7", color="#2E5C8A", penwidth=1.6];
+  "UserRoles__user_role_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label=<<U>user_role_id</U>>];
+  "UserRoles" -- "UserRoles__user_role_id" [len=0.8, weight=4];
+  "UserRoles__user_role_name" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="user_role_name"];
+  "UserRoles" -- "UserRoles__user_role_name" [len=0.8, weight=4];
+  "Permissions" [shape=box, style="filled,bold", fillcolor="#DCE9F7", color="#2E5C8A", penwidth=1.6];
+  "Permissions__permission_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label=<<U>permission_id</U>>];
+  "Permissions" -- "Permissions__permission_id" [len=0.8, weight=4];
+  "Permissions__permission_key" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="permission_key"];
+  "Permissions" -- "Permissions__permission_key" [len=0.8, weight=4];
+  "Permissions__permission_name" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="permission_name"];
+  "Permissions" -- "Permissions__permission_name" [len=0.8, weight=4];
+  "Permissions__permission_is_group" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="permission_is_group"];
+  "Permissions" -- "Permissions__permission_is_group" [len=0.8, weight=4];
+  "Permissions__permission_route" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="permission_route"];
+  "Permissions" -- "Permissions__permission_route" [len=0.8, weight=4];
+  "Permissions__permission_sort" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="permission_sort"];
+  "Permissions" -- "Permissions__permission_sort" [len=0.8, weight=4];
+
+  // kapcsolatok
+  "R_fk_permission_parent" [shape=diamond, style=filled, fillcolor="white", color="#666666", fontsize=8, label="BelongsTo", width=1.0, height=0.55];
+  "Permissions" -- "R_fk_permission_parent" [label="N", len=2.4];
+  "R_fk_permission_parent" -- "Permissions" [label="1", len=2.4];
+
+  // több-a-többhöz kapcsolatok (a relációs sémában kapcsolótábla)
+  "R_RolePermissions" [shape=diamond, style=filled, fillcolor="white", color="#666666", fontsize=9, label="Grants", width=1.3, height=0.7];
+  "UserRoles" -- "R_RolePermissions" [label="M", len=2.4];
+  "R_RolePermissions" -- "Permissions" [label="N", len=2.4];
+}

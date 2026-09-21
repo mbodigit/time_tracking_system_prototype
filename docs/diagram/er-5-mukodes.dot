@@ -1,0 +1,72 @@
+graph ER {
+  fontname="Helvetica";
+  graph [rankdir=LR, splines=spline, nodesep=0.3, ranksep=1.0, pack=true, packmode=array, bgcolor="white", pad=0.3];
+  node [fontname="Helvetica", fontsize=10];
+  edge [fontname="Helvetica", fontsize=9, color="#555555"];
+
+  // fókuszban lévő egyedek, minden attribútummal
+  "WorkingTimeTracking" [shape=box, style="filled,bold", fillcolor="#F6DDDD", color="#8A3B3B", penwidth=1.6];
+  "WorkingTimeTracking__wtt_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label=<<U>wtt_id</U>>];
+  "WorkingTimeTracking" -- "WorkingTimeTracking__wtt_id" [len=0.8, weight=4];
+  "WorkingTimeTracking__wtt_working_date" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="wtt_working_date"];
+  "WorkingTimeTracking" -- "WorkingTimeTracking__wtt_working_date" [len=0.8, weight=4];
+  "WorkingTimeTracking__wtt_working_start" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="wtt_working_start"];
+  "WorkingTimeTracking" -- "WorkingTimeTracking__wtt_working_start" [len=0.8, weight=4];
+  "WorkingTimeTracking__wtt_working_end" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="wtt_working_end"];
+  "WorkingTimeTracking" -- "WorkingTimeTracking__wtt_working_end" [len=0.8, weight=4];
+  "WorkingTimeTracking__wtt_brk_start" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="wtt_brk_start"];
+  "WorkingTimeTracking" -- "WorkingTimeTracking__wtt_brk_start" [len=0.8, weight=4];
+  "WorkingTimeTracking__wtt_brk_end" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="wtt_brk_end"];
+  "WorkingTimeTracking" -- "WorkingTimeTracking__wtt_brk_end" [len=0.8, weight=4];
+  "WorkingTimeTracking__wtt_note" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="wtt_note"];
+  "WorkingTimeTracking" -- "WorkingTimeTracking__wtt_note" [len=0.8, weight=4];
+  "WorkingTimeTracking__wtt_created_at" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="wtt_created_at"];
+  "WorkingTimeTracking" -- "WorkingTimeTracking__wtt_created_at" [len=0.8, weight=4];
+  "WorkingTimeTracking__wtt_updated_at" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="wtt_updated_at"];
+  "WorkingTimeTracking" -- "WorkingTimeTracking__wtt_updated_at" [len=0.8, weight=4];
+  "Requests" [shape=box, style="filled,bold", fillcolor="#F6DDDD", color="#8A3B3B", penwidth=1.6];
+  "Requests__request_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label=<<U>request_id</U>>];
+  "Requests" -- "Requests__request_id" [len=0.8, weight=4];
+  "Requests__request_start_date" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="request_start_date"];
+  "Requests" -- "Requests__request_start_date" [len=0.8, weight=4];
+  "Requests__request_end_date" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="request_end_date"];
+  "Requests" -- "Requests__request_end_date" [len=0.8, weight=4];
+  "Requests__request_message" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="request_message"];
+  "Requests" -- "Requests__request_message" [len=0.8, weight=4];
+  "Requests__request_status" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="request_status"];
+  "Requests" -- "Requests__request_status" [len=0.8, weight=4];
+  "Requests__request_decision_at" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="request_decision_at"];
+  "Requests" -- "Requests__request_decision_at" [len=0.8, weight=4];
+  "Requests__request_decision_reason" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="request_decision_reason"];
+  "Requests" -- "Requests__request_decision_reason" [len=0.8, weight=4];
+  "Requests__request_created_at" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="request_created_at"];
+  "Requests" -- "Requests__request_created_at" [len=0.8, weight=4];
+
+  // kapcsolódó egyedek, csak az elsődleges kulccsal
+  "Absences" [shape=box, style="filled,bold", fillcolor="#DCE9F7", color="#2E5C8A", penwidth=1.6];
+  "Absences__absence_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label=<<U>absence_id</U>>];
+  "Absences" -- "Absences__absence_id" [len=0.8, weight=4];
+  "Employees" [shape=box, style="filled,bold", fillcolor="#FBE6D4", color="#A5661F", penwidth=1.6];
+  "Employees__employee_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label=<<U>employee_id</U>>];
+  "Employees" -- "Employees__employee_id" [len=0.8, weight=4];
+  "Users" [shape=box, style="filled,bold", fillcolor="#FBE6D4", color="#A5661F", penwidth=1.6];
+  "Users__user_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label=<<U>user_id</U>>];
+  "Users" -- "Users__user_id" [len=0.8, weight=4];
+
+  // kapcsolatok
+  "R_fk_wtt_employee" [shape=diamond, style=filled, fillcolor="white", color="#666666", fontsize=8, label="RecordedFor", width=1.0, height=0.55];
+  "WorkingTimeTracking" -- "R_fk_wtt_employee" [label="N", len=2.4];
+  "R_fk_wtt_employee" -- "Employees" [label="1", len=2.4];
+  "R_fk_wtt_absence" [shape=diamond, style=filled, fillcolor="white", color="#666666", fontsize=8, label="CoveredBy", width=1.0, height=0.55];
+  "WorkingTimeTracking" -- "R_fk_wtt_absence" [label="N", len=2.4];
+  "R_fk_wtt_absence" -- "Absences" [label="1", len=2.4];
+  "R_fk_request_employee" [shape=diamond, style=filled, fillcolor="white", color="#666666", fontsize=8, label="RequestedBy", width=1.0, height=0.55];
+  "Requests" -- "R_fk_request_employee" [label="N", len=2.4];
+  "R_fk_request_employee" -- "Employees" [label="1", len=2.4];
+  "R_fk_request_absence" [shape=diamond, style=filled, fillcolor="white", color="#666666", fontsize=8, label="AppliesFor", width=1.0, height=0.55];
+  "Requests" -- "R_fk_request_absence" [label="N", len=2.4];
+  "R_fk_request_absence" -- "Absences" [label="1", len=2.4];
+  "R_fk_request_decision_by" [shape=diamond, style=filled, fillcolor="white", color="#666666", fontsize=8, label="DecidedBy", width=1.0, height=0.55];
+  "Requests" -- "R_fk_request_decision_by" [label="N", len=2.4];
+  "R_fk_request_decision_by" -- "Users" [label="1", len=2.4];
+}

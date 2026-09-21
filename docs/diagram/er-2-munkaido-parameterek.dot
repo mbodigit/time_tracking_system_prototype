@@ -1,0 +1,69 @@
+graph ER {
+  fontname="Helvetica";
+  graph [rankdir=LR, splines=spline, nodesep=0.3, ranksep=1.0, pack=true, packmode=array, bgcolor="white", pad=0.3];
+  node [fontname="Helvetica", fontsize=10];
+  edge [fontname="Helvetica", fontsize=9, color="#555555"];
+
+  // fókuszban lévő egyedek, minden attribútummal
+  "WorkSchedules" [shape=box, style="filled,bold", fillcolor="#DCE9F7", color="#2E5C8A", penwidth=1.6];
+  "WorkSchedules__work_schedule_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label=<<U>work_schedule_id</U>>];
+  "WorkSchedules" -- "WorkSchedules__work_schedule_id" [len=0.8, weight=4];
+  "WorkSchedules__work_schedule_name" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="work_schedule_name"];
+  "WorkSchedules" -- "WorkSchedules__work_schedule_name" [len=0.8, weight=4];
+  "WorkSchedules__work_schedule_is_shift" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="work_schedule_is_shift"];
+  "WorkSchedules" -- "WorkSchedules__work_schedule_is_shift" [len=0.8, weight=4];
+  "WorkingHours" [shape=box, style="filled,bold", fillcolor="#DCE9F7", color="#2E5C8A", penwidth=1.6];
+  "WorkingHours__working_hour_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label=<<U>working_hour_id</U>>];
+  "WorkingHours" -- "WorkingHours__working_hour_id" [len=0.8, weight=4];
+  "WorkingHours__working_hour_num" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="working_hour_num"];
+  "WorkingHours" -- "WorkingHours__working_hour_num" [len=0.8, weight=4];
+  "WorkingHours__working_hour_name" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="working_hour_name"];
+  "WorkingHours" -- "WorkingHours__working_hour_name" [len=0.8, weight=4];
+  "CoreHours" [shape=box, style="filled,bold", fillcolor="#DCE9F7", color="#2E5C8A", penwidth=1.6];
+  "CoreHours__core_hour_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label=<<U>core_hour_id</U>>];
+  "CoreHours" -- "CoreHours__core_hour_id" [len=0.8, weight=4];
+  "CoreHours__core_hour_name" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="core_hour_name"];
+  "CoreHours" -- "CoreHours__core_hour_name" [len=0.8, weight=4];
+  "CoreHours__core_hour_start" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="core_hour_start"];
+  "CoreHours" -- "CoreHours__core_hour_start" [len=0.8, weight=4];
+  "CoreHours__core_hour_end" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="core_hour_end"];
+  "CoreHours" -- "CoreHours__core_hour_end" [len=0.8, weight=4];
+  "Absences" [shape=box, style="filled,bold", fillcolor="#DCE9F7", color="#2E5C8A", penwidth=1.6];
+  "Absences__absence_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label=<<U>absence_id</U>>];
+  "Absences" -- "Absences__absence_id" [len=0.8, weight=4];
+  "Absences__absence_name" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="absence_name"];
+  "Absences" -- "Absences__absence_name" [len=0.8, weight=4];
+  "Absences__absence_is_paid" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="absence_is_paid"];
+  "Absences" -- "Absences__absence_is_paid" [len=0.8, weight=4];
+  "Absences__absence_category" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="absence_category"];
+  "Absences" -- "Absences__absence_category" [len=0.8, weight=4];
+  "Absences__absence_is_open_ended" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="absence_is_open_ended"];
+  "Absences" -- "Absences__absence_is_open_ended" [len=0.8, weight=4];
+  "Absences__absence_rec_type" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="absence_rec_type"];
+  "Absences" -- "Absences__absence_rec_type" [len=0.8, weight=4];
+  "Absences__absence_status" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="absence_status"];
+  "Absences" -- "Absences__absence_status" [len=0.8, weight=4];
+  "Absences__absence_sort" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="absence_sort"];
+  "Absences" -- "Absences__absence_sort" [len=0.8, weight=4];
+  "Allowances" [shape=box, style="filled,bold", fillcolor="#DCE9F7", color="#2E5C8A", penwidth=1.6];
+  "Allowances__allowance_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label=<<U>allowance_id</U>>];
+  "Allowances" -- "Allowances__allowance_id" [len=0.8, weight=4];
+  "Allowances__allowance_name" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="allowance_name"];
+  "Allowances" -- "Allowances__allowance_name" [len=0.8, weight=4];
+  "Allowances__allowance_percent" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="allowance_percent"];
+  "Allowances" -- "Allowances__allowance_percent" [len=0.8, weight=4];
+  "Allowances__allowance_start_hour" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="allowance_start_hour"];
+  "Allowances" -- "Allowances__allowance_start_hour" [len=0.8, weight=4];
+  "Allowances__allowance_end_hour" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="allowance_end_hour"];
+  "Allowances" -- "Allowances__allowance_end_hour" [len=0.8, weight=4];
+
+  // kapcsolatok
+
+  // több-a-többhöz kapcsolatok (a relációs sémában kapcsolótábla)
+  "R_AbsenceWorkSchedules" [shape=diamond, style=filled, fillcolor="white", color="#666666", fontsize=9, label="AvailableIn", width=1.3, height=0.7];
+  "Absences" -- "R_AbsenceWorkSchedules" [label="M", len=2.4];
+  "R_AbsenceWorkSchedules" -- "WorkSchedules" [label="N", len=2.4];
+  "R_WorkScheduleAllowances" [shape=diamond, style=filled, fillcolor="white", color="#666666", fontsize=9, label="Entitles", width=1.3, height=0.7];
+  "WorkSchedules" -- "R_WorkScheduleAllowances" [label="M", len=2.4];
+  "R_WorkScheduleAllowances" -- "Allowances" [label="N", len=2.4];
+}

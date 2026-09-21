@@ -1,0 +1,81 @@
+graph ER {
+  fontname="Helvetica";
+  graph [rankdir=LR, splines=spline, nodesep=0.3, ranksep=1.0, pack=true, packmode=array, bgcolor="white", pad=0.3];
+  node [fontname="Helvetica", fontsize=10];
+  edge [fontname="Helvetica", fontsize=9, color="#555555"];
+
+  // fókuszban lévő egyedek, minden attribútummal
+  "Areas" [shape=box, style="filled,bold", fillcolor="#DDEEDD", color="#3B7A3B", penwidth=1.6];
+  "Areas__area_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label=<<U>area_id</U>>];
+  "Areas" -- "Areas__area_id" [len=0.8, weight=4];
+  "Areas__area_name" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="area_name"];
+  "Areas" -- "Areas__area_name" [len=0.8, weight=4];
+  "Departments" [shape=box, style="filled,bold", fillcolor="#DDEEDD", color="#3B7A3B", penwidth=1.6];
+  "Departments__department_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label=<<U>department_id</U>>];
+  "Departments" -- "Departments__department_id" [len=0.8, weight=4];
+  "Departments__department_name" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="department_name"];
+  "Departments" -- "Departments__department_name" [len=0.8, weight=4];
+  "Shifts" [shape=box, style="filled,bold", fillcolor="#DDEEDD", color="#3B7A3B", penwidth=1.6];
+  "Shifts__shift_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label=<<U>shift_id</U>>];
+  "Shifts" -- "Shifts__shift_id" [len=0.8, weight=4];
+  "Shifts__shift_name" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="shift_name"];
+  "Shifts" -- "Shifts__shift_name" [len=0.8, weight=4];
+  "UserGroups" [shape=box, style="filled,bold", fillcolor="#DDEEDD", color="#3B7A3B", penwidth=1.6];
+  "UserGroups__user_group_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label=<<U>user_group_id</U>>];
+  "UserGroups" -- "UserGroups__user_group_id" [len=0.8, weight=4];
+  "UserGroups__user_group_name" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="user_group_name"];
+  "UserGroups" -- "UserGroups__user_group_name" [len=0.8, weight=4];
+  "UserGroups__user_group_status" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="user_group_status"];
+  "UserGroups" -- "UserGroups__user_group_status" [len=0.8, weight=4];
+  "UserGroups__user_group_description" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="user_group_description"];
+  "UserGroups" -- "UserGroups__user_group_description" [len=0.8, weight=4];
+
+  // kapcsolódó egyedek, csak az elsődleges kulccsal
+  "CoreHours" [shape=box, style="filled,bold", fillcolor="#DCE9F7", color="#2E5C8A", penwidth=1.6];
+  "CoreHours__core_hour_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label=<<U>core_hour_id</U>>];
+  "CoreHours" -- "CoreHours__core_hour_id" [len=0.8, weight=4];
+  "CostCenters" [shape=box, style="filled,bold", fillcolor="#DCE9F7", color="#2E5C8A", penwidth=1.6];
+  "CostCenters__cost_center_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label=<<U>cost_center_id</U>>];
+  "CostCenters" -- "CostCenters__cost_center_id" [len=0.8, weight=4];
+  "Users" [shape=box, style="filled,bold", fillcolor="#FBE6D4", color="#A5661F", penwidth=1.6];
+  "Users__user_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label=<<U>user_id</U>>];
+  "Users" -- "Users__user_id" [len=0.8, weight=4];
+  "WorkSchedules" [shape=box, style="filled,bold", fillcolor="#DCE9F7", color="#2E5C8A", penwidth=1.6];
+  "WorkSchedules__work_schedule_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label=<<U>work_schedule_id</U>>];
+  "WorkSchedules" -- "WorkSchedules__work_schedule_id" [len=0.8, weight=4];
+  "WorkingHours" [shape=box, style="filled,bold", fillcolor="#DCE9F7", color="#2E5C8A", penwidth=1.6];
+  "WorkingHours__working_hour_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label=<<U>working_hour_id</U>>];
+  "WorkingHours" -- "WorkingHours__working_hour_id" [len=0.8, weight=4];
+
+  // kapcsolatok
+  "R_fk_department_area" [shape=diamond, style=filled, fillcolor="white", color="#666666", fontsize=8, label="BelongsTo", width=1.0, height=0.55];
+  "Departments" -- "R_fk_department_area" [label="N", len=2.4];
+  "R_fk_department_area" -- "Areas" [label="1", len=2.4];
+  "R_fk_shift_department" [shape=diamond, style=filled, fillcolor="white", color="#666666", fontsize=8, label="BelongsTo", width=1.0, height=0.55];
+  "Shifts" -- "R_fk_shift_department" [label="N", len=2.4];
+  "R_fk_shift_department" -- "Departments" [label="1", len=2.4];
+  "R_fk_group_area" [shape=diamond, style=filled, fillcolor="white", color="#666666", fontsize=8, label="LocatedIn", width=1.0, height=0.55];
+  "UserGroups" -- "R_fk_group_area" [label="N", len=2.4];
+  "R_fk_group_area" -- "Areas" [label="1", len=2.4];
+  "R_fk_group_department_in_area" [shape=diamond, style=filled, fillcolor="white", color="#666666", fontsize=8, label="LocatedIn", width=1.0, height=0.55];
+  "UserGroups" -- "R_fk_group_department_in_area" [label="N", len=2.4];
+  "R_fk_group_department_in_area" -- "Departments" [label="1", len=2.4];
+  "R_fk_group_shift_in_department" [shape=diamond, style=filled, fillcolor="white", color="#666666", fontsize=8, label="LocatedIn", width=1.0, height=0.55];
+  "UserGroups" -- "R_fk_group_shift_in_department" [label="N", len=2.4];
+  "R_fk_group_shift_in_department" -- "Shifts" [label="1", len=2.4];
+  "R_fk_group_cost_center" [shape=diamond, style=filled, fillcolor="white", color="#666666", fontsize=8, label="ChargedTo", width=1.0, height=0.55];
+  "UserGroups" -- "R_fk_group_cost_center" [label="N", len=2.4];
+  "R_fk_group_cost_center" -- "CostCenters" [label="1", len=2.4];
+  "R_fk_group_work_schedule" [shape=diamond, style=filled, fillcolor="white", color="#666666", fontsize=8, label="Follows", width=1.0, height=0.55];
+  "UserGroups" -- "R_fk_group_work_schedule" [label="N", len=2.4];
+  "R_fk_group_work_schedule" -- "WorkSchedules" [label="1", len=2.4];
+  "R_fk_group_working_hour" [shape=diamond, style=filled, fillcolor="white", color="#666666", fontsize=8, label="Requires", width=1.0, height=0.55];
+  "UserGroups" -- "R_fk_group_working_hour" [label="N", len=2.4];
+  "R_fk_group_working_hour" -- "WorkingHours" [label="1", len=2.4];
+  "R_fk_group_core_hour" [shape=diamond, style=filled, fillcolor="white", color="#666666", fontsize=8, label="Requires", width=1.0, height=0.55];
+  "UserGroups" -- "R_fk_group_core_hour" [label="N", len=2.4];
+  "R_fk_group_core_hour" -- "CoreHours" [label="1", len=2.4];
+  "R_fk_group_manager" [shape=diamond, style=filled, fillcolor="white", color="#666666", fontsize=8, label="ManagedBy", width=1.0, height=0.55];
+  "UserGroups" -- "R_fk_group_manager" [label="N", len=2.4];
+  "R_fk_group_manager" -- "Users" [label="1", len=2.4];
+}

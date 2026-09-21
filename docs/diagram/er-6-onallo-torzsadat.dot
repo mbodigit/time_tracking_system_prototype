@@ -1,0 +1,68 @@
+graph ER {
+  fontname="Helvetica";
+  graph [rankdir=LR, splines=spline, nodesep=0.3, ranksep=1.0, pack=true, packmode=array, bgcolor="white", pad=0.3];
+  node [fontname="Helvetica", fontsize=10];
+  edge [fontname="Helvetica", fontsize=9, color="#555555"];
+
+  // fókuszban lévő egyedek, minden attribútummal
+  "EmployeeStatus" [shape=box, style="filled,bold", fillcolor="#DCE9F7", color="#2E5C8A", penwidth=1.6];
+  "EmployeeStatus__employee_status_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label=<<U>employee_status_id</U>>];
+  "EmployeeStatus" -- "EmployeeStatus__employee_status_id" [len=0.8, weight=4];
+  "EmployeeStatus__employee_status_name" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="employee_status_name"];
+  "EmployeeStatus" -- "EmployeeStatus__employee_status_name" [len=0.8, weight=4];
+  "EmployeeStatus__employee_status_is_active" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="employee_status_is_active"];
+  "EmployeeStatus" -- "EmployeeStatus__employee_status_is_active" [len=0.8, weight=4];
+  "EmployeeCategories" [shape=box, style="filled,bold", fillcolor="#DCE9F7", color="#2E5C8A", penwidth=1.6];
+  "EmployeeCategories__employee_category_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label=<<U>employee_category_id</U>>];
+  "EmployeeCategories" -- "EmployeeCategories__employee_category_id" [len=0.8, weight=4];
+  "EmployeeCategories__employee_category_name" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="employee_category_name"];
+  "EmployeeCategories" -- "EmployeeCategories__employee_category_name" [len=0.8, weight=4];
+  "CostCenters" [shape=box, style="filled,bold", fillcolor="#DCE9F7", color="#2E5C8A", penwidth=1.6];
+  "CostCenters__cost_center_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label=<<U>cost_center_id</U>>];
+  "CostCenters" -- "CostCenters__cost_center_id" [len=0.8, weight=4];
+  "CostCenters__cost_center_name" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="cost_center_name"];
+  "CostCenters" -- "CostCenters__cost_center_name" [len=0.8, weight=4];
+  "CostCenters__cost_center_code" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="cost_center_code"];
+  "CostCenters" -- "CostCenters__cost_center_code" [len=0.8, weight=4];
+  "CostCenters__cost_center_next_employee_seq" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="cost_center_next_employee_seq"];
+  "CostCenters" -- "CostCenters__cost_center_next_employee_seq" [len=0.8, weight=4];
+  "WorkLocations" [shape=box, style="filled,bold", fillcolor="#DCE9F7", color="#2E5C8A", penwidth=1.6];
+  "WorkLocations__work_location_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label=<<U>work_location_id</U>>];
+  "WorkLocations" -- "WorkLocations__work_location_id" [len=0.8, weight=4];
+  "WorkLocations__work_location_name" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="work_location_name"];
+  "WorkLocations" -- "WorkLocations__work_location_name" [len=0.8, weight=4];
+  "WorkLocations__work_location_code" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="work_location_code"];
+  "WorkLocations" -- "WorkLocations__work_location_code" [len=0.8, weight=4];
+  "WorkLocations__work_location_address_line1" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="work_location_address_line1"];
+  "WorkLocations" -- "WorkLocations__work_location_address_line1" [len=0.8, weight=4];
+  "WorkLocations__work_location_address_line2" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="work_location_address_line2"];
+  "WorkLocations" -- "WorkLocations__work_location_address_line2" [len=0.8, weight=4];
+  "WorkLocations__work_location_postal_code" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="work_location_postal_code"];
+  "WorkLocations" -- "WorkLocations__work_location_postal_code" [len=0.8, weight=4];
+  "WorkLocations__work_location_city" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="work_location_city"];
+  "WorkLocations" -- "WorkLocations__work_location_city" [len=0.8, weight=4];
+  "WorkLocations__work_location_country" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="work_location_country"];
+  "WorkLocations" -- "WorkLocations__work_location_country" [len=0.8, weight=4];
+  "GlobalCalendar" [shape=box, style="filled,bold", fillcolor="#DCE9F7", color="#2E5C8A", penwidth=1.6];
+  "GlobalCalendar__gl_cal_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label=<<U>gl_cal_id</U>>];
+  "GlobalCalendar" -- "GlobalCalendar__gl_cal_id" [len=0.8, weight=4];
+  "GlobalCalendar__gl_cal_date" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="gl_cal_date"];
+  "GlobalCalendar" -- "GlobalCalendar__gl_cal_date" [len=0.8, weight=4];
+  "GlobalCalendar__gl_cal_day_type" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="gl_cal_day_type"];
+  "GlobalCalendar" -- "GlobalCalendar__gl_cal_day_type" [len=0.8, weight=4];
+  "GlobalCalendar__gl_cal_note" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="gl_cal_note"];
+  "GlobalCalendar" -- "GlobalCalendar__gl_cal_note" [len=0.8, weight=4];
+  "CompanySettings" [shape=box, style="filled,bold", fillcolor="#DCE9F7", color="#2E5C8A", penwidth=1.6];
+  "CompanySettings__company_settings_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label=<<U>company_settings_id</U>>];
+  "CompanySettings" -- "CompanySettings__company_settings_id" [len=0.8, weight=4];
+  "CompanySettings__company_name" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="company_name"];
+  "CompanySettings" -- "CompanySettings__company_name" [len=0.8, weight=4];
+  "CompanySettings__company_address" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="company_address"];
+  "CompanySettings" -- "CompanySettings__company_address" [len=0.8, weight=4];
+  "CompanySettings__company_tax_number" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="company_tax_number"];
+  "CompanySettings" -- "CompanySettings__company_tax_number" [len=0.8, weight=4];
+  "CompanySettings__company_logo_url" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="company_logo_url"];
+  "CompanySettings" -- "CompanySettings__company_logo_url" [len=0.8, weight=4];
+
+  // kapcsolatok
+}
