@@ -41,14 +41,27 @@ const login = async (req, res) => {
             return res.status(403).json({message: 'A felhasználó státusza inaktív! Kérem forduljon az IT osztályhoz.'})
         }
 
-        //ideiglenes
-        return res.status(200).json({message: 'A jelszó helyes.'})
+        const payload = {
+            userId: user.user_id,
+            username: user.user_username,
+            role: user.user_role_name,
+            employeeId: user.employee_id,
+            fullName: `${user.employee_last_name} ${user.employee_first_name}`,
+            mustChangePassword: Boolean(user.user_must_change_password) 
+        }
+
+        const token = jwt.sign(payload, process.env.JWT_SECRET, {expiresIn: '8h'});
+        return res.status(200).json({
+            message: payload.mustChangePassword
+                ? "Sikeres bejelentkezés. Az alapértelmezett jelszót meg kell változtatnod a folytatáshoz."
+                : "Sikeres bejelentkezés!",
+            token: token,
+            user: payload
+        });
     }
     catch (error){
         console.error('Bejelentkezési hiba:', error);
         return res.status(500).json({message: 'Szerver hiba.'})
     }
-
-
 }
 module.exports = {login};
