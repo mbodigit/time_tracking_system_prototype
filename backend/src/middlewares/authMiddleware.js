@@ -18,6 +18,12 @@ const authenticateToken = (req, res, next) => {
         return res.status(401).json({ message: 'A fejléc megvan, de a token üres.' });
     }
 
+    try {
+        req.user = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (error) {
+        return res.status(403).json({ message: 'Érvénytelen, módosított vagy lejárt token.' });
+    }
+
     next();
 };
 
