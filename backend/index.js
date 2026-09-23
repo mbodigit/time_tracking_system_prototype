@@ -3,6 +3,7 @@ const express = require('express');
 const pool = require('./src/config/db');
 const cors = require('cors');
 const authRoutes = require('./src/routes/authRoutes');
+const profileRoutes = require('./src/routes/profileRoutes');
 
 const app = express();
 
@@ -10,6 +11,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use('/api', authRoutes);
+app.use('/api', profileRoutes);
 
 const serverStart = async () => {
     try {
