@@ -33,12 +33,20 @@ const login = async (req, res) => {
             return res.status(401).json({message: 'Hibás felhasználónév vagy jelszó!'});
         }
 
+        if (!user.employee_status_is_active){
+            return res.status(403).json({message: 'A dolgozó státusza inaktív! Kérem forduljon a HR osztályhoz.'})
+        }
+
+        if (!user.user_status){
+            return res.status(403).json({message: 'A felhasználó státusza inaktív! Kérem forduljon az IT osztályhoz.'})
+        }
+
         //ideiglenes
         return res.status(200).json({message: 'A jelszó helyes.'})
     }
     catch (error){
         console.error('Bejelentkezési hiba:', error);
-        res.status(500).json({message: 'Szerver hiba.'})
+        return res.status(500).json({message: 'Szerver hiba.'})
     }
 
 
