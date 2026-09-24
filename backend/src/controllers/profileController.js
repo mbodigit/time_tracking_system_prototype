@@ -29,8 +29,20 @@ const changePassword = async (req, res) => {
         return res.status(401).json({message: "A jelenlegi jelszó helytelen."});
     }
 
+    const newPasswordHash = await bcrypt.hash(newPassword, 10);
+
+    await pool.execute(
+        `
+        UPDATE Users
+        SET 
+            user_password_hash = ?,
+            user_must_change_password = 0
+        WHERE user_id = ?
+        `, [newPasswordHash, req.user.userId]
+    );
+
     //ideiglenes
-    return res.status(200).json({message: 'A jelenlegi jelszó helyes.'});
+    return res.status(200).json({message: 'A jelszó megváltozott. Kérem jelentkezzen be újra..'});
 };
 
 module.exports = { getMe, changePassword };
