@@ -15,6 +15,11 @@ const changePassword = async (req, res) => {
     if (newPassword.length < 8){
         return res.status(400).json({message: 'Az új jelszónak legalább 8 karakter hosszúnak kell lennie.'})
     }
+
+    if (currentPassword === newPassword) {
+    return res.status(400).json({ message: 'Az új jelszó nem egyezhet meg a jelenlegivel.' });
+    }
+    
     try {
         const [rows] = await pool.execute(
             `
