@@ -26,7 +26,7 @@ Chen-jelölés: téglalap az egyed, ellipszis az attribútum, rombusz a kapcsola
 Az elsődleges kulcs aláhúzva. A vonalakon lévő 1 és N a kapcsolat számosságát
 mutatja.
 
-Mivel a teljes adatmodell 24 egyedből és 148 attribútumból áll, egyetlen
+Mivel a teljes adatmodell 24 egyedből és 150 attribútumból áll, egyetlen
 Chen-ábrán olvashatatlan lenne, ezért hat részdiagram készül. Minden
 részdiagramnak van egy fókusza, ahol az egyedek minden attribútumukkal
 szerepelnek, és vannak kapcsolódó egyedei, amelyek csak az elsődleges
@@ -42,9 +42,9 @@ import html
 ITT = os.path.dirname(os.path.abspath(__file__))
 MIGRACIOK = os.path.join(ITT, "..", "..", "backend", "migrations")
 FAJLOK = ["001_torzsadatok.sql", "002_szervezet.sql",
-          "003_emberek.sql", "004_mukodes.sql"]
+          "003_dolgozok.sql", "004_mukodes.sql", "006_elrendeles.sql"]
 
-TIPUSOK = (r"(?:INT|TINYINT|BOOLEAN|VARCHAR\(\d+\)|DATE|TIME|DATETIME"
+TIPUSOK = (r"(?:INT|TINYINT|BOOLEAN|VARCHAR\(\d+\)|DATETIME|DATE|TIME"
            r"|DECIMAL\([\d,]+\)|TEXT|ENUM\([^)]*\))")
 
 
@@ -122,6 +122,24 @@ def sema_beolvasas():
                     "hivatkozott": ht,
                 })
 
+        # Az utólag, ALTER TABLE-lel hozzáadott oszlopok. A 006-os migráció
+        # így bővíti a WorkingTimeTracking táblát, és ezek az oszlopok
+        # ugyanúgy az egyed attribútumai, mint a CREATE TABLE-ben lévők.
+        for darab in egysoros.split("ALTER TABLE ")[1:]:
+            m = re.match(r"(\w+)", darab)
+            if not m or m.group(1) not in tablak:
+                continue
+            tn = m.group(1)
+            for onev, otipus, ovege in re.findall(
+                    rf"ADD COLUMN (\w+) ({TIPUSOK})([^,']*)", darab):
+                if any(c["nev"] == onev for c in tablak[tn]["oszlopok"]):
+                    continue
+                tablak[tn]["oszlopok"].append({
+                    "nev": onev,
+                    "tipus": otipus.upper(),
+                    "kotelezo": "NOT NULL" in ovege.upper(),
+                })
+
     return tablak, sorrend
 
 
@@ -159,6 +177,7 @@ KAPCSOLAT_NEV = {
     "fk_user_role":                 "HasRole",
     "fk_wtt_employee":              "RecordedFor",
     "fk_wtt_absence":               "CoveredBy",
+    "fk_wtt_ordered_by":            "OrderedBy",
     "fk_request_employee":          "RequestedBy",
     "fk_request_absence":           "AppliesFor",
     "fk_request_decision_by":       "DecidedBy",
@@ -179,7 +198,7 @@ KAPCSOLOTABLA_NEV = {
 SZIN = {
     "001_torzsadatok.sql": ("#DCE9F7", "#2E5C8A"),
     "002_szervezet.sql":   ("#DDEEDD", "#3B7A3B"),
-    "003_emberek.sql":     ("#FBE6D4", "#A5661F"),
+    "003_dolgozok.sql":    ("#FBE6D4", "#A5661F"),
     "004_mukodes.sql":     ("#F6DDDD", "#8A3B3B"),
 }
 
