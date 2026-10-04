@@ -58,6 +58,8 @@ graph ER {
   "Employees" -- "Employees__employee_break_start" [len=0.8, weight=4];
   "Employees__employee_break_end" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="employee_break_end"];
   "Employees" -- "Employees__employee_break_end" [len=0.8, weight=4];
+  "Employees__employee_annual_leave_days" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="employee_annual_leave_days"];
+  "Employees" -- "Employees__employee_annual_leave_days" [len=0.8, weight=4];
   "Users" [shape=box, style="filled,bold", fillcolor="#FBE6D4", color="#A5661F", penwidth=1.6];
   "Users__user_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label=<<U>user_id</U>>];
   "Users" -- "Users__user_id" [len=0.8, weight=4];
