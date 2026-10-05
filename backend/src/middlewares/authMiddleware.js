@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const pool = require('../config/db');
 
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
@@ -43,4 +44,38 @@ const authenticateToken = (req, res, next) => {
     next();
 };
 
-module.exports = {authenticateToken};
+const authorizePermission = (permissionKey) => {
+    return async (req, res, next) => {
+        if (!req.user || !req.user.role) {
+            return res.status(401).json({ message: 'Hitelesítés szükséges ehhez a művelethez.' });
+        }
+
+        if (req.user.role === 'Admin') {
+            return next();
+        }
+
+        try {
+            const [rows] = await pool.execute(
+                `SELECT 1
+                 FROM RolePermissions rp
+                 JOIN Permissions p ON p.permission_id = rp.permission_id
+                 JOIN UserRoles   r ON r.user_role_id  = rp.user_role_id
+                 WHERE r.user_role_name = ?
+                   AND p.permission_key = ?
+                 LIMIT 1`,
+                [req.user.role, permissionKey]
+            );
+            if (rows.length === 0) {
+                console.warn(`Megtagadva: ${req.user.role} / ${permissionKey}`);
+                return res.status(403).json({ message: 'Nincs jogosultsága ehhez a művelethez.' });
+            }
+        } catch (error) {
+            console.error('Jogosultság-ellenőrzési hiba:', error);
+            return res.status(500).json({ message: 'Szerver hiba.' });
+        }
+
+        next();
+    };
+};
+
+module.exports = {authenticateToken, authorizePermission};
