@@ -9,4 +9,10 @@ router.post('/time-entries',
     timeEntryController.create
 );
 
+router.get('/time-entries',
+    authenticateToken,
+    authorizePermission('monthly_log.record'),
+    timeEntryController.list
+);
+
 module.exports = router;
