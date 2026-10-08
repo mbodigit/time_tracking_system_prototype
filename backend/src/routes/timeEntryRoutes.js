@@ -15,4 +15,10 @@ router.get('/time-entries',
     timeEntryController.list
 );
 
+router.patch('/time-entries/:id',
+    authenticateToken,
+    authorizePermission('monthly_log.record'),
+    timeEntryController.update
+);
+
 module.exports = router;

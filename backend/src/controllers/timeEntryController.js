@@ -9,6 +9,14 @@ const DAY_TYPE_MAP = {
     'Pihenőnap': 'restday',
     'Munkanap': 'workday'
 };
+const UPDATABLE_FIELDS = {
+    workStart: 'wtt_working_start',
+    workEnd: 'wtt_working_end',
+    breakStart: 'wtt_brk_start',
+    breakEnd: 'wtt_brk_end',
+    scheduleStart: 'wtt_schedule_start',
+    scheduleEnd: 'wtt_schedule_end'
+};
 
 
 
@@ -30,8 +38,7 @@ const addDays = (dateString, count) => {
 
 const toDate = (value) => new Date(String(value).replace(' ', 'T'));
 
-const minutesBetween = (from, to) =>
-    Math.round((toDate(to) - toDate(from)) / (1000 * 60));
+const minutesBetween = (from, to) => Math.round((toDate(to) - toDate(from)) / (1000 * 60));
 
 
 
@@ -254,6 +261,7 @@ const list = async (req, res) => {
 
             if (!row.wtt_working_start || !row.wtt_working_end) {
                 days.push({
+                    id: row.wtt_id,
                     date,
                     workStart: null,
                     workEnd: null,
@@ -305,6 +313,7 @@ const list = async (req, res) => {
             }
 
             days.push({
+                id: row.wtt_id,
                 date,
                 workStart: row.wtt_working_start,
                 workEnd: row.wtt_working_end,
@@ -333,4 +342,114 @@ const list = async (req, res) => {
     }
 };
 
-module.exports = { create, list };
+const update = async (req, res) => {
+    const entryId = Number(req.params.id);
+
+    if (!entryId) {
+        return res.status(400).json({ message: 'Érvénytelen azonosító.' });
+    }
+
+    const { note } = req.body || {};
+
+    try {
+        const [existing] = await pool.execute(
+            `SELECT wtt_employee_id, wtt_working_date,
+                    wtt_working_start, wtt_working_end
+             FROM WorkingTimeTracking
+             WHERE wtt_id = ?`,
+            [entryId]
+        );
+
+        if (existing.length === 0) {
+            return res.status(404).json({ message: 'A munkaidő-bejegyzés nem található.' });
+        }
+
+        const entry = existing[0];
+        const isSelf = entry.wtt_employee_id === req.user.employeeId;
+
+        if (!isSelf) {
+            const hasAccess = await canAccessEmployee(
+                req.user.userId, req.user.employeeId, entry.wtt_employee_id
+            );
+
+            if (!hasAccess) {
+                return res.status(403).json({ message: 'Ehhez a dolgozóhoz nincs hozzáférése.' });
+            }
+        }
+
+        const daysPassed = daysSince(entry.wtt_working_date);
+
+        if (req.user.role === 'Dolgozó' && daysPassed > 0) {
+            return res.status(403).json({
+                message: 'A lezárt munkaidő-adat a dolgozói jogosultsággal nem módosítható.'
+            });
+        }
+
+        if (daysPassed > BACKDATE_LIMIT_DAYS && req.user.role !== 'HR-Bér') {
+            return res.status(403).json({
+                message: 'Visszamenőleges módosításra legfeljebb három napig van lehetőség.'
+            });
+        }
+
+        if (daysPassed > 0 && !note) {
+            return res.status(400).json({
+                message: 'Visszamenőleges módosításhoz indoklás megadása kötelező.'
+            });
+        }
+
+        const fields = [];
+        const values = [];
+
+        for (const [key, column] of Object.entries(UPDATABLE_FIELDS)) {
+            if (req.body[key] !== undefined) {
+                fields.push(`${column} = ?`);
+                values.push(req.body[key] ? toSqlDateTime(req.body[key]) : null);
+            }
+        }
+
+        if (note !== undefined) {
+            fields.push('wtt_note = ?');
+            values.push(note || null);
+        }
+
+        if (fields.length === 0) {
+            return res.status(400).json({ message: 'Nincs módosítandó mező.' });
+        }
+
+        const newStart = req.body.workStart !== undefined
+            ? req.body.workStart : entry.wtt_working_start;
+        const newEnd = req.body.workEnd !== undefined
+            ? req.body.workEnd : entry.wtt_working_end;
+
+        if (newStart && newEnd) {
+            const start = toDate(newStart);
+            const end = toDate(newEnd);
+
+            if (end <= start) {
+                return res.status(400).json({
+                    message: 'A munkavégzés vége nem lehet korábbi a kezdeténél.'
+                });
+            }
+
+            if (Math.round((end - start) / (1000 * 60)) > MAX_DAILY_MINUTES) {
+                return res.status(400).json({
+                    message: 'Egy munkanapra legfeljebb 12 óra munkaidő rögzíthető.'
+                });
+            }
+        }
+
+        values.push(entryId);
+
+        await pool.execute(
+            `UPDATE WorkingTimeTracking SET ${fields.join(', ')} WHERE wtt_id = ?`,
+            values
+        );
+
+        return res.status(200).json({ message: 'A munkaidő módosításra került.' });
+    } catch (error) {
+        console.error('Munkaidő módosítási hiba:', error);
+        return res.status(500).json({ message: 'Szerver hiba.' });
+    }
+};
+
+module.exports = { create, list, update };
