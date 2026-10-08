@@ -1,6 +1,8 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { login } from "../../api/auth";
+import { ApiError } from "../../api/client";
 
 export const LoginPage = () => {
   const [username, setUsername] = useState("");
@@ -13,18 +15,7 @@ export const LoginPage = () => {
     setErrorMessage("");
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setErrorMessage(data.message);
-        return;
-      }
+      const data = await login(username, password);
 
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
@@ -32,8 +23,10 @@ export const LoginPage = () => {
       navigate(
         data.user.mustChangePassword ? "/change-password" : "/dashboard",
       );
-    } catch {
-      setErrorMessage("Nem érhető el a szerver. Fut a backend?");
+    } catch (error) {
+      setErrorMessage(
+        error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
+      );
     }
   };
 

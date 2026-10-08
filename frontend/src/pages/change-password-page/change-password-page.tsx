@@ -1,7 +1,9 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { getToken, clearSession } from "../../utils/auth";
+import { clearSession } from "../../utils/auth";
+import { changePassword } from "../../api/auth";
+import { ApiError } from "../../api/client";
 
 export const ChangePasswordPage = () => {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -21,30 +23,15 @@ export const ChangePasswordPage = () => {
     }
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/me/password`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${getToken()}`,
-          },
-          body: JSON.stringify({ currentPassword, newPassword }),
-        },
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setErrorMessage(data.message);
-        return;
-      }
+      const data = await changePassword(currentPassword, newPassword);
 
       setSuccessMessage(data.message);
       clearSession();
       setTimeout(() => navigate("/"), 2000);
-    } catch {
-      setErrorMessage("Nem érhető el a szerver.");
+    } catch (error) {
+      setErrorMessage(
+        error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
+      );
     }
   };
 
