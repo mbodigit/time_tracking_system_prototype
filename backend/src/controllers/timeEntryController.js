@@ -33,7 +33,10 @@ const daysSince = (dateString) => {
 const addDays = (dateString, count) => {
     const date = new Date(`${dateString}T00:00:00`);
     date.setDate(date.getDate() + count);
-    return date.toISOString().slice(0, 10);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 };
 
 const toDate = (value) => new Date(String(value).replace(' ', 'T'));
@@ -85,11 +88,11 @@ const create = async (req, res) => {
         return res.status(400).json({message: 'Jövőbeli napra munkaidő nem rögzíthető.'});
     }
 
-    if (isSelf && daysPassed > 0 && req.user.role === 'Dolgozó') {
+    if (req.user.role === 'Dolgozó' && daysPassed > 0) {
         return res.status(403).json({message: 'A saját munkaidő csak a tárgynapon rögzíthető.'});
     }
 
-    if (!isSelf && daysPassed > BACKDATE_LIMIT_DAYS && req.user.role !== 'HR-Bér') {
+    if (req.user.role !== 'HR-Bér' && daysPassed > BACKDATE_LIMIT_DAYS) {
         return res.status(403).json({message: 'Visszamenőleges rögzítésre legfeljebb három napig van lehetőség.'});
     }
 
@@ -250,19 +253,44 @@ const list = async (req, res) => {
             calendar[entry.gl_cal_date] = DAY_TYPE_MAP[entry.gl_cal_day_type] || 'workday';
         }
 
+        const rowsByDate = {};
+        for (const row of rows) {
+            rowsByDate[row.wtt_working_date] = row;
+        }
+
         const days = [];
         const summaryAllowances = {};
         let summaryWorkedMinutes = 0;
+        let recordedDays = 0;
 
-        for (const row of rows) {
-            const date = row.wtt_working_date;
+        for (let dayNumber = 1; dayNumber <= lastDayNumber; dayNumber++) {
+            const date = `${monthPrefix}-${String(dayNumber).padStart(2, '0')}`;
             const dayType = calendar[date] || 'workday';
             const nextDayType = calendar[addDays(date, 1)] || 'workday';
+            const row = rowsByDate[date];
+
+            if (!row) {
+                days.push({
+                    id: null,
+                    date,
+                    dayType,
+                    workStart: null,
+                    workEnd: null,
+                    absenceId: null,
+                    isOrdered: false,
+                    workedMinutes: 0,
+                    allowances: {}
+                });
+                continue;
+            }
+
+            recordedDays++;
 
             if (!row.wtt_working_start || !row.wtt_working_end) {
                 days.push({
                     id: row.wtt_id,
                     date,
+                    dayType,
                     workStart: null,
                     workEnd: null,
                     absenceId: row.wtt_absence_id,
@@ -315,6 +343,7 @@ const list = async (req, res) => {
             days.push({
                 id: row.wtt_id,
                 date,
+                dayType,
                 workStart: row.wtt_working_start,
                 workEnd: row.wtt_working_end,
                 absenceId: row.wtt_absence_id,
@@ -331,7 +360,7 @@ const list = async (req, res) => {
             month: monthNumber,
             days,
             summary: {
-                recordedDays: days.length,
+                recordedDays,
                 workedMinutes: summaryWorkedMinutes,
                 allowances: summaryAllowances
             }

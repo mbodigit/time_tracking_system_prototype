@@ -1,8 +1,11 @@
 import { apiGet, apiPost, apiPatch } from "./client";
 
+export type DayType = "workday" | "restday" | "holiday";
+
 export interface TimeEntryDay {
-  id: number;
+  id: number | null;
   date: string;
+  dayType: DayType;
   workStart: string | null;
   workEnd: string | null;
   absenceId: number | null;
