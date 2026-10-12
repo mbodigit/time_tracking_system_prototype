@@ -7,6 +7,7 @@ import {
 import { ApiError } from "../../api/client";
 import {
   formatMinutes,
+  formatSignedMinutes,
   formatMonth,
   formatTime,
   getCurrentMonth,
@@ -17,7 +18,7 @@ import {
 } from "../../utils/datetime";
 import { TimeEntryForm } from "./time-entry-form";
 
-const ALLOWANCE_KEYS = ["15", "30", "100", "200", "300"];
+const ALLOWANCE_KEYS = ["15", "30", "50", "100", "200"];
 
 const getDayLabel = (day: TimeEntryDay): string => {
   if (day.dayType === "holiday") return "Munkaszüneti nap";
@@ -108,6 +109,19 @@ export const TimeLogPage = () => {
               {formatMinutes(summary.workedMinutes)}
             </div>
           </div>
+          <div className="stat py-3">
+            <div className="stat-title">Szünet</div>
+            <div className="stat-value text-2xl">
+              {formatMinutes(summary.breakMinutes)}
+            </div>
+          </div>
+          <div className="stat py-3">
+            <div className="stat-title">Egyenleg</div>
+            <div className="stat-value text-2xl">
+              {formatSignedMinutes(summary.balanceMinutes)}
+            </div>
+          </div>
+
           {ALLOWANCE_KEYS.filter((key) => summary.allowances[key]).map(
             (key) => (
               <div className="stat py-3" key={key}>
@@ -132,7 +146,10 @@ export const TimeLogPage = () => {
                 <th>Jelleg</th>
                 <th>Kezdés</th>
                 <th>Végzés</th>
+                <th>Jelenlét</th>
+                <th>Szünet</th>
                 <th>Ledolgozott</th>
+                <th>Egyenleg</th>
                 {ALLOWANCE_KEYS.map((key) => (
                   <th key={key}>{key}%</th>
                 ))}
@@ -163,7 +180,18 @@ export const TimeLogPage = () => {
                   </td>
                   <td>{formatTime(day.workStart)}</td>
                   <td>{formatTime(day.workEnd)}</td>
+                  <td>{formatMinutes(day.presenceMinutes)}</td>
+                  <td>{formatMinutes(day.breakMinutes)}</td>
                   <td>{formatMinutes(day.workedMinutes)}</td>
+                  <td
+                    className={
+                      day.balanceMinutes && day.balanceMinutes < 0
+                        ? "text-error"
+                        : ""
+                    }
+                  >
+                    {formatSignedMinutes(day.balanceMinutes)}
+                  </td>
                   {ALLOWANCE_KEYS.map((key) => (
                     <td key={key}>{formatMinutes(day.allowances[key] ?? 0)}</td>
                   ))}

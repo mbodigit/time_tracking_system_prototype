@@ -261,6 +261,9 @@ const list = async (req, res) => {
         const days = [];
         const summaryAllowances = {};
         let summaryWorkedMinutes = 0;
+        let summaryPresenceMinutes = 0;
+        let summaryBreakMinutes = 0;
+        let summaryBalanceMinutes = 0;
         let recordedDays = 0;
 
         for (let dayNumber = 1; dayNumber <= lastDayNumber; dayNumber++) {
@@ -278,6 +281,10 @@ const list = async (req, res) => {
                     workEnd: null,
                     absenceId: null,
                     isOrdered: false,
+                    presenceMinutes: 0,
+                    breakMinutes: 0,
+                    scheduledMinutes: null,
+                    balanceMinutes: null,
                     workedMinutes: 0,
                     allowances: {}
                 });
@@ -295,46 +302,69 @@ const list = async (req, res) => {
                     workEnd: null,
                     absenceId: row.wtt_absence_id,
                     isOrdered: Boolean(row.wtt_is_ordered),
+                    presenceMinutes: 0,
+                    breakMinutes: 0,
+                    scheduledMinutes: null,
+                    balanceMinutes: null,
                     workedMinutes: 0,
                     allowances: {}
                 });
                 continue;
             }
 
+            const weekday = new Date(`${date}T00:00:00`).getDay();
+            const isWorkingDay = dayType === 'workday' && weekday !== 0 && weekday !== 6;
+
             let scheduleStart = row.wtt_schedule_start;
             let scheduleEnd = row.wtt_schedule_end;
 
-            if (!scheduleStart && templateStart && templateEnd) {
+            if (!scheduleStart && isWorkingDay && templateStart && templateEnd) {
                 scheduleStart = `${date} ${templateStart}`;
                 scheduleEnd = templateEnd > templateStart
                     ? `${date} ${templateEnd}`
                     : `${addDays(date, 1)} ${templateEnd}`;
             }
 
-            const scheduleMissing = !scheduleStart || !scheduleEnd;
-
-            if (scheduleMissing) {
-                scheduleStart = row.wtt_working_start;
-                scheduleEnd = row.wtt_working_end;
-            }
+            const hasSchedule = Boolean(scheduleStart) && Boolean(scheduleEnd);
+            const scheduleMissing = isWorkingDay && !hasSchedule;
 
             const breakMinutes = (row.wtt_brk_start && row.wtt_brk_end)
                 ? minutesBetween(row.wtt_brk_start, row.wtt_brk_end)
-                : (employee.employee_break_minutes || 0);
+                : (hasSchedule ? (employee.employee_break_minutes || 0) : 0);
+
+            const breakDeduction = employee.employee_break_paid ? 0 : breakMinutes;
+
+            const scheduledMinutes = scheduleMissing
+                ? null
+                : (hasSchedule
+                    ? minutesBetween(scheduleStart, scheduleEnd) - breakDeduction
+                    : 0);
 
             const result = calculateAllowances({
                 workStart: toDate(row.wtt_working_start),
                 workEnd: toDate(row.wtt_working_end),
-                scheduleStart: scheduleStart ? toDate(scheduleStart) : null,
-                scheduleEnd: scheduleEnd ? toDate(scheduleEnd) : null,
+                scheduleStart: hasSchedule ? toDate(scheduleStart) : null,
+                scheduleEnd: hasSchedule ? toDate(scheduleEnd) : null,
                 dayType,
                 nextDayType,
                 isShiftWorker,
+                isOrdered: Boolean(row.wtt_is_ordered),
                 breakMinutes,
                 breakPaid: Boolean(employee.employee_break_paid)
             });
 
+            const presenceMinutes = minutesBetween(
+                row.wtt_working_start, row.wtt_working_end
+            );
+
+            const balanceMinutes = scheduledMinutes === null
+                ? null
+                : result.workedMinutes - scheduledMinutes - result.premiumOutsideMinutes;
+
             summaryWorkedMinutes += result.workedMinutes;
+            summaryPresenceMinutes += presenceMinutes;
+            summaryBreakMinutes += breakDeduction;
+            summaryBalanceMinutes += balanceMinutes || 0;
 
             for (const [key, value] of Object.entries(result.allowances)) {
                 summaryAllowances[key] = (summaryAllowances[key] || 0) + value;
@@ -348,6 +378,10 @@ const list = async (req, res) => {
                 workEnd: row.wtt_working_end,
                 absenceId: row.wtt_absence_id,
                 isOrdered: Boolean(row.wtt_is_ordered),
+                presenceMinutes,
+                breakMinutes: breakDeduction,
+                scheduledMinutes,
+                balanceMinutes,
                 scheduleMissing,
                 workedMinutes: result.workedMinutes,
                 allowances: result.allowances
@@ -362,6 +396,9 @@ const list = async (req, res) => {
             summary: {
                 recordedDays,
                 workedMinutes: summaryWorkedMinutes,
+                presenceMinutes: summaryPresenceMinutes,
+                breakMinutes: summaryBreakMinutes,
+                balanceMinutes: summaryBalanceMinutes,
                 allowances: summaryAllowances
             }
         });

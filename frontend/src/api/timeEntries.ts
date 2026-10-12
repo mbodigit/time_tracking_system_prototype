@@ -10,6 +10,10 @@ export interface TimeEntryDay {
   workEnd: string | null;
   absenceId: number | null;
   isOrdered: boolean;
+  presenceMinutes: number;
+  breakMinutes: number;
+  scheduledMinutes: number | null;
+  balanceMinutes: number | null;
   scheduleMissing?: boolean;
   workedMinutes: number;
   allowances: Record<string, number>;
@@ -23,6 +27,9 @@ export interface MonthlyLog {
   summary: {
     recordedDays: number;
     workedMinutes: number;
+    presenceMinutes: number;
+    breakMinutes: number;
+    balanceMinutes: number;
     allowances: Record<string, number>;
   };
 }

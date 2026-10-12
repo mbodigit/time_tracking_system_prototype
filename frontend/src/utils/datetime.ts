@@ -48,3 +48,17 @@ export const shiftMonth = (
   const shifted = new Date(year, month - 1 + offset, 1);
   return { year: shifted.getFullYear(), month: shifted.getMonth() + 1 };
 };
+
+export const formatSignedMinutes = (minutes: number | null): string => {
+  if (minutes === null || minutes === undefined) {
+    return "-";
+  }
+  if (minutes === 0) {
+    return "0:00";
+  }
+  const sign = minutes < 0 ? "-" : "+";
+  const absolute = Math.abs(minutes);
+  const hours = Math.floor(absolute / 60);
+  const rest = absolute % 60;
+  return `${sign}${hours}:${String(rest).padStart(2, "0")}`;
+};

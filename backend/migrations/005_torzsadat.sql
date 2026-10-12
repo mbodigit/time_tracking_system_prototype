@@ -108,11 +108,11 @@ SELECT v.nev, v.szazalek, v.kezd, v.veg FROM (
             SELECT 'Délutáni műszakpótlék' AS nev,  15.00 AS szazalek,
                    '18:00:00' AS kezd, '22:00:00' AS veg
   UNION ALL SELECT 'Éjszakai műszakpótlék',        30.00, '22:00:00', '06:00:00'
-  UNION ALL SELECT 'Hétköznapi túlóra',           100.00, '00:00:00', '00:00:00'
-  UNION ALL SELECT 'Szombati túlóra',             200.00, '00:00:00', '00:00:00'
-  UNION ALL SELECT 'Vasárnapi túlóra',            300.00, '00:00:00', '00:00:00'
-  UNION ALL SELECT 'Pihenőnapi túlóra',           200.00, '00:00:00', '00:00:00'
-  UNION ALL SELECT 'Ünnepnapi túlóra',            300.00, '00:00:00', '00:00:00'
+  UNION ALL SELECT 'Hétköznapi túlóra',            50.00, '00:00:00', '00:00:00'
+  UNION ALL SELECT 'Szombati túlóra',             100.00, '00:00:00', '00:00:00'
+  UNION ALL SELECT 'Vasárnapi túlóra',            200.00, '00:00:00', '00:00:00'
+  UNION ALL SELECT 'Pihenőnapi túlóra',           100.00, '00:00:00', '00:00:00'
+  UNION ALL SELECT 'Munkaszüneti napi túlóra',    200.00, '00:00:00', '00:00:00'
 ) v
 WHERE NOT EXISTS (
   SELECT 1 FROM Allowances p WHERE p.allowance_name = v.nev
