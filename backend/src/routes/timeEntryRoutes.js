@@ -21,4 +21,10 @@ router.patch('/time-entries/:id',
     timeEntryController.update
 );
 
+router.put('/time-entries/ordered',
+    authenticateToken,
+    authorizePermission('monthly_log.edit_past'),
+    timeEntryController.setOrdered
+);
+
 module.exports = router;

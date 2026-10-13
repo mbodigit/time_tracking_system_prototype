@@ -518,4 +518,107 @@ const update = async (req, res) => {
     }
 };
 
-module.exports = { create, list, update };
+const setOrdered = async (req, res) => {
+    const { employeeId, workingDate, isOrdered } = req.body || {};
+
+    if (!employeeId || !workingDate) {
+        return res.status(400).json({
+            message: 'A dolgozó azonosítója és a munkanap megadása kötelező.'
+        });
+    }
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(workingDate)) {
+        return res.status(400).json({ message: 'A munkanap formátuma érvénytelen.' });
+    }
+
+    if (typeof isOrdered !== 'boolean') {
+        return res.status(400).json({
+            message: 'Az elrendelés jelölőjét logikai értékként kell megadni.'
+        });
+    }
+
+    const targetEmployeeId = Number(employeeId);
+
+    if (!targetEmployeeId) {
+        return res.status(400).json({ message: 'Érvénytelen dolgozói azonosító.' });
+    }
+
+    if (targetEmployeeId === req.user.employeeId) {
+        return res.status(403).json({
+            message: 'Saját munkavégzés elrendelésére nincs lehetőség.'
+        });
+    }
+
+    try {
+        const hasAccess = await canAccessEmployee(
+            req.user.userId, req.user.employeeId, targetEmployeeId
+        );
+
+        if (!hasAccess) {
+            return res.status(403).json({ message: 'Ehhez a dolgozóhoz nincs hozzáférése.' });
+        }
+
+        const [covered] = await pool.execute(
+            `SELECT 1
+             FROM Requests
+             WHERE request_employee_id = ?
+               AND request_status = 'Jóváhagyva'
+               AND ? BETWEEN request_start_date AND request_end_date
+             LIMIT 1`,
+            [targetEmployeeId, workingDate]
+        );
+
+        if (covered.length > 0) {
+            return res.status(409).json({
+                message: 'Jóváhagyott távolléti jogcímmel fedett napra elrendelés nem adható.'
+            });
+        }
+
+        const [existing] = await pool.execute(
+            `SELECT wtt_id
+             FROM WorkingTimeTracking
+             WHERE wtt_employee_id = ? AND wtt_working_date = ?
+             LIMIT 1`,
+            [targetEmployeeId, workingDate]
+        );
+
+        if (existing.length > 0) {
+            await pool.execute(
+                `UPDATE WorkingTimeTracking
+                 SET wtt_is_ordered = ?, wtt_ordered_by = ?
+                 WHERE wtt_id = ?`,
+                [isOrdered ? 1 : 0, isOrdered ? req.user.userId : null, existing[0].wtt_id]
+            );
+
+            return res.status(200).json({
+                message: isOrdered
+                    ? 'Az elrendelés rögzítésre került.'
+                    : 'Az elrendelés visszavonásra került.',
+                id: existing[0].wtt_id
+            });
+        }
+
+        if (!isOrdered) {
+            return res.status(404).json({
+                message: 'Erre a napra nincs elrendelés, amit vissza lehetne vonni.'
+            });
+        }
+
+        const [result] = await pool.execute(
+            `INSERT INTO WorkingTimeTracking (
+                wtt_employee_id, wtt_working_date, wtt_is_ordered, wtt_ordered_by
+             ) VALUES (?, ?, 1, ?)`,
+            [targetEmployeeId, workingDate, req.user.userId]
+        );
+
+        return res.status(201).json({
+            message: 'Az elrendelés rögzítésre került.',
+            id: result.insertId
+        });
+    } catch (error) {
+        console.error('Elrendelési hiba:', error);
+        return res.status(500).json({ message: 'Szerver hiba.' });
+    }
+};
+
+module.exports = { create, list, update, setOrdered };
