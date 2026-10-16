@@ -24,6 +24,9 @@ variables:
   - name: regiEntryId
     value: "900001"
     description: "a visszaallito szkript altal letrehozott regi sor azonositoja"
+  - name: regiNap2
+    value: "2026-01-06"
+    description: "masodik regi nap a HR rogzitesehez"
   - name: jovoNap
     value: "2030-01-02"
     description: "jovobeli nap, fix"

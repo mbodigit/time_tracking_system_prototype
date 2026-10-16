@@ -1,0 +1,24 @@
+info:
+  name: hr havi nezet idegen dolgozora
+  type: http
+  seq: 36
+
+http:
+  method: GET
+  url: "{{baseUrl}}/time-entries?year={{ev}}&month={{honap}}&employeeId={{idDolgozoM}}"
+  auth:
+    type: bearer
+    token: "{{hrToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

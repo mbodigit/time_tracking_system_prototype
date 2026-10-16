@@ -1,6 +1,13 @@
 const pool = require('../config/db');
 
-const getAccessibleEmployeeIds = async (userId, employeeId) => {
+const PRIVILEGED_ROLES = ['HR-Bér', 'Admin'];
+
+const getAccessibleEmployeeIds = async (userId, employeeId, role) => {
+    if (PRIVILEGED_ROLES.includes(role)) {
+        const [all] = await pool.execute(`SELECT employee_id FROM Employees`);
+        return all.map((row) => row.employee_id);
+    }
+
     const [rows] = await pool.execute(
         `SELECT e.employee_id
          FROM Employees e
@@ -13,8 +20,12 @@ const getAccessibleEmployeeIds = async (userId, employeeId) => {
     return rows.map((row) => row.employee_id);
 };
 
-const canAccessEmployee = async (userId, employeeId, targetEmployeeId) => {
+const canAccessEmployee = async (userId, employeeId, targetEmployeeId, role) => {
     if (targetEmployeeId === employeeId) {
+        return true;
+    }
+
+    if (PRIVILEGED_ROLES.includes(role)) {
         return true;
     }
 

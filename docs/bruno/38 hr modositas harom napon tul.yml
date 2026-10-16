@@ -1,0 +1,31 @@
+info:
+  name: hr modositas harom napon tul
+  type: http
+  seq: 38
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/time-entries/{{regiEntryId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "workEnd": "{{regiNap}} 17:00:00",
+        "note": "HR havi zaras, javitas"
+      }
+  auth:
+    type: bearer
+    token: "{{hrToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

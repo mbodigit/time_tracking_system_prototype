@@ -99,7 +99,7 @@ const create = async (req, res) => {
     try {
         if (!isSelf) {
             const hasAccess = await canAccessEmployee(
-                req.user.userId, req.user.employeeId, targetEmployeeId
+                req.user.userId, req.user.employeeId, targetEmployeeId, req.user.role
             );
 
             if (!hasAccess) {
@@ -192,7 +192,7 @@ const list = async (req, res) => {
     try {
         if (!isSelf) {
             const hasAccess = await canAccessEmployee(
-                req.user.userId, req.user.employeeId, targetEmployeeId
+                req.user.userId, req.user.employeeId, targetEmployeeId, req.user.role
             );
 
             if (!hasAccess) {
@@ -435,7 +435,7 @@ const update = async (req, res) => {
 
         if (!isSelf) {
             const hasAccess = await canAccessEmployee(
-                req.user.userId, req.user.employeeId, entry.wtt_employee_id
+                req.user.userId, req.user.employeeId, entry.wtt_employee_id, req.user.role
             );
 
             if (!hasAccess) {
@@ -551,7 +551,7 @@ const setOrdered = async (req, res) => {
 
     try {
         const hasAccess = await canAccessEmployee(
-            req.user.userId, req.user.employeeId, targetEmployeeId
+            req.user.userId, req.user.employeeId, targetEmployeeId, req.user.role
         );
 
         if (!hasAccess) {
