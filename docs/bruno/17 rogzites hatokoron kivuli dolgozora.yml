@@ -1,0 +1,33 @@
+info:
+  name: rogzites hatokoron kivuli dolgozora
+  type: http
+  seq: 17
+
+http:
+  method: POST
+  url: "{{baseUrl}}/time-entries"
+  body:
+    type: json
+    data: |-
+      {
+        "employeeId": {{idKivulallo}},
+        "workingDate": "{{tegnap}}",
+        "workStart": "{{tegnap}} 08:00:00",
+        "workEnd": "{{tegnap}} 16:00:00"
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "403"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

@@ -1,0 +1,31 @@
+info:
+  name: modositas indoklassal
+  type: http
+  seq: 23
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/time-entries/{{entryId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "workEnd": "{{ma}} 07:00:00",
+        "note": "Elrendelt tulora, utolagos javitas"
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

@@ -1,0 +1,32 @@
+info:
+  name: elrendeles dolgozoi fiokkal
+  type: http
+  seq: 34
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/time-entries/ordered"
+  body:
+    type: json
+    data: |-
+      {
+        "employeeId": {{idDolgozoM}},
+        "workingDate": "{{jovoNap2}}",
+        "isOrdered": true
+      }
+  auth:
+    type: bearer
+    token: "{{dolgozoToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "403"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

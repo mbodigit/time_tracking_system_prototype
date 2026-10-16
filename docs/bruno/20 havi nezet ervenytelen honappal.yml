@@ -1,0 +1,24 @@
+info:
+  name: havi nezet ervenytelen honappal
+  type: http
+  seq: 20
+
+http:
+  method: GET
+  url: "{{baseUrl}}/time-entries?year={{ev}}&month=13"
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "400"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

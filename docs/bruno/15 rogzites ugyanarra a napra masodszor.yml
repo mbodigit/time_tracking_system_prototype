@@ -1,0 +1,32 @@
+info:
+  name: rogzites ugyanarra a napra masodszor
+  type: http
+  seq: 15
+
+http:
+  method: POST
+  url: "{{baseUrl}}/time-entries"
+  body:
+    type: json
+    data: |-
+      {
+        "workingDate": "{{ma}}",
+        "workStart": "{{ma}} 08:00:00",
+        "workEnd": "{{ma}} 16:00:00"
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "409"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

@@ -1,0 +1,24 @@
+info:
+  name: profil ervenyes tokennel
+  type: http
+  seq: 6
+
+http:
+  method: GET
+  url: "{{baseUrl}}/me"
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

@@ -1,0 +1,31 @@
+info:
+  name: jelszocsere vissza az eredetire
+  type: http
+  seq: 9
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/me/password"
+  body:
+    type: json
+    data: |-
+      {
+        "currentPassword": "Teszt5678",
+        "newPassword": "{{jelszo}}"
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

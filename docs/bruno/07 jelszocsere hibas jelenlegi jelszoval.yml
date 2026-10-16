@@ -1,0 +1,31 @@
+info:
+  name: jelszocsere hibas jelenlegi jelszoval
+  type: http
+  seq: 7
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/me/password"
+  body:
+    type: json
+    data: |-
+      {
+        "currentPassword": "RosszJelszo99",
+        "newPassword": "Teszt5678"
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "401"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

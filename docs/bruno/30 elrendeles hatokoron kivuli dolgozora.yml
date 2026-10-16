@@ -1,0 +1,32 @@
+info:
+  name: elrendeles hatokoron kivuli dolgozora
+  type: http
+  seq: 30
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/time-entries/ordered"
+  body:
+    type: json
+    data: |-
+      {
+        "employeeId": {{idKivulallo}},
+        "workingDate": "{{jovoNap2}}",
+        "isOrdered": true
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "403"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

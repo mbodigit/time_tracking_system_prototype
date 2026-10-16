@@ -1,0 +1,32 @@
+info:
+  name: elrendeles visszavonasa
+  type: http
+  seq: 27
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/time-entries/ordered"
+  body:
+    type: json
+    data: |-
+      {
+        "employeeId": {{idDolgozoM}},
+        "workingDate": "{{jovoNap2}}",
+        "isOrdered": false
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

@@ -1,0 +1,32 @@
+info:
+  name: elrendeles jovobeli napra
+  type: http
+  seq: 25
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/time-entries/ordered"
+  body:
+    type: json
+    data: |-
+      {
+        "employeeId": {{idDolgozoM}},
+        "workingDate": "{{jovoNap2}}",
+        "isOrdered": true
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "201"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
