@@ -93,7 +93,9 @@ CROSS JOIN WorkSchedules w
 WHERE (
         a.absence_name NOT IN ('Homeoffice', 'Csúszó nap',
                                'Külföldi kiküldetés', 'Tanulmányi szabadság')
-        OR w.work_schedule_is_shift = 0
+        OR (w.work_schedule_name = 'Nem műszakos')
+        OR (w.work_schedule_name = 'Kötetlen'
+            AND a.absence_name IN ('Külföldi kiküldetés', 'Tanulmányi szabadság'))
       )
   AND NOT EXISTS (
     SELECT 1 FROM AbsenceWorkSchedules x

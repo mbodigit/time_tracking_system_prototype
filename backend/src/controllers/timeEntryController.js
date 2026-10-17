@@ -205,10 +205,12 @@ const list = async (req, res) => {
                 e.employee_break_minutes, e.employee_break_paid,
                 e.employee_core_start, e.employee_core_end,
                 c.core_hour_start, c.core_hour_end,
-                w.work_schedule_is_shift
+                w.work_schedule_is_shift,
+                h.working_hour_num
              FROM Employees e
-             LEFT JOIN CoreHours     c ON c.core_hour_id     = e.employee_core_hour_id
-             LEFT JOIN WorkSchedules w ON w.work_schedule_id = e.employee_work_schedule_id
+             LEFT JOIN CoreHours     c ON c.core_hour_id      = e.employee_core_hour_id
+             LEFT JOIN WorkSchedules w ON w.work_schedule_id  = e.employee_work_schedule_id
+             LEFT JOIN WorkingHours  h ON h.working_hour_id   = e.employee_working_hour_id
              WHERE e.employee_id = ?`,
             [targetEmployeeId]
         );
@@ -253,6 +255,40 @@ const list = async (req, res) => {
             calendar[entry.gl_cal_date] = DAY_TYPE_MAP[entry.gl_cal_day_type] || 'workday';
         }
 
+        const contractedMinutes = (employee.working_hour_num || 0) * 60;
+
+        const [requestRows] = await pool.execute(
+            `SELECT r.request_start_date, r.request_end_date, r.request_status,
+                    a.absence_id, a.absence_name, a.absence_is_paid, a.absence_rec_type
+             FROM Requests r
+             JOIN Absences a ON a.absence_id = r.request_absence_id
+             WHERE r.request_employee_id = ?
+               AND r.request_status IN ('Függőben', 'Jóváhagyva')
+               AND r.request_start_date <= ?
+               AND r.request_end_date   >= ?`,
+            [targetEmployeeId, lastDay, firstDay]
+        );
+
+        const absenceByDate = {};
+        for (const entry of requestRows) {
+            let cursor = entry.request_start_date < firstDay
+                ? firstDay
+                : entry.request_start_date;
+            const last = entry.request_end_date > lastDay
+                ? lastDay
+                : entry.request_end_date;
+
+            while (cursor <= last) {
+                const current = absenceByDate[cursor];
+
+                if (!current || entry.request_status === 'Jóváhagyva') {
+                    absenceByDate[cursor] = entry;
+                }
+
+                cursor = addDays(cursor, 1);
+            }
+        }
+
         const rowsByDate = {};
         for (const row of rows) {
             rowsByDate[row.wtt_working_date] = row;
@@ -264,6 +300,7 @@ const list = async (req, res) => {
         let summaryPresenceMinutes = 0;
         let summaryBreakMinutes = 0;
         let summaryBalanceMinutes = 0;
+        let summaryAbsenceMinutes = 0;
         let recordedDays = 0;
 
         for (let dayNumber = 1; dayNumber <= lastDayNumber; dayNumber++) {
@@ -271,6 +308,28 @@ const list = async (req, res) => {
             const dayType = calendar[date] || 'workday';
             const nextDayType = calendar[addDays(date, 1)] || 'workday';
             const row = rowsByDate[date];
+            const absence = absenceByDate[date];
+            const isApprovedAbsence = Boolean(absence) && absence.request_status === 'Jóváhagyva';
+            const weekdayNumber = new Date(`${date}T00:00:00`).getDay();
+            const isWorkingDayForAbsence =
+                dayType === 'workday' && weekdayNumber !== 0 && weekdayNumber !== 6;
+
+            const absenceMinutes =
+                (isApprovedAbsence && absence.absence_rec_type === 0 && isWorkingDayForAbsence)
+                    ? contractedMinutes
+                    : 0;
+
+            summaryAbsenceMinutes += absenceMinutes;
+
+            const absenceInfo = absence
+                ? {
+                    id: absence.absence_id,
+                    name: absence.absence_name,
+                    isPaid: Boolean(absence.absence_is_paid),
+                    status: absence.request_status,
+                    coversDay: absenceMinutes > 0
+                  }
+                : null;
 
             if (!row) {
                 days.push({
@@ -279,13 +338,15 @@ const list = async (req, res) => {
                     dayType,
                     workStart: null,
                     workEnd: null,
-                    absenceId: null,
+                    absence: absenceInfo,
+                    absenceMinutes,
                     isOrdered: false,
                     presenceMinutes: 0,
                     breakMinutes: 0,
                     scheduledMinutes: null,
-                    balanceMinutes: null,
+                    balanceMinutes: absenceMinutes > 0 ? 0 : null,
                     workedMinutes: 0,
+                    settledMinutes: absenceMinutes,
                     allowances: {}
                 });
                 continue;
@@ -300,13 +361,15 @@ const list = async (req, res) => {
                     dayType,
                     workStart: null,
                     workEnd: null,
-                    absenceId: row.wtt_absence_id,
+                    absence: absenceInfo,
+                    absenceMinutes,
                     isOrdered: Boolean(row.wtt_is_ordered),
                     presenceMinutes: 0,
                     breakMinutes: 0,
                     scheduledMinutes: null,
-                    balanceMinutes: null,
+                    balanceMinutes: absenceMinutes > 0 ? 0 : null,
                     workedMinutes: 0,
+                    settledMinutes: result.workedMinutes + absenceMinutes,
                     allowances: {}
                 });
                 continue;
@@ -359,7 +422,9 @@ const list = async (req, res) => {
 
             const balanceMinutes = scheduledMinutes === null
                 ? null
-                : result.workedMinutes - scheduledMinutes - result.premiumOutsideMinutes;
+                : (absenceMinutes > 0
+                    ? 0
+                    : result.workedMinutes - scheduledMinutes - result.premiumOutsideMinutes);
 
             summaryWorkedMinutes += result.workedMinutes;
             summaryPresenceMinutes += presenceMinutes;
@@ -376,7 +441,8 @@ const list = async (req, res) => {
                 dayType,
                 workStart: row.wtt_working_start,
                 workEnd: row.wtt_working_end,
-                absenceId: row.wtt_absence_id,
+                absence: absenceInfo,
+                absenceMinutes,
                 isOrdered: Boolean(row.wtt_is_ordered),
                 presenceMinutes,
                 breakMinutes: breakDeduction,
@@ -399,6 +465,8 @@ const list = async (req, res) => {
                 presenceMinutes: summaryPresenceMinutes,
                 breakMinutes: summaryBreakMinutes,
                 balanceMinutes: summaryBalanceMinutes,
+                absenceMinutes: summaryAbsenceMinutes,
+                settledMinutes: summaryWorkedMinutes + summaryAbsenceMinutes,
                 allowances: summaryAllowances
             }
         });

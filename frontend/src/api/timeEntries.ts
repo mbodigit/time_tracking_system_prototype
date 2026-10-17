@@ -8,7 +8,15 @@ export interface TimeEntryDay {
   dayType: DayType;
   workStart: string | null;
   workEnd: string | null;
-  absenceId: number | null;
+    absence: {
+    id: number;
+    name: string;
+    isPaid: boolean;
+    status: "Függőben" | "Jóváhagyva";
+    coversDay: boolean;
+  } | null;
+  absenceMinutes: number;
+  settledMinutes: number;
   isOrdered: boolean;
   presenceMinutes: number;
   breakMinutes: number;
@@ -30,6 +38,8 @@ export interface MonthlyLog {
     presenceMinutes: number;
     breakMinutes: number;
     balanceMinutes: number;
+    absenceMinutes: number;
+    settledMinutes: number;
     allowances: Record<string, number>;
   };
 }

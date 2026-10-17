@@ -1,0 +1,30 @@
+info:
+  name: elbiralas ervenytelen allapottal
+  type: http
+  seq: 51
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/requests/{{subRequestId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "status": "Talan"
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "400"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

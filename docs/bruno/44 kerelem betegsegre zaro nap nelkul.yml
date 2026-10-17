@@ -1,0 +1,31 @@
+info:
+  name: kerelem betegsegre zaro nap nelkul
+  type: http
+  seq: 44
+
+http:
+  method: POST
+  url: "{{baseUrl}}/requests"
+  body:
+    type: json
+    data: |-
+      {
+        "absenceId": 2,
+        "startDate": "{{kerelemNap2}}"
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "201"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

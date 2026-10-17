@@ -1,0 +1,31 @@
+info:
+  name: kerelem hianyzo jogcimmel
+  type: http
+  seq: 40
+
+http:
+  method: POST
+  url: "{{baseUrl}}/requests"
+  body:
+    type: json
+    data: |-
+      {
+        "startDate": "{{kerelemNap}}",
+        "endDate": "{{kerelemNap}}"
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "400"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

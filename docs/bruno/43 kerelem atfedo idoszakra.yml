@@ -1,0 +1,32 @@
+info:
+  name: kerelem atfedo idoszakra
+  type: http
+  seq: 43
+
+http:
+  method: POST
+  url: "{{baseUrl}}/requests"
+  body:
+    type: json
+    data: |-
+      {
+        "absenceId": 1,
+        "startDate": "{{kerelemVeg}}",
+        "endDate": "{{kerelemVeg}}"
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "409"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

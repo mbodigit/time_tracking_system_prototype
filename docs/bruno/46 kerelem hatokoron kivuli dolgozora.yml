@@ -1,0 +1,33 @@
+info:
+  name: kerelem hatokoron kivuli dolgozora
+  type: http
+  seq: 46
+
+http:
+  method: POST
+  url: "{{baseUrl}}/requests"
+  body:
+    type: json
+    data: |-
+      {
+        "employeeId": {{idKivulallo}},
+        "absenceId": 1,
+        "startDate": "{{kerelemNap}}",
+        "endDate": "{{kerelemNap}}"
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "403"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

@@ -1,0 +1,30 @@
+info:
+  name: elbiralas sajat kerelemre
+  type: http
+  seq: 50
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/requests/{{requestId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "status": "Jóváhagyva"
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "403"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

@@ -1,0 +1,30 @@
+info:
+  name: elutasitas indoklas nelkul
+  type: http
+  seq: 52
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/requests/{{subRequestId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "status": "Elutasítva"
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "400"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
