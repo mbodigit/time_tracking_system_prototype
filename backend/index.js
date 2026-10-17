@@ -5,6 +5,8 @@ const cors = require('cors');
 const authRoutes = require('./src/routes/authRoutes');
 const profileRoutes = require('./src/routes/profileRoutes');
 const timeEntryRoutes = require('./src/routes/timeEntryRoutes');
+const requestRoutes = require('./src/routes/requestRoutes');
+const lookupRoutes = require('./src/routes/lookupRoutes');
 
 const app = express();
 
@@ -14,6 +16,8 @@ app.use(express.json());
 app.use('/api', authRoutes);
 app.use('/api', profileRoutes);
 app.use('/api', timeEntryRoutes);
+app.use('/api', requestRoutes);
+app.use('/api', lookupRoutes);
 
 const serverStart = async () => {
     try {
