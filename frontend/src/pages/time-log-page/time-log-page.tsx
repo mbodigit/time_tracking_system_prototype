@@ -116,6 +116,18 @@ export const TimeLogPage = () => {
             </div>
           </div>
           <div className="stat py-3">
+            <div className="stat-title">Jogcímmel fedett</div>
+            <div className="stat-value text-2xl">
+              {formatMinutes(summary.absenceMinutes)}
+            </div>
+          </div>
+          <div className="stat py-3">
+            <div className="stat-title">Elszámolt összesen</div>
+            <div className="stat-value text-2xl">
+              {formatMinutes(summary.settledMinutes)}
+            </div>
+          </div>
+          <div className="stat py-3">
             <div className="stat-title">Egyenleg</div>
             <div className="stat-value text-2xl">
               {formatSignedMinutes(summary.balanceMinutes)}
@@ -150,6 +162,8 @@ export const TimeLogPage = () => {
                 <th>Szünet</th>
                 <th>Ledolgozott</th>
                 <th>Egyenleg</th>
+                <th>Jogcím</th>
+                <th>Elszámolt</th>
                 {ALLOWANCE_KEYS.map((key) => (
                   <th key={key}>{key}%</th>
                 ))}
@@ -191,6 +205,33 @@ export const TimeLogPage = () => {
                     }
                   >
                     {formatSignedMinutes(day.balanceMinutes)}
+                  </td>
+                  <td className="whitespace-nowrap">
+                    {day.absence ? (
+                      <span
+                        className={`badge badge-sm ${
+                          day.absence.coversDay
+                            ? "badge-info"
+                            : "badge-warning badge-outline"
+                        }`}
+                        title={
+                          day.absence.coversDay
+                            ? "Jóváhagyott jogcím, az óraszám elszámolásra kerül."
+                            : "Függőben lévő kérelem, óraszámot nem számol el."
+                        }
+                      >
+                        {day.absence.name}
+                      </span>
+                    ) : (
+                      "-"
+                    )}
+                  </td>
+                  <td>
+                    {day.settledMinutes
+                      ? formatMinutes(day.settledMinutes)
+                      : day.absence
+                        ? "0:00"
+                        : "-"}
                   </td>
                   {ALLOWANCE_KEYS.map((key) => (
                     <td key={key}>{formatMinutes(day.allowances[key] ?? 0)}</td>
