@@ -1,0 +1,32 @@
+info:
+  name: elrendeles jovahagyott tavolletre
+  type: http
+  seq: 57
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/time-entries/ordered"
+  body:
+    type: json
+    data: |-
+      {
+        "employeeId": {{idDolgozoM}},
+        "workingDate": "{{kerelemNap}}",
+        "isOrdered": true
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "409"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

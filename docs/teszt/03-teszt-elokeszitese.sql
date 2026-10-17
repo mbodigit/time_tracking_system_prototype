@@ -9,6 +9,11 @@ WHERE wtt_employee_id IN (
       )
   AND wtt_id <> 900001;
 
+DELETE FROM Requests
+WHERE request_employee_id IN (
+  SELECT employee_id FROM Employees WHERE employee_code LIKE 'TESZT-%'
+);
+
 SET @dm := (SELECT employee_id FROM Employees WHERE employee_code = 'TESZT-DM1');
 
 INSERT IGNORE INTO WorkingTimeTracking (

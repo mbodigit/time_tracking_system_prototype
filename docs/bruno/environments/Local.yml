@@ -33,6 +33,15 @@ variables:
   - name: jovoNap2
     value: "2030-01-05"
     description: "masodik jovobeli nap az elrendeleshez"
+  - name: kerelemNap
+    value: "2030-02-02"
+    description: "kerelem kezdo nap"
+  - name: kerelemVeg
+    value: "2030-02-04"
+    description: "kerelem zaro nap"
+  - name: kerelemNap2
+    value: "2030-03-02"
+    description: "nyitott vegu kerelem napja"
   - name: idVezetoM
     value: "11"
     description: "TESZT-VM1"
