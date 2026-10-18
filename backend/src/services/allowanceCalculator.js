@@ -35,6 +35,8 @@ const calculateAllowances = (input) => {
         nextDayType,
         isShiftWorker,
         isOrdered,
+        breakStart,
+        breakEnd,
         breakMinutes,
         breakPaid
     } = input;
@@ -45,8 +47,14 @@ const calculateAllowances = (input) => {
 
     const startDay = workStart.getDate();
     const hasSchedule = Boolean(scheduleStart) && Boolean(scheduleEnd);
+    const hasBreakWindow = Boolean(breakStart) && Boolean(breakEnd) && !breakPaid;
 
     for (let time = workStart.getTime(); time < workEnd.getTime(); time += MILLISEC_PER_MINUTE) {
+        if (hasBreakWindow
+            && time >= breakStart.getTime()
+            && time < breakEnd.getTime()) {
+            continue;
+        }
         const minute = new Date(time);
         presenceMinutes++;
 
@@ -74,7 +82,7 @@ const calculateAllowances = (input) => {
         }
     }
 
-    const deduction = breakPaid ? 0 : (breakMinutes || 0);
+    const deduction = (breakPaid || hasBreakWindow) ? 0 : (breakMinutes || 0);
 
     return {
         workedMinutes: presenceMinutes - deduction,

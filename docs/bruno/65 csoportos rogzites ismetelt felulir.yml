@@ -1,0 +1,36 @@
+info:
+  name: csoportos rogzites ismetelt felulir
+  type: http
+  seq: 65
+
+http:
+  method: POST
+  url: "{{baseUrl}}/time-entries/bulk"
+  body:
+    type: json
+    data: |-
+      {
+        "workingDate": "{{csoportNap}}",
+        "entries": [
+          { "employeeId": {{idDolgozoM}}, "workStart": "{{csoportNap}} 06:00:00", "workEnd": "{{csoportNap}} 15:00:00" }
+        ]
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.results[0].status
+      operator: eq
+      value: "updated"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

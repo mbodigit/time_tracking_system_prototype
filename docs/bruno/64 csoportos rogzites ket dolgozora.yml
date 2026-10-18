@@ -1,0 +1,40 @@
+info:
+  name: csoportos rogzites ket dolgozora
+  type: http
+  seq: 64
+
+http:
+  method: POST
+  url: "{{baseUrl}}/time-entries/bulk"
+  body:
+    type: json
+    data: |-
+      {
+        "workingDate": "{{csoportNap}}",
+        "entries": [
+          { "employeeId": {{idDolgozoM}}, "workStart": "{{csoportNap}} 06:00:00", "workEnd": "{{csoportNap}} 14:00:00" },
+          { "employeeId": {{idKotetlen}}, "workStart": "{{csoportNap}} 08:00:00", "workEnd": "{{csoportNap}} 16:00:00" }
+        ]
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.results[0].status
+      operator: eq
+      value: "created"
+    - expression: res.body.results[1].status
+      operator: eq
+      value: "error"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

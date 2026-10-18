@@ -63,6 +63,31 @@ WHERE employee_code IN ('TESZT-DM1', 'TESZT-K1');
 UPDATE Employees SET employee_manager_id = @vezeto_nm_id
 WHERE employee_code = 'TESZT-DN1';
 
+UPDATE Employees
+SET employee_core_hour_id =
+      (SELECT core_hour_id FROM CoreHours WHERE core_hour_name = '22:00-06:00'),
+    employee_break_start = '02:00:00',
+    employee_break_end = '02:30:00',
+    employee_break_minutes = 30,
+    employee_break_paid = 0
+WHERE employee_code IN ('TESZT-VM1', 'TESZT-DM1');
+
+UPDATE Employees
+SET employee_core_hour_id =
+      (SELECT core_hour_id FROM CoreHours WHERE core_hour_name = '07:00-15:00'),
+    employee_break_start = '12:00:00',
+    employee_break_end = '12:30:00',
+    employee_break_minutes = 30,
+    employee_break_paid = 0
+WHERE employee_code IN ('TESZT-VN1', 'TESZT-DN1', 'TESZT-HR1');
+
+UPDATE Employees
+SET employee_working_hour_id =
+      (SELECT working_hour_id FROM WorkingHours WHERE working_hour_num = 8)
+WHERE employee_code IN
+      ('TESZT-VM1', 'TESZT-VN1', 'TESZT-DM1', 'TESZT-DN1', 'TESZT-HR1')
+  AND employee_working_hour_id IS NULL;
+
 INSERT INTO Users (
   user_username, user_password_hash, user_employee_id, user_role_id,
   user_status, user_must_change_password
@@ -86,10 +111,16 @@ SET SQL_SAFE_UPDATES = @elozo_safe_updates;
 SELECT e.employee_code,
        w.work_schedule_name AS munkarend,
        c.core_hour_name     AS torzsido,
+       e.employee_break_start AS szunet_kezdete,
+       e.employee_break_end   AS szunet_vege,
+       e.employee_break_minutes AS szunet_perc,
+       e.employee_break_paid    AS fizetett_szunet,
+       h.working_hour_num       AS napi_oraszam,
        f.employee_code      AS felettes
 FROM Employees e
 LEFT JOIN WorkSchedules w ON w.work_schedule_id = e.employee_work_schedule_id
 LEFT JOIN CoreHours     c ON c.core_hour_id     = e.employee_core_hour_id
+LEFT JOIN WorkingHours  h ON h.working_hour_id  = e.employee_working_hour_id
 LEFT JOIN Employees     f ON f.employee_id      = e.employee_manager_id
 WHERE e.employee_code LIKE 'TESZT-%'
 ORDER BY e.employee_id;

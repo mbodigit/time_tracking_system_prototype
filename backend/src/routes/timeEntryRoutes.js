@@ -27,4 +27,16 @@ router.put('/time-entries/ordered',
     timeEntryController.setOrdered
 );
 
+router.get('/time-entries/daily',
+    authenticateToken,
+    authorizePermission('group_log.record'),
+    timeEntryController.listDaily
+);
+
+router.post('/time-entries/bulk',
+    authenticateToken,
+    authorizePermission('group_log.record'),
+    timeEntryController.createBulk
+);
+
 module.exports = router;

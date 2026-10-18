@@ -1,5 +1,5 @@
 const pool = require('../config/db');
-const { canAccessEmployee } = require('../services/employeeScope');
+const { canAccessEmployee, getAccessibleEmployeeIds } = require('../services/employeeScope');
 const { calculateAllowances } = require('../services/allowanceCalculator');
 
 const MAX_DAILY_MINUTES = 12 * 60;
@@ -138,7 +138,20 @@ const create = async (req, res) => {
         let breakStartValue = breakStart ? toSqlDateTime(breakStart) : null;
         let breakEndValue = breakEnd ? toSqlDateTime(breakEnd) : null;
 
-        if (!breakStartValue && !breakEndValue) {
+        const [dayTypeRows] = await pool.execute(
+            `SELECT gl_cal_day_type FROM GlobalCalendar WHERE gl_cal_date = ? LIMIT 1`,
+            [workingDate]
+        );
+
+        const workingDateType = dayTypeRows.length > 0
+            ? (DAY_TYPE_MAP[dayTypeRows[0].gl_cal_day_type] || 'workday')
+            : 'workday';
+
+        const breakWeekday = new Date(`${workingDate}T00:00:00`).getDay();
+        const isBreakWorkingDay = workingDateType === 'workday'
+            && breakWeekday !== 0 && breakWeekday !== 6;
+
+        if (!breakStartValue && !breakEndValue && isBreakWorkingDay) {
             const [template] = await pool.execute(
                 `SELECT
                     employee_break_start, employee_break_end
@@ -148,8 +161,13 @@ const create = async (req, res) => {
             );
 
             if (template.length > 0 && template[0].employee_break_start) {
-                breakStartValue = `${workingDate} ${template[0].employee_break_start}`;
-                breakEndValue = `${workingDate} ${template[0].employee_break_end}`;
+                const workStartTime = toSqlDateTime(workStart).slice(11, 19);
+                const breakDate = String(template[0].employee_break_start) < workStartTime
+                    ? addDays(workingDate, 1)
+                    : workingDate;
+
+                breakStartValue = `${breakDate} ${template[0].employee_break_start}`;
+                breakEndValue = `${breakDate} ${template[0].employee_break_end}`;
             }
         }
 
@@ -369,7 +387,7 @@ const list = async (req, res) => {
                     scheduledMinutes: null,
                     balanceMinutes: absenceMinutes > 0 ? 0 : null,
                     workedMinutes: 0,
-                    settledMinutes: result.workedMinutes + absenceMinutes,
+                    settledMinutes: absenceMinutes,
                     allowances: {}
                 });
                 continue;
@@ -412,6 +430,8 @@ const list = async (req, res) => {
                 nextDayType,
                 isShiftWorker,
                 isOrdered: Boolean(row.wtt_is_ordered),
+                breakStart: row.wtt_brk_start ? toDate(row.wtt_brk_start) : null,
+                breakEnd:   row.wtt_brk_end   ? toDate(row.wtt_brk_end)   : null,
                 breakMinutes,
                 breakPaid: Boolean(employee.employee_break_paid)
             });
@@ -450,6 +470,7 @@ const list = async (req, res) => {
                 balanceMinutes,
                 scheduleMissing,
                 workedMinutes: result.workedMinutes,
+                settledMinutes: result.workedMinutes + absenceMinutes,
                 allowances: result.allowances
             });
         }
@@ -689,4 +710,280 @@ const setOrdered = async (req, res) => {
     }
 };
 
-module.exports = { create, list, update, setOrdered };
+const listDaily = async (req, res) => {
+    const date = req.query.date;
+
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return res.status(400).json({ message: 'Érvényes dátumot kell megadni.' });
+    }
+
+    try {
+        const ids = await getAccessibleEmployeeIds(
+            req.user.userId, req.user.employeeId, req.user.role
+        );
+
+        if (!ids.includes(req.user.employeeId)) {
+            ids.push(req.user.employeeId);
+        }
+
+        if (ids.length === 0) {
+            return res.status(200).json({ date, dayType: 'workday', employees: [] });
+        }
+
+        const placeholders = ids.map(() => '?').join(', ');
+
+        const [calendarRows] = await pool.execute(
+            `SELECT gl_cal_day_type FROM GlobalCalendar WHERE gl_cal_date = ?`,
+            [date]
+        );
+
+        const dayType = calendarRows.length > 0
+            ? (DAY_TYPE_MAP[calendarRows[0].gl_cal_day_type] || 'workday')
+            : 'workday';
+
+        const [employeeRows] = await pool.execute(
+            `SELECT e.employee_id, e.employee_code,
+                    e.employee_last_name, e.employee_first_name,
+                    e.employee_core_start, e.employee_core_end,
+                    c.core_hour_start, c.core_hour_end,
+                    w.work_schedule_name, w.work_schedule_is_shift
+             FROM Employees e
+             LEFT JOIN CoreHours     c ON c.core_hour_id     = e.employee_core_hour_id
+             LEFT JOIN WorkSchedules w ON w.work_schedule_id = e.employee_work_schedule_id
+             WHERE e.employee_id IN (${placeholders})
+             ORDER BY e.employee_last_name, e.employee_first_name`,
+            ids
+        );
+
+        const [entryRows] = await pool.execute(
+            `SELECT wtt_id, wtt_employee_id, wtt_working_start, wtt_working_end,
+                    wtt_brk_start, wtt_brk_end, wtt_is_ordered
+             FROM WorkingTimeTracking
+             WHERE wtt_working_date = ? AND wtt_employee_id IN (${placeholders})`,
+            [date, ...ids]
+        );
+
+        const entryByEmployee = {};
+        for (const row of entryRows) {
+            entryByEmployee[row.wtt_employee_id] = row;
+        }
+
+        const [absenceRows] = await pool.execute(
+            `SELECT r.request_employee_id, r.request_status,
+                    a.absence_name, a.absence_rec_type
+             FROM Requests r
+             JOIN Absences a ON a.absence_id = r.request_absence_id
+             WHERE r.request_status IN ('Függőben', 'Jóváhagyva')
+               AND r.request_start_date <= ? AND r.request_end_date >= ?
+               AND r.request_employee_id IN (${placeholders})`,
+            [date, date, ...ids]
+        );
+
+        const absenceByEmployee = {};
+        for (const row of absenceRows) {
+            const current = absenceByEmployee[row.request_employee_id];
+            if (!current || row.request_status === 'Jóváhagyva') {
+                absenceByEmployee[row.request_employee_id] = row;
+            }
+        }
+
+        const employees = employeeRows.map((row) => {
+            const entry = entryByEmployee[row.employee_id];
+            const absence = absenceByEmployee[row.employee_id];
+            const templateStart = row.employee_core_start || row.core_hour_start;
+            const templateEnd = row.employee_core_end || row.core_hour_end;
+
+            return {
+                id: row.employee_id,
+                code: row.employee_code,
+                name: `${row.employee_last_name} ${row.employee_first_name}`,
+                workSchedule: row.work_schedule_name,
+                isShiftWorker: Boolean(row.work_schedule_is_shift),
+                templateStart: templateStart ? String(templateStart).slice(0, 5) : null,
+                templateEnd: templateEnd ? String(templateEnd).slice(0, 5) : null,
+                entry: entry
+                    ? {
+                        id: entry.wtt_id,
+                        workStart: entry.wtt_working_start,
+                        workEnd: entry.wtt_working_end,
+                        breakStart: entry.wtt_brk_start,
+                        breakEnd: entry.wtt_brk_end,
+                        isOrdered: Boolean(entry.wtt_is_ordered)
+                      }
+                    : null,
+                absence: absence
+                    ? {
+                        name: absence.absence_name,
+                        status: absence.request_status,
+                        coversDay: absence.request_status === 'Jóváhagyva'
+                                   && absence.absence_rec_type === 0
+                      }
+                    : null,
+                isSelf: row.employee_id === req.user.employeeId
+            };
+        });
+
+        return res.status(200).json({ date, dayType, employees });
+    } catch (error) {
+        console.error('Napi lista hiba:', error);
+        return res.status(500).json({ message: 'Szerver hiba.' });
+    }
+};
+
+const createBulk = async (req, res) => {
+    const { workingDate, entries } = req.body || {};
+
+    if (!workingDate || !/^\d{4}-\d{2}-\d{2}$/.test(workingDate)) {
+        return res.status(400).json({ message: 'Érvényes munkanapot kell megadni.' });
+    }
+
+    if (!Array.isArray(entries) || entries.length === 0) {
+        return res.status(400).json({ message: 'Legalább egy dolgozó adatát meg kell adni.' });
+    }
+
+    const daysPassed = daysSince(workingDate);
+
+    if (daysPassed < 0) {
+        return res.status(400).json({ message: 'Jövőbeli napra munkaidő nem rögzíthető.' });
+    }
+
+    if (req.user.role !== 'HR-Bér' && daysPassed > BACKDATE_LIMIT_DAYS) {
+        return res.status(403).json({
+            message: 'Visszamenőleges rögzítésre legfeljebb három napig van lehetőség.'
+        });
+    }
+
+    const bulkWeekday = new Date(`${workingDate}T00:00:00`).getDay();
+    const results = [];
+
+    try {
+        const [bulkDayTypeRows] = await pool.execute(
+            `SELECT gl_cal_day_type FROM GlobalCalendar WHERE gl_cal_date = ? LIMIT 1`,
+            [workingDate]
+        );
+
+        const bulkDayType = bulkDayTypeRows.length > 0
+            ? (DAY_TYPE_MAP[bulkDayTypeRows[0].gl_cal_day_type] || 'workday')
+            : 'workday';
+
+        const isBulkWorkingDay = bulkDayType === 'workday'
+            && bulkWeekday !== 0 && bulkWeekday !== 6;
+        for (const item of entries) {
+            const employeeId = Number(item.employeeId);
+            const { workStart, workEnd, breakStart, breakEnd } = item;
+
+            if (!employeeId || !workStart || !workEnd) {
+                results.push({ employeeId, status: 'error', message: 'Hiányos adat.' });
+                continue;
+            }
+
+            const start = new Date(String(workStart).replace(' ', 'T'));
+            const end = new Date(String(workEnd).replace(' ', 'T'));
+
+            if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) {
+                results.push({ employeeId, status: 'error', message: 'Érvénytelen időpont.' });
+                continue;
+            }
+
+            if (Math.round((end - start) / (1000 * 60)) > MAX_DAILY_MINUTES) {
+                results.push({ employeeId, status: 'error', message: 'Több mint 12 óra.' });
+                continue;
+            }
+
+            const hasAccess = employeeId === req.user.employeeId
+                || await canAccessEmployee(
+                    req.user.userId, req.user.employeeId, employeeId, req.user.role
+                );
+
+            if (!hasAccess) {
+                results.push({ employeeId, status: 'error', message: 'Nincs hozzáférés.' });
+                continue;
+            }
+
+            const [schedule] = await pool.execute(
+                `SELECT w.work_schedule_name,
+                        e.employee_break_start, e.employee_break_end
+                 FROM Employees e
+                 JOIN WorkSchedules w ON w.work_schedule_id = e.employee_work_schedule_id
+                 WHERE e.employee_id = ?`,
+                [employeeId]
+            );
+
+            if (schedule.length > 0 && schedule[0].work_schedule_name === 'Kötetlen') {
+                results.push({
+                    employeeId, status: 'error',
+                    message: 'Kötetlen munkarendben nincs napi rögzítés.'
+                });
+                continue;
+            }
+
+            const [existing] = await pool.execute(
+                `SELECT wtt_id, wtt_brk_start FROM WorkingTimeTracking
+                 WHERE wtt_employee_id = ? AND wtt_working_date = ? LIMIT 1`,
+                [employeeId, workingDate]
+            );
+
+            let breakStartValue = breakStart ? toSqlDateTime(breakStart) : null;
+            let breakEndValue = breakEnd ? toSqlDateTime(breakEnd) : null;
+
+            const breakAlreadyStored = existing.length > 0 && Boolean(existing[0].wtt_brk_start);
+
+            if (!breakStartValue && !breakEndValue && isBulkWorkingDay && !breakAlreadyStored
+                && schedule.length > 0 && schedule[0].employee_break_start) {
+                const workStartTime = toSqlDateTime(workStart).slice(11, 19);
+                const breakDate = String(schedule[0].employee_break_start) < workStartTime
+                    ? addDays(workingDate, 1)
+                    : workingDate;
+
+                breakStartValue = `${breakDate} ${schedule[0].employee_break_start}`;
+                breakEndValue = `${breakDate} ${schedule[0].employee_break_end}`;
+            }
+
+            if (existing.length > 0) {
+                await pool.execute(
+                    `UPDATE WorkingTimeTracking
+                     SET wtt_working_start = ?, wtt_working_end = ?,
+                         wtt_brk_start = COALESCE(?, wtt_brk_start),
+                         wtt_brk_end   = COALESCE(?, wtt_brk_end)
+                     WHERE wtt_id = ?`,
+                    [
+                        toSqlDateTime(workStart), toSqlDateTime(workEnd),
+                        breakStartValue, breakEndValue, existing[0].wtt_id
+                    ]
+                );
+
+                results.push({ employeeId, status: 'updated', id: existing[0].wtt_id });
+                continue;
+            }
+
+            const [inserted] = await pool.execute(
+                `INSERT INTO WorkingTimeTracking (
+                    wtt_employee_id, wtt_working_date,
+                    wtt_working_start, wtt_working_end,
+                    wtt_brk_start, wtt_brk_end
+                 ) VALUES (?, ?, ?, ?, ?, ?)`,
+                [
+                    employeeId, workingDate,
+                    toSqlDateTime(workStart), toSqlDateTime(workEnd),
+                    breakStartValue, breakEndValue
+                ]
+            );
+
+            results.push({ employeeId, status: 'created', id: inserted.insertId });
+        }
+
+        const failed = results.filter((item) => item.status === 'error').length;
+
+        return res.status(200).json({
+            message: failed === 0
+                ? 'A munkaidők rögzítésre kerültek.'
+                : `${results.length - failed} sor rögzítve, ${failed} sor hibás.`,
+            results
+        });
+    } catch (error) {
+        console.error('Csoportos rögzítési hiba:', error);
+        return res.status(500).json({ message: 'Szerver hiba.' });
+    }
+};
+
+module.exports = { create, list, update, setOrdered, listDaily, createBulk };
