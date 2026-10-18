@@ -1,0 +1,31 @@
+info:
+  name: csoportos rogzites ures listaval
+  type: http
+  seq: 62
+
+http:
+  method: POST
+  url: "{{baseUrl}}/time-entries/bulk"
+  body:
+    type: json
+    data: |-
+      {
+        "workingDate": "{{tegnap}}",
+        "entries": []
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "400"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

@@ -295,3 +295,49 @@ test('nem műszakos dolgozónál a szombat éjfélkor kezdődik', () => {
         allowances: { '100': 360 }
     });
 });
+
+test('időponttal megadott szünet a pótlékból is kimarad', () => {
+    const result = calculateAllowances({
+        workStart:     new Date('2026-09-28T22:00:00'),
+        workEnd:       new Date('2026-09-29T06:00:00'),
+        scheduleStart: new Date('2026-09-28T22:00:00'),
+        scheduleEnd:   new Date('2026-09-29T06:00:00'),
+        dayType:       'workday',
+        nextDayType:   'workday',
+        isShiftWorker: true,
+        isOrdered:     false,
+        breakStart:    new Date('2026-09-29T02:00:00'),
+        breakEnd:      new Date('2026-09-29T02:30:00'),
+        breakMinutes:  30,
+        breakPaid:     false
+    });
+
+    assert.deepStrictEqual(result, {
+        workedMinutes: 450,
+        premiumOutsideMinutes: 0,
+        allowances: { '30': 450 }
+    });
+});
+
+test('fizetett szünet időponttal is beleszámít a pótlékba', () => {
+    const result = calculateAllowances({
+        workStart:     new Date('2026-09-28T22:00:00'),
+        workEnd:       new Date('2026-09-29T06:00:00'),
+        scheduleStart: new Date('2026-09-28T22:00:00'),
+        scheduleEnd:   new Date('2026-09-29T06:00:00'),
+        dayType:       'workday',
+        nextDayType:   'workday',
+        isShiftWorker: true,
+        isOrdered:     false,
+        breakStart:    new Date('2026-09-29T02:00:00'),
+        breakEnd:      new Date('2026-09-29T02:30:00'),
+        breakMinutes:  30,
+        breakPaid:     true
+    });
+
+    assert.deepStrictEqual(result, {
+        workedMinutes: 480,
+        premiumOutsideMinutes: 0,
+        allowances: { '30': 480 }
+    });
+});

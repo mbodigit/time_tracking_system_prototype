@@ -1,0 +1,33 @@
+info:
+  name: csoportos rogzites dolgozoi fiokkal
+  type: http
+  seq: 67
+
+http:
+  method: POST
+  url: "{{baseUrl}}/time-entries/bulk"
+  body:
+    type: json
+    data: |-
+      {
+        "workingDate": "{{csoportNap}}",
+        "entries": [
+          { "employeeId": {{idDolgozoM}}, "workStart": "{{csoportNap}} 08:00:00", "workEnd": "{{csoportNap}} 16:00:00" }
+        ]
+      }
+  auth:
+    type: bearer
+    token: "{{dolgozoToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "403"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

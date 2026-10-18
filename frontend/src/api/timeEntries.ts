@@ -57,3 +57,58 @@ export const createEntry = (payload: Record<string, unknown>) =>
 
 export const updateEntry = (id: number, payload: Record<string, unknown>) =>
   apiPatch<{ message: string }>(`/time-entries/${id}`, payload);
+
+export interface DailyEmployee {
+  id: number;
+  code: string;
+  name: string;
+  workSchedule: string | null;
+  isShiftWorker: boolean;
+  templateStart: string | null;
+  templateEnd: string | null;
+  entry: {
+    id: number;
+    workStart: string | null;
+    workEnd: string | null;
+    breakStart: string | null;
+    breakEnd: string | null;
+    isOrdered: boolean;
+  } | null;
+  absence: {
+    name: string;
+    status: string;
+    coversDay: boolean;
+  } | null;
+  isSelf: boolean;
+}
+
+export interface DailyLog {
+  date: string;
+  dayType: DayType;
+  employees: DailyEmployee[];
+}
+
+export interface BulkResult {
+  employeeId: number;
+  status: "created" | "updated" | "error";
+  id?: number;
+  message?: string;
+}
+
+export const listDaily = (date: string) =>
+  apiGet<DailyLog>(`/time-entries/daily?date=${date}`);
+
+export const createBulk = (
+  workingDate: string,
+  entries: {
+    employeeId: number;
+    workStart: string;
+    workEnd: string;
+    breakStart?: string;
+    breakEnd?: string;
+  }[],
+) =>
+  apiPost<{ message: string; results: BulkResult[] }>("/time-entries/bulk", {
+    workingDate,
+    entries,
+  });

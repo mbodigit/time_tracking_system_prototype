@@ -9,6 +9,7 @@ import { formatTime } from "../../utils/datetime";
 
 interface Props {
   day: TimeEntryDay;
+  employeeId?: number | null;
   onClose: () => void;
   onSaved: () => void;
 }
@@ -28,17 +29,18 @@ const isBackdated = (date: string): boolean => {
   return new Date(`${date}T00:00:00`) < today;
 };
 
-export const TimeEntryForm = ({ day, onClose, onSaved }: Props) => {
+export const TimeEntryForm = ({ day, employeeId, onClose, onSaved }: Props) => {
   const initialStart = formatTime(day.workStart);
   const initialEnd = formatTime(day.workEnd);
-  const crossesMidnight =
-    Boolean(day.workEnd) && day.workEnd!.slice(0, 10) !== day.date;
 
   const [workStart, setWorkStart] = useState(
     initialStart === "-" ? "" : initialStart,
   );
   const [workEnd, setWorkEnd] = useState(initialEnd === "-" ? "" : initialEnd);
-  const [endsNextDay, setEndsNextDay] = useState(crossesMidnight);
+  const [breakStart, setBreakStart] = useState(
+    day.breakMinutes && day.workStart ? "" : "",
+  );
+  const [breakEnd, setBreakEnd] = useState("");
   const [note, setNote] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -54,7 +56,7 @@ export const TimeEntryForm = ({ day, onClose, onSaved }: Props) => {
     }
 
     const startValue = `${day.date} ${workStart}:00`;
-    const endDate = endsNextDay ? addOneDay(day.date) : day.date;
+    const endDate = workEnd <= workStart ? addOneDay(day.date) : day.date;
     const endValue = `${endDate} ${workEnd}:00`;
 
     setIsSaving(true);
@@ -63,13 +65,26 @@ export const TimeEntryForm = ({ day, onClose, onSaved }: Props) => {
         await updateEntry(day.id, {
           workStart: startValue,
           workEnd: endValue,
+          ...(breakStart && breakEnd
+            ? {
+                breakStart: `${day.date} ${breakStart}:00`,
+                breakEnd: `${day.date} ${breakEnd}:00`,
+              }
+            : {}),
           ...(note ? { note } : {}),
         });
       } else {
         await createEntry({
+          ...(employeeId ? { employeeId } : {}),
           workingDate: day.date,
           workStart: startValue,
           workEnd: endValue,
+          ...(breakStart && breakEnd
+            ? {
+                breakStart: `${day.date} ${breakStart}:00`,
+                breakEnd: `${day.date} ${breakEnd}:00`,
+              }
+            : {}),
           ...(note ? { note } : {}),
         });
       }
@@ -122,17 +137,37 @@ export const TimeEntryForm = ({ day, onClose, onSaved }: Props) => {
           </label>
         </div>
 
-        <label className="label cursor-pointer justify-start gap-2">
-          <input
-            type="checkbox"
-            className="checkbox checkbox-sm"
-            checked={endsNextDay}
-            onChange={(event) => setEndsNextDay(event.target.checked)}
-          />
-          <span className="label-text">
-            A munkavégzés a következő napon végződik
-          </span>
-        </label>
+        {workStart && workEnd && workEnd <= workStart && (
+          <div className="alert alert-info text-sm py-2">
+            <span>A munkavégzés a következő napon végződik.</span>
+          </div>
+        )}
+
+        <div className="flex gap-3">
+          <label className="form-control flex-1">
+            <div className="label py-1">
+              <span className="label-text">Szünet kezdete (elhagyható)</span>
+            </div>
+            <input
+              type="time"
+              className="input input-bordered"
+              value={breakStart}
+              onChange={(event) => setBreakStart(event.target.value)}
+            />
+          </label>
+
+          <label className="form-control flex-1">
+            <div className="label py-1">
+              <span className="label-text">Szünet vége</span>
+            </div>
+            <input
+              type="time"
+              className="input input-bordered"
+              value={breakEnd}
+              onChange={(event) => setBreakEnd(event.target.value)}
+            />
+          </label>
+        </div>
 
         <label className="form-control">
           <div className="label py-1">

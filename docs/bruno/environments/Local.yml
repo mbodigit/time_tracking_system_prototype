@@ -5,52 +5,55 @@ variables:
     description: ""
   - name: jelszo
     value: Teszt1234
-    description: "a teszt-fiokok kozos jelszava"
+    description: a teszt-fiokok kozos jelszava
   - name: ma
-    value: "2026-10-16"
-    description: "FUTTATAS ELOTT a mai datumra allitando"
+    value: 2026-10-18
+    description: FUTTATAS ELOTT a mai datumra allitando
   - name: tegnap
-    value: "2026-10-15"
-    description: "FUTTATAS ELOTT az elozo napra allitando"
+    value: 2026-10-17
+    description: FUTTATAS ELOTT az elozo napra allitando
+  - name: csoportNap
+    value: 2026-10-16
+    description: "FUTTATAS ELOTT: ket nappal a ma elott, a csoportos tesztekhez"
   - name: ev
     value: "2026"
-    description: "FUTTATAS ELOTT az aktualis ev"
+    description: FUTTATAS ELOTT az aktualis ev
   - name: honap
     value: "10"
-    description: "FUTTATAS ELOTT az aktualis honap"
+    description: FUTTATAS ELOTT az aktualis honap
   - name: regiNap
-    value: "2026-01-05"
-    description: "harom napnal regebbi nap, fix"
+    value: 2026-01-05
+    description: harom napnal regebbi nap, fix
   - name: regiEntryId
     value: "900001"
-    description: "a visszaallito szkript altal letrehozott regi sor azonositoja"
+    description: a visszaallito szkript altal letrehozott regi sor azonositoja
   - name: regiNap2
-    value: "2026-01-06"
-    description: "masodik regi nap a HR rogzitesehez"
+    value: 2026-01-06
+    description: masodik regi nap a HR rogzitesehez
   - name: jovoNap
-    value: "2030-01-02"
-    description: "jovobeli nap, fix"
+    value: 2030-01-02
+    description: jovobeli nap, fix
   - name: jovoNap2
-    value: "2030-01-05"
-    description: "masodik jovobeli nap az elrendeleshez"
+    value: 2030-01-05
+    description: masodik jovobeli nap az elrendeleshez
   - name: kerelemNap
-    value: "2030-02-04"
-    description: "kerelem kezdo nap"
+    value: 2030-02-04
+    description: kerelem kezdo nap
   - name: kerelemVeg
-    value: "2030-02-06"
-    description: "kerelem zaro nap"
+    value: 2030-02-06
+    description: kerelem zaro nap
   - name: kerelemNap2
-    value: "2030-03-04"
-    description: "nyitott vegu kerelem napja"
+    value: 2030-03-04
+    description: nyitott vegu kerelem napja
   - name: idVezetoM
     value: "11"
-    description: "TESZT-VM1"
+    description: TESZT-VM1
   - name: idDolgozoM
     value: "13"
-    description: "TESZT-DM1"
+    description: TESZT-DM1
   - name: idKivulallo
-    value: 7
-    description: "TESZT-D5 azonositoja a 02-teszt-fiokok.sql lekerdezesebol"
+    value: "7"
+    description: TESZT-D5 azonositoja a 02-teszt-fiokok.sql lekerdezesebol
   - name: idKotetlen
-    value: 10
-    description: "TESZT-K1 azonositoja"
+    value: "10"
+    description: TESZT-K1 azonositoja
