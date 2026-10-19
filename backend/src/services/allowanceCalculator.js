@@ -8,21 +8,21 @@ const getAllowanceKey = (
 ) => {
     const weekday = referenceDay.getDay();
 
-    if (dayType === 'holiday')  return '200';
-    if (weekday === SUNDAY)     return '200';
-    if (weekday === SATURDAY)   return '100';
-    if (dayType === 'restday')  return '100';
+    if (dayType === 'holiday')  return 'munkaszuneti';
+    if (weekday === SUNDAY)     return 'vasarnap';
+    if (weekday === SATURDAY)   return 'szombat';
+    if (dayType === 'restday')  return 'pihenonap';
 
     if (isWithinSchedule) {
         if (!isShiftWorker) return null;
 
         const hour = minute.getHours();
-        if (hour >= 22 || hour < 6) return '30';
-        if (hour >= 18)             return '15';
+        if (hour >= 22 || hour < 6) return 'ejszakai';
+        if (hour >= 18)             return 'delutani';
         return null;
     }
 
-    return isOrdered ? '50' : null;
+    return isOrdered ? 'tulora' : null;
 };
 
 const calculateAllowances = (input) => {

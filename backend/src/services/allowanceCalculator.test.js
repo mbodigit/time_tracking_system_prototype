@@ -40,7 +40,7 @@ test('éjszakás műszak, a következő nap munkaszüneti nap', () => {
     assert.deepStrictEqual(result, {
         workedMinutes: 540,
         premiumOutsideMinutes: 60,
-        allowances: { '30': 480, '200': 60 }
+        allowances: { ejszakai: 480, munkaszuneti: 60 }
     });
 });
 
@@ -61,7 +61,7 @@ test('pénteki éjszakás műszak, a túlóra szombatra esik', () => {
     assert.deepStrictEqual(result, {
         workedMinutes: 600,
         premiumOutsideMinutes: 120,
-        allowances: { '30': 480, '100': 120 }
+        allowances: { ejszakai: 480, szombat: 120 }
     });
 });
 
@@ -82,7 +82,7 @@ test('szombati éjszakás műszak, a túlóra vasárnapra esik', () => {
     assert.deepStrictEqual(result, {
         workedMinutes: 600,
         premiumOutsideMinutes: 120,
-        allowances: { '100': 480, '200': 120 }
+        allowances: { szombat: 480, vasarnap: 120 }
     });
 });
 
@@ -103,7 +103,7 @@ test('délutános műszak egy órás elrendelt túlórával', () => {
     assert.deepStrictEqual(result, {
         workedMinutes: 540,
         premiumOutsideMinutes: 60,
-        allowances: { '15': 240, '50': 60 }
+        allowances: { delutani: 240, tulora: 60 }
     });
 });
 
@@ -124,7 +124,7 @@ test('éjszakás műszak egy órával korábbi, elrendelt kezdéssel', () => {
     assert.deepStrictEqual(result, {
         workedMinutes: 540,
         premiumOutsideMinutes: 60,
-        allowances: { '50': 60, '30': 480 }
+        allowances: { tulora: 60, ejszakai: 480 }
     });
 });
 
@@ -145,7 +145,7 @@ test('pihenőnapon végzett munka', () => {
     assert.deepStrictEqual(result, {
         workedMinutes: 240,
         premiumOutsideMinutes: 0,
-        allowances: { '100': 240 }
+        allowances: { pihenonap: 240 }
     });
 });
 
@@ -166,7 +166,7 @@ test('munkaszüneti napon végzett munka', () => {
     assert.deepStrictEqual(result, {
         workedMinutes: 480,
         premiumOutsideMinutes: 0,
-        allowances: { '200': 480 }
+        allowances: { munkaszuneti: 480 }
     });
 });
 
@@ -187,7 +187,7 @@ test('vasárnapi munkavégzés', () => {
     assert.deepStrictEqual(result, {
         workedMinutes: 480,
         premiumOutsideMinutes: 0,
-        allowances: { '200': 480 }
+        allowances: { vasarnap: 480 }
     });
 });
 
@@ -271,7 +271,7 @@ test('ugyanaz a munkavégzés elrendelve, hétköznapi túlóra', () => {
     assert.deepStrictEqual(result, {
         workedMinutes: 480,
         premiumOutsideMinutes: 480,
-        allowances: { '50': 480 }
+        allowances: { tulora: 480 }
     });
 });
 
@@ -292,7 +292,7 @@ test('nem műszakos dolgozónál a szombat éjfélkor kezdődik', () => {
     assert.deepStrictEqual(result, {
         workedMinutes: 480,
         premiumOutsideMinutes: 360,
-        allowances: { '100': 360 }
+        allowances: { szombat: 360 }
     });
 });
 
@@ -315,7 +315,7 @@ test('időponttal megadott szünet a pótlékból is kimarad', () => {
     assert.deepStrictEqual(result, {
         workedMinutes: 450,
         premiumOutsideMinutes: 0,
-        allowances: { '30': 450 }
+        allowances: { ejszakai: 450 }
     });
 });
 
@@ -338,6 +338,6 @@ test('fizetett szünet időponttal is beleszámít a pótlékba', () => {
     assert.deepStrictEqual(result, {
         workedMinutes: 480,
         premiumOutsideMinutes: 0,
-        allowances: { '30': 480 }
+        allowances: { ejszakai: 480 }
     });
 });

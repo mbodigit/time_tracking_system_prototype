@@ -101,3 +101,6 @@ vite.config.ts.timestamp-*
 .vite/
 
 .DS_Store
+temp
+~$*
+docs/*Szakdolgozat*.docx
