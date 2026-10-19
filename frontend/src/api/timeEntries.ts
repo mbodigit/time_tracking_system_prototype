@@ -27,10 +27,17 @@ export interface TimeEntryDay {
   allowances: Record<string, number>;
 }
 
+export interface AllowanceType {
+  code: string;
+  name: string;
+  percent: number;
+}
+
 export interface MonthlyLog {
   employeeId: number;
   year: number;
   month: number;
+  allowanceTypes: AllowanceType[];
   days: TimeEntryDay[];
   summary: {
     recordedDays: number;

@@ -19,8 +19,6 @@ import {
 import { listEmployees, type ScopeEmployee } from "../../api/lookups";
 import { TimeEntryForm } from "./time-entry-form";
 
-const ALLOWANCE_KEYS = ["15", "30", "50", "100", "200"];
-
 const getDayLabel = (day: TimeEntryDay): string => {
   if (day.dayType === "holiday") return "Munkaszüneti nap";
   if (day.dayType === "restday") return "Pihenőnap";
@@ -76,6 +74,7 @@ export const MonthlyLogTab = () => {
   const otherEmployees = employees.filter((item) => !item.isSelf);
 
   const summary = log?.summary;
+  const allowanceTypes = log?.allowanceTypes ?? [];
 
   return (
     <div className="space-y-4">
@@ -167,16 +166,16 @@ export const MonthlyLogTab = () => {
             </div>
           </div>
 
-          {ALLOWANCE_KEYS.filter((key) => summary.allowances[key]).map(
-            (key) => (
-              <div className="stat py-3" key={key}>
-                <div className="stat-title">{key}% pótlék</div>
+          {allowanceTypes
+            .filter((tipus) => summary.allowances[tipus.code])
+            .map((tipus) => (
+              <div className="stat py-3" key={tipus.code}>
+                <div className="stat-title">{tipus.name}</div>
                 <div className="stat-value text-2xl">
-                  {formatMinutes(summary.allowances[key])}
+                  {formatMinutes(summary.allowances[tipus.code])}
                 </div>
               </div>
-            ),
-          )}
+            ))}
         </div>
       )}
 
@@ -198,8 +197,13 @@ export const MonthlyLogTab = () => {
                 <th>Egyenleg</th>
                 <th>Jogcím</th>
                 <th>Elszámolt</th>
-                {ALLOWANCE_KEYS.map((key) => (
-                  <th key={key}>{key}%</th>
+                {allowanceTypes.map((tipus) => (
+                  <th key={tipus.code}>
+                    {tipus.name}
+                    <div className="font-normal opacity-60">
+                      {tipus.percent}%
+                    </div>
+                  </th>
                 ))}
                 <th />
               </tr>
@@ -268,8 +272,10 @@ export const MonthlyLogTab = () => {
                         ? "0:00"
                         : "-"}
                   </td>
-                  {ALLOWANCE_KEYS.map((key) => (
-                    <td key={key}>{formatMinutes(day.allowances[key] ?? 0)}</td>
+                  {allowanceTypes.map((tipus) => (
+                    <td key={tipus.code}>
+                      {formatMinutes(day.allowances[tipus.code] ?? 0)}
+                    </td>
                   ))}
                   <td>
                     <button

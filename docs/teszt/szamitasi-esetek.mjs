@@ -42,7 +42,7 @@ const ESETEK = [
         elrendelve: false,
         vart: { presenceMinutes: 480, breakMinutes: 30, workedMinutes: 450,
                 scheduledMinutes: 450, balanceMinutes: 0, settledMinutes: 450,
-                allowances: { '30': 450 } }
+                allowances: { ejszakai: 450 } }
     },
     {
         nev: 'Plusz óra a beosztás előtt, elrendelés nélkül',
@@ -51,7 +51,7 @@ const ESETEK = [
         elrendelve: false,
         vart: { presenceMinutes: 600, breakMinutes: 30, workedMinutes: 570,
                 scheduledMinutes: 450, balanceMinutes: 120, settledMinutes: 570,
-                allowances: { '30': 450 } }
+                allowances: { ejszakai: 450 } }
     },
     {
         nev: 'Ugyanaz elrendelve, a plusz órát felár váltja ki',
@@ -60,7 +60,7 @@ const ESETEK = [
         elrendelve: true,
         vart: { presenceMinutes: 600, breakMinutes: 30, workedMinutes: 570,
                 scheduledMinutes: 450, balanceMinutes: 0, settledMinutes: 570,
-                allowances: { '30': 450, '50': 120 } }
+                allowances: { ejszakai: 450, tulora: 120 } }
     },
     {
         nev: 'Szombati éjszakás, szünet nélkül',
@@ -69,7 +69,7 @@ const ESETEK = [
         elrendelve: false,
         vart: { presenceMinutes: 480, breakMinutes: 0, workedMinutes: 480,
                 scheduledMinutes: 0, balanceMinutes: 0, settledMinutes: 480,
-                allowances: { '100': 120, '200': 360 } }
+                allowances: { szombat: 120, vasarnap: 360 } }
     },
     {
         nev: 'Szombati éjszakás, kézzel megadott szünettel',
@@ -79,7 +79,7 @@ const ESETEK = [
         elrendelve: false,
         vart: { presenceMinutes: 480, breakMinutes: 30, workedMinutes: 450,
                 scheduledMinutes: 0, balanceMinutes: 0, settledMinutes: 450,
-                allowances: { '100': 120, '200': 330 } }
+                allowances: { szombat: 120, vasarnap: 330 } }
     },
     {
         nev: 'Vasárnapi munkavégzés',
@@ -88,7 +88,7 @@ const ESETEK = [
         elrendelve: false,
         vart: { presenceMinutes: 480, breakMinutes: 0, workedMinutes: 480,
                 scheduledMinutes: 0, balanceMinutes: 0, settledMinutes: 480,
-                allowances: { '200': 480 } }
+                allowances: { vasarnap: 480 } }
     },
     {
         nev: 'Munkaszüneti napon kezdődő éjszakás műszak',
@@ -97,7 +97,7 @@ const ESETEK = [
         elrendelve: false,
         vart: { presenceMinutes: 480, breakMinutes: 0, workedMinutes: 480,
                 scheduledMinutes: 0, balanceMinutes: 360, settledMinutes: 480,
-                allowances: { '200': 120 } }
+                allowances: { munkaszuneti: 120 } }
     },
     {
         nev: 'Nem műszakos dolgozó elrendelt túlórája',
@@ -106,7 +106,7 @@ const ESETEK = [
         elrendelve: true,
         vart: { presenceMinutes: 720, breakMinutes: 30, workedMinutes: 690,
                 scheduledMinutes: 450, balanceMinutes: 0, settledMinutes: 690,
-                allowances: { '50': 240 } }
+                allowances: { tulora: 240 } }
     },
         {
         nev: 'A szünet a tényleges munkaidőn kívülre esik',
@@ -115,7 +115,7 @@ const ESETEK = [
         elrendelve: false,
         vart: { presenceMinutes: 180, breakMinutes: 0, workedMinutes: 180,
                 scheduledMinutes: 480, balanceMinutes: -300, settledMinutes: 180,
-                allowances: { '30': 180 } }
+                allowances: { ejszakai: 180 } }
     }
 ];
 

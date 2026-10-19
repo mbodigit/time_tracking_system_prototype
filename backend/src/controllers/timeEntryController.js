@@ -278,6 +278,19 @@ const list = async (req, res) => {
             calendar[entry.gl_cal_date] = DAY_TYPE_MAP[entry.gl_cal_day_type] || 'workday';
         }
 
+        const [allowanceRows] = await pool.execute(
+            `SELECT allowance_code, allowance_name, allowance_percent
+             FROM Allowances
+             WHERE allowance_code IS NOT NULL
+             ORDER BY allowance_percent, allowance_name`
+        );
+
+        const allowanceTypes = allowanceRows.map((row) => ({
+            code: row.allowance_code,
+            name: row.allowance_name,
+            percent: Number(row.allowance_percent)
+        }));
+
         const contractedMinutes = (employee.working_hour_num || 0) * 60;
 
         const [requestRows] = await pool.execute(
@@ -487,6 +500,7 @@ const list = async (req, res) => {
             employeeId: targetEmployeeId,
             year: yearNumber,
             month: monthNumber,
+            allowanceTypes,
             days,
             summary: {
                 recordedDays,
