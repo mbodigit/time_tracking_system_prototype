@@ -63,6 +63,8 @@ graph ER {
   "CompanySettings" -- "CompanySettings__company_tax_number" [len=0.8, weight=4];
   "CompanySettings__company_logo_url" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="company_logo_url"];
   "CompanySettings" -- "CompanySettings__company_logo_url" [len=0.8, weight=4];
+  "CompanySettings__company_base_payroll_code" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="company_base_payroll_code"];
+  "CompanySettings" -- "CompanySettings__company_base_payroll_code" [len=0.8, weight=4];
 
   // kapcsolatok
 }
