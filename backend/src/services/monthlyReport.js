@@ -132,8 +132,8 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
         const absence = absenceByDate[date];
         const isApprovedAbsence = Boolean(absence) && absence.request_status === 'Jóváhagyva';
         const weekdayNumber = new Date(`${date}T00:00:00`).getDay();
-        const isWorkingDayForAbsence =
-            dayType === 'workday' && weekdayNumber !== 0 && weekdayNumber !== 6;
+        const isWorkingDayForAbsence = dayType === 'transferred'
+            || (dayType === 'workday' && weekdayNumber !== 0 && weekdayNumber !== 6);
 
         const absenceMinutes =
             (isApprovedAbsence && absence.absence_rec_type === 0 && isWorkingDayForAbsence)
@@ -202,7 +202,8 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
         }
 
         const weekday = new Date(`${date}T00:00:00`).getDay();
-        const isWorkingDay = dayType === 'workday' && weekday !== 0 && weekday !== 6;
+        const isWorkingDay = dayType === 'transferred'
+            || (dayType === 'workday' && weekday !== 0 && weekday !== 6);
 
         let scheduleStart = row.wtt_schedule_start;
         let scheduleEnd = row.wtt_schedule_end;

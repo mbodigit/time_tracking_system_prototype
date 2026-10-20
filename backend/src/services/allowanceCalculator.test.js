@@ -341,3 +341,45 @@ test('fizetett szünet időponttal is beleszámít a pótlékba', () => {
         allowances: { ejszakai: 480 }
     });
 });
+
+test('áthelyezett munkanapra eső szombat rendes munkanapként minősül', () => {
+    const result = calculateAllowances({
+        workStart:     new Date('2026-10-10T22:00:00'),
+        workEnd:       new Date('2026-10-11T06:00:00'),
+        scheduleStart: new Date('2026-10-10T22:00:00'),
+        scheduleEnd:   new Date('2026-10-11T06:00:00'),
+        dayType:       'transferred',
+        nextDayType:   'workday',
+        isShiftWorker: true,
+        isOrdered:     false,
+        breakMinutes:  0,
+        breakPaid:     false
+    });
+
+    assert.deepStrictEqual(result, {
+        workedMinutes: 480,
+        premiumOutsideMinutes: 0,
+        allowances: { ejszakai: 480 }
+    });
+});
+
+test('áthelyezett munkanapon a beosztáson túli óra elrendelve túlóra', () => {
+    const result = calculateAllowances({
+        workStart:     new Date('2026-10-10T06:00:00'),
+        workEnd:       new Date('2026-10-10T16:00:00'),
+        scheduleStart: new Date('2026-10-10T06:00:00'),
+        scheduleEnd:   new Date('2026-10-10T14:00:00'),
+        dayType:       'transferred',
+        nextDayType:   'workday',
+        isShiftWorker: true,
+        isOrdered:     true,
+        breakMinutes:  0,
+        breakPaid:     false
+    });
+
+    assert.deepStrictEqual(result, {
+        workedMinutes: 600,
+        premiumOutsideMinutes: 120,
+        allowances: { tulora: 120 }
+    });
+});
