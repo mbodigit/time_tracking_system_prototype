@@ -43,7 +43,7 @@ const collectEmployeeIds = async (req) => {
 };
 
 const buildRows = async (ids, yearNumber, monthNumber) => {
-    const sorok = [];
+    const reportRows = [];
     let allowanceTypes = [];
 
     for (const id of ids) {
@@ -55,7 +55,7 @@ const buildRows = async (ids, yearNumber, monthNumber) => {
 
         allowanceTypes = report.allowanceTypes;
 
-        sorok.push({
+        reportRows.push({
             employeeId: report.employeeId,
             employeeCode: report.employeeCode,
             employeeName: report.employeeName,
@@ -63,9 +63,9 @@ const buildRows = async (ids, yearNumber, monthNumber) => {
         });
     }
 
-    sorok.sort((a, b) => a.employeeName.localeCompare(b.employeeName, 'hu'));
+    reportRows.sort((a, b) => a.employeeName.localeCompare(b.employeeName, 'hu'));
 
-    return { sorok, allowanceTypes };
+    return { reportRows, allowanceTypes };
 };
 
 const monthly = async (req, res) => {
@@ -77,7 +77,7 @@ const monthly = async (req, res) => {
 
     try {
         const ids = await collectEmployeeIds(req);
-        const { sorok, allowanceTypes } = await buildRows(
+        const { reportRows, allowanceTypes } = await buildRows(
             ids, period.yearNumber, period.monthNumber
         );
 
@@ -91,16 +91,16 @@ const monthly = async (req, res) => {
             allowances: {}
         };
 
-        for (const sor of sorok) {
-            totals.workedMinutes += sor.workedMinutes;
-            totals.presenceMinutes += sor.presenceMinutes;
-            totals.breakMinutes += sor.breakMinutes;
-            totals.balanceMinutes += sor.balanceMinutes;
-            totals.absenceMinutes += sor.absenceMinutes;
-            totals.settledMinutes += sor.settledMinutes;
+        for (const reportRow of reportRows) {
+            totals.workedMinutes += reportRow.workedMinutes;
+            totals.presenceMinutes += reportRow.presenceMinutes;
+            totals.breakMinutes += reportRow.breakMinutes;
+            totals.balanceMinutes += reportRow.balanceMinutes;
+            totals.absenceMinutes += reportRow.absenceMinutes;
+            totals.settledMinutes += reportRow.settledMinutes;
 
-            for (const [kulcs, ertek] of Object.entries(sor.allowances)) {
-                totals.allowances[kulcs] = (totals.allowances[kulcs] || 0) + ertek;
+            for (const [code, minutes] of Object.entries(reportRow.allowances)) {
+                totals.allowances[code] = (totals.allowances[code] || 0) + minutes;
             }
         }
 
@@ -108,7 +108,7 @@ const monthly = async (req, res) => {
             year: period.yearNumber,
             month: period.monthNumber,
             allowanceTypes,
-            employees: sorok,
+            employees: reportRows,
             totals
         });
     } catch (error) {
@@ -128,7 +128,7 @@ const payroll = async (req, res) => {
 
     try {
         const ids = await collectEmployeeIds(req);
-        const { sorok, allowanceTypes } = await buildRows(
+        const { reportRows, allowanceTypes } = await buildRows(
             ids, period.yearNumber, period.monthNumber
         );
 
@@ -136,51 +136,52 @@ const payroll = async (req, res) => {
             `SELECT company_base_payroll_code FROM CompanySettings WHERE company_settings_id = 1`
         );
 
-        const alapKod = (settings.length > 0 && settings[0].company_base_payroll_code)
+        const baseCode = (settings.length > 0 && settings[0].company_base_payroll_code)
             ? settings[0].company_base_payroll_code
             : 'ALAP';
 
-        const berkodByCode = {};
-        for (const tipus of allowanceTypes) {
-            berkodByCode[tipus.code] = tipus.payrollCode || tipus.code;
+        const payrollCodeByAllowance = {};
+        for (const allowanceType of allowanceTypes) {
+            payrollCodeByAllowance[allowanceType.code] =
+                allowanceType.payrollCode || allowanceType.code;
         }
 
-        const idoszak = `${period.yearNumber}-${String(period.monthNumber).padStart(2, '0')}`;
-        const kimenet = ['dolgozo_kod;nev;idoszak;berkod;oraszam'];
+        const periodLabel = `${period.yearNumber}-${String(period.monthNumber).padStart(2, '0')}`;
+        const lines = ['dolgozo_kod;nev;idoszak;berkod;oraszam'];
 
-        for (const sor of sorok) {
-            const tetelek = [];
+        for (const reportRow of reportRows) {
+            const items = [];
 
-            if (sor.workedMinutes > 0) {
-                tetelek.push([alapKod, sor.workedMinutes]);
+            if (reportRow.workedMinutes > 0) {
+                items.push([baseCode, reportRow.workedMinutes]);
             }
 
-            for (const tipus of allowanceTypes) {
-                const percek = sor.allowances[tipus.code] || 0;
-                if (percek > 0) {
-                    tetelek.push([berkodByCode[tipus.code], percek]);
+            for (const allowanceType of allowanceTypes) {
+                const minutes = reportRow.allowances[allowanceType.code] || 0;
+                if (minutes > 0) {
+                    items.push([payrollCodeByAllowance[allowanceType.code], minutes]);
                 }
             }
 
-            for (const [kod, percek] of Object.entries(sor.absences || {})) {
-                if (percek > 0) {
-                    tetelek.push([kod, percek]);
+            for (const [code, minutes] of Object.entries(reportRow.absences || {})) {
+                if (minutes > 0) {
+                    items.push([code, minutes]);
                 }
             }
 
-            for (const [kod, percek] of tetelek) {
-                kimenet.push(
-                    `${sor.employeeCode};${sor.employeeName};${idoszak};${kod};${toHours(percek)}`
+            for (const [code, minutes] of items) {
+                lines.push(
+                    `${reportRow.employeeCode};${reportRow.employeeName};${periodLabel};${code};${toHours(minutes)}`
                 );
             }
         }
 
-        const fajlnev = `berfeladas_${period.yearNumber}_${String(period.monthNumber).padStart(2, '0')}.csv`;
+        const fileName = `berfeladas_${period.yearNumber}_${String(period.monthNumber).padStart(2, '0')}.csv`;
 
         res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-        res.setHeader('Content-Disposition', `attachment; filename="${fajlnev}"`);
+        res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
 
-        return res.status(200).send(`\uFEFF${kimenet.join('\r\n')}\r\n`);
+        return res.status(200).send(`\uFEFF${lines.join('\r\n')}\r\n`);
     } catch (error) {
         console.error('Bérfeladási export hiba:', error);
         return res.status(500).json({ message: 'Szerver hiba.' });

@@ -1,0 +1,28 @@
+info:
+  name: attekinto dolgozoi fiokkal
+  type: http
+  seq: 77
+
+http:
+  method: GET
+  url: "{{baseUrl}}/dashboard?year={{ev}}&month={{honap}}"
+  auth:
+    type: bearer
+    token: "{{dolgozoToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.approval
+      operator: isUndefined
+    - expression: res.body.leave.entitlementDays
+      operator: isNumber
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

@@ -88,6 +88,11 @@ WHERE employee_code IN
       ('TESZT-VM1', 'TESZT-VN1', 'TESZT-DM1', 'TESZT-DN1', 'TESZT-HR1')
   AND employee_working_hour_id IS NULL;
 
+UPDATE Employees
+SET employee_annual_leave_days = 25
+WHERE employee_code LIKE 'TESZT-%'
+  AND employee_annual_leave_days IS NULL;
+
 INSERT INTO Users (
   user_username, user_password_hash, user_employee_id, user_role_id,
   user_status, user_must_change_password
@@ -116,6 +121,7 @@ SELECT e.employee_code,
        e.employee_break_minutes AS szunet_perc,
        e.employee_break_paid    AS fizetett_szunet,
        h.working_hour_num       AS napi_oraszam,
+       e.employee_annual_leave_days AS szabadsagkeret,
        f.employee_code      AS felettes
 FROM Employees e
 LEFT JOIN WorkSchedules w ON w.work_schedule_id = e.employee_work_schedule_id
