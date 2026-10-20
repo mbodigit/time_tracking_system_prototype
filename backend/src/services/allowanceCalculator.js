@@ -7,11 +7,12 @@ const getAllowanceKey = (
     minute, referenceDay, dayType, isShiftWorker, isWithinSchedule, isOrdered
 ) => {
     const weekday = referenceDay.getDay();
+    const isTransferredWorkday = dayType === 'transferred';
 
-    if (dayType === 'holiday')  return 'munkaszuneti';
-    if (weekday === SUNDAY)     return 'vasarnap';
-    if (weekday === SATURDAY)   return 'szombat';
-    if (dayType === 'restday')  return 'pihenonap';
+    if (dayType === 'holiday')                       return 'munkaszuneti';
+    if (!isTransferredWorkday && weekday === SUNDAY) return 'vasarnap';
+    if (!isTransferredWorkday && weekday === SATURDAY) return 'szombat';
+    if (dayType === 'restday')                       return 'pihenonap';
 
     if (isWithinSchedule) {
         if (!isShiftWorker) return null;

@@ -9,6 +9,7 @@ const requestRoutes = require('./src/routes/requestRoutes');
 const lookupRoutes = require('./src/routes/lookupRoutes');
 const reportRoutes = require('./src/routes/reportRoutes');
 const dashboardRoutes = require('./src/routes/dashboardRoutes');
+const calendarRoutes = require('./src/routes/calendarRoutes');
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.use('/api', requestRoutes);
 app.use('/api', lookupRoutes);
 app.use('/api', reportRoutes);
 app.use('/api', dashboardRoutes);
+app.use('/api', calendarRoutes);
 
 const serverStart = async () => {
     try {

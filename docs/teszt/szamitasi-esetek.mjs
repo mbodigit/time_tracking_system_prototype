@@ -2,6 +2,7 @@ const BASE = process.env.BASE_URL || 'http://localhost:3000/api';
 const PASSWORD = 'Teszt1234';
 const YEAR = 2026;
 const MONTH = 1;
+const TRANSFERRED_WORKDAY = '2026-01-17';
 
 const login = async (username) => {
     const response = await fetch(`${BASE}/login`, {
@@ -116,6 +117,15 @@ const CASES = [
         expected: { presenceMinutes: 180, breakMinutes: 0, workedMinutes: 180,
                 scheduledMinutes: 480, balanceMinutes: -300, settledMinutes: 180,
                 allowances: { ejszakai: 180 } }
+    },
+    {
+        name: 'Áthelyezett munkanapra eső szombati éjszakás',
+        code: 'TESZT-DM1', date: TRANSFERRED_WORKDAY,
+        start: `${TRANSFERRED_WORKDAY} 22:00:00`, end: '2026-01-18 06:00:00',
+        isOrdered: false,
+        expected: { presenceMinutes: 480, breakMinutes: 30, workedMinutes: 450,
+                scheduledMinutes: 450, balanceMinutes: 0, settledMinutes: 450,
+                allowances: { ejszakai: 450 } }
     }
 ];
 
@@ -131,6 +141,22 @@ const resolveEmployeeIds = async (token) => {
         idsByCode[employee.code] = employee.id;
     }
     return idsByCode;
+};
+
+const setCalendarDay = async (token, date, dayType) => {
+    const response = await callApi(token, 'POST', '/calendar', {
+        date,
+        dayType,
+        note: 'Regressziós teszt'
+    });
+
+    if (response.status !== 200) {
+        throw new Error(`A naptári nap nem rögzíthető: ${date} (${response.status})`);
+    }
+};
+
+const removeCalendarDay = async (token, date) => {
+    await callApi(token, 'DELETE', `/calendar/${date}`);
 };
 
 const saveEntry = async (token, testCase, employeeId) => {
@@ -204,6 +230,8 @@ const run = async () => {
 
     const idsByCode = await resolveEmployeeIds(hrToken);
 
+    await setCalendarDay(hrToken, TRANSFERRED_WORKDAY, 'Munkanap');
+
     for (const testCase of CASES) {
         const employeeId = idsByCode[testCase.code];
 
@@ -262,6 +290,8 @@ const run = async () => {
             failureCount++;
         }
     }
+
+    await removeCalendarDay(hrToken, TRANSFERRED_WORKDAY);
 
     console.log('-'.repeat(92));
     console.log(

@@ -7,6 +7,8 @@ import { AppLayout } from "./components/app-layout/app-layout";
 import { TimeLogPage } from "./pages/time-log-page/time-log-page";
 import { RequestsPage } from "./pages/requests-page/requests-page";
 import { ReportsPage } from "./pages/reports-page/reports-page";
+import { CalendarPage } from "./pages/calendar-page/calendar-page";
+import { RequireRole } from "./components/require-role/require-role";
 
 const App = () => {
   return (
@@ -25,7 +27,22 @@ const App = () => {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/time-log" element={<TimeLogPage />} />
           <Route path="/requests" element={<RequestsPage />} />
-          <Route path="/reports" element={<ReportsPage />} />
+          <Route
+            path="/reports"
+            element={
+              <RequireRole roles={["Vezető", "HR-Bér"]}>
+                <ReportsPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/admin-calendar"
+            element={
+              <RequireRole roles={["HR-Bér"]}>
+                <CalendarPage />
+              </RequireRole>
+            }
+          />
         </Route>
       </Routes>
     </BrowserRouter>
