@@ -1,25 +1,25 @@
 const BASE = process.env.BASE_URL || 'http://localhost:3000/api';
-const JELSZO = 'Teszt1234';
-const EV = 2026;
-const HONAP = 1;
+const PASSWORD = 'Teszt1234';
+const YEAR = 2026;
+const MONTH = 1;
 
-const login = async (felhasznalo) => {
-    const valasz = await fetch(`${BASE}/login`, {
+const login = async (username) => {
+    const response = await fetch(`${BASE}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: felhasznalo, password: JELSZO })
+        body: JSON.stringify({ username, password: PASSWORD })
     });
 
-    if (!valasz.ok) {
-        throw new Error(`Bejelentkezés sikertelen: ${felhasznalo} (${valasz.status})`);
+    if (!response.ok) {
+        throw new Error(`Bejelentkezés sikertelen: ${username} (${response.status})`);
     }
 
-    const adat = await valasz.json();
-    return adat.token;
+    const data = await response.json();
+    return data.token;
 };
 
-const hivas = async (token, method, utvonal, body) => {
-    const valasz = await fetch(`${BASE}${utvonal}`, {
+const callApi = async (token, method, path, body) => {
+    const response = await fetch(`${BASE}${path}`, {
         method,
         headers: {
             'Content-Type': 'application/json',
@@ -28,244 +28,252 @@ const hivas = async (token, method, utvonal, body) => {
         body: body ? JSON.stringify(body) : undefined
     });
 
-    const szoveg = await valasz.text();
-    let adat = null;
-    try { adat = szoveg ? JSON.parse(szoveg) : null; } catch { adat = szoveg; }
-    return { status: valasz.status, adat };
+    const text = await response.text();
+    let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+    return { status: response.status, data };
 };
 
-const ESETEK = [
+const CASES = [
     {
-        nev: 'Hétköznapi éjszakás, sablon szerinti szünet',
-        kod: 'TESZT-DM1', nap: '2026-01-07',
-        kezdes: '2026-01-07 22:00:00', vegzes: '2026-01-08 06:00:00',
-        elrendelve: false,
-        vart: { presenceMinutes: 480, breakMinutes: 30, workedMinutes: 450,
+        name: 'Hétköznapi éjszakás, sablon szerinti szünet',
+        code: 'TESZT-DM1', date: '2026-01-07',
+        start: '2026-01-07 22:00:00', end: '2026-01-08 06:00:00',
+        isOrdered: false,
+        expected: { presenceMinutes: 480, breakMinutes: 30, workedMinutes: 450,
                 scheduledMinutes: 450, balanceMinutes: 0, settledMinutes: 450,
                 allowances: { ejszakai: 450 } }
     },
     {
-        nev: 'Plusz óra a beosztás előtt, elrendelés nélkül',
-        kod: 'TESZT-DM1', nap: '2026-01-08',
-        kezdes: '2026-01-08 20:00:00', vegzes: '2026-01-09 06:00:00',
-        elrendelve: false,
-        vart: { presenceMinutes: 600, breakMinutes: 30, workedMinutes: 570,
+        name: 'Plusz óra a beosztás előtt, elrendelés nélkül',
+        code: 'TESZT-DM1', date: '2026-01-08',
+        start: '2026-01-08 20:00:00', end: '2026-01-09 06:00:00',
+        isOrdered: false,
+        expected: { presenceMinutes: 600, breakMinutes: 30, workedMinutes: 570,
                 scheduledMinutes: 450, balanceMinutes: 120, settledMinutes: 570,
                 allowances: { ejszakai: 450 } }
     },
     {
-        nev: 'Ugyanaz elrendelve, a plusz órát felár váltja ki',
-        kod: 'TESZT-DM1', nap: '2026-01-09',
-        kezdes: '2026-01-09 20:00:00', vegzes: '2026-01-10 06:00:00',
-        elrendelve: true,
-        vart: { presenceMinutes: 600, breakMinutes: 30, workedMinutes: 570,
+        name: 'Ugyanaz elrendelve, a plusz órát felár váltja ki',
+        code: 'TESZT-DM1', date: '2026-01-09',
+        start: '2026-01-09 20:00:00', end: '2026-01-10 06:00:00',
+        isOrdered: true,
+        expected: { presenceMinutes: 600, breakMinutes: 30, workedMinutes: 570,
                 scheduledMinutes: 450, balanceMinutes: 0, settledMinutes: 570,
                 allowances: { ejszakai: 450, tulora: 120 } }
     },
     {
-        nev: 'Szombati éjszakás, szünet nélkül',
-        kod: 'TESZT-DM1', nap: '2026-01-03',
-        kezdes: '2026-01-03 22:00:00', vegzes: '2026-01-04 06:00:00',
-        elrendelve: false,
-        vart: { presenceMinutes: 480, breakMinutes: 0, workedMinutes: 480,
+        name: 'Szombati éjszakás, szünet nélkül',
+        code: 'TESZT-DM1', date: '2026-01-03',
+        start: '2026-01-03 22:00:00', end: '2026-01-04 06:00:00',
+        isOrdered: false,
+        expected: { presenceMinutes: 480, breakMinutes: 0, workedMinutes: 480,
                 scheduledMinutes: 0, balanceMinutes: 0, settledMinutes: 480,
                 allowances: { szombat: 120, vasarnap: 360 } }
     },
     {
-        nev: 'Szombati éjszakás, kézzel megadott szünettel',
-        kod: 'TESZT-DM1', nap: '2026-01-10',
-        kezdes: '2026-01-10 22:00:00', vegzes: '2026-01-11 06:00:00',
-        szunetKezdes: '2026-01-11 02:00:00', szunetVegzes: '2026-01-11 02:30:00',
-        elrendelve: false,
-        vart: { presenceMinutes: 480, breakMinutes: 30, workedMinutes: 450,
+        name: 'Szombati éjszakás, kézzel megadott szünettel',
+        code: 'TESZT-DM1', date: '2026-01-10',
+        start: '2026-01-10 22:00:00', end: '2026-01-11 06:00:00',
+        breakStart: '2026-01-11 02:00:00', breakEnd: '2026-01-11 02:30:00',
+        isOrdered: false,
+        expected: { presenceMinutes: 480, breakMinutes: 30, workedMinutes: 450,
                 scheduledMinutes: 0, balanceMinutes: 0, settledMinutes: 450,
                 allowances: { szombat: 120, vasarnap: 330 } }
     },
     {
-        nev: 'Vasárnapi munkavégzés',
-        kod: 'TESZT-DM1', nap: '2026-01-04',
-        kezdes: '2026-01-04 06:00:00', vegzes: '2026-01-04 14:00:00',
-        elrendelve: false,
-        vart: { presenceMinutes: 480, breakMinutes: 0, workedMinutes: 480,
+        name: 'Vasárnapi munkavégzés',
+        code: 'TESZT-DM1', date: '2026-01-04',
+        start: '2026-01-04 06:00:00', end: '2026-01-04 14:00:00',
+        isOrdered: false,
+        expected: { presenceMinutes: 480, breakMinutes: 0, workedMinutes: 480,
                 scheduledMinutes: 0, balanceMinutes: 0, settledMinutes: 480,
                 allowances: { vasarnap: 480 } }
     },
     {
-        nev: 'Munkaszüneti napon kezdődő éjszakás műszak',
-        kod: 'TESZT-DM1', nap: '2026-01-01',
-        kezdes: '2026-01-01 22:00:00', vegzes: '2026-01-02 06:00:00',
-        elrendelve: false,
-        vart: { presenceMinutes: 480, breakMinutes: 0, workedMinutes: 480,
+        name: 'Munkaszüneti napon kezdődő éjszakás műszak',
+        code: 'TESZT-DM1', date: '2026-01-01',
+        start: '2026-01-01 22:00:00', end: '2026-01-02 06:00:00',
+        isOrdered: false,
+        expected: { presenceMinutes: 480, breakMinutes: 0, workedMinutes: 480,
                 scheduledMinutes: 0, balanceMinutes: 360, settledMinutes: 480,
                 allowances: { munkaszuneti: 120 } }
     },
     {
-        nev: 'Nem műszakos dolgozó elrendelt túlórája',
-        kod: 'TESZT-DN1', nap: '2026-01-02',
-        kezdes: '2026-01-02 07:00:00', vegzes: '2026-01-02 19:00:00',
-        elrendelve: true,
-        vart: { presenceMinutes: 720, breakMinutes: 30, workedMinutes: 690,
+        name: 'Nem műszakos dolgozó elrendelt túlórája',
+        code: 'TESZT-DN1', date: '2026-01-02',
+        start: '2026-01-02 07:00:00', end: '2026-01-02 19:00:00',
+        isOrdered: true,
+        expected: { presenceMinutes: 720, breakMinutes: 30, workedMinutes: 690,
                 scheduledMinutes: 450, balanceMinutes: 0, settledMinutes: 690,
                 allowances: { tulora: 240 } }
     },
-        {
-        nev: 'A szünet a tényleges munkaidőn kívülre esik',
-        kod: 'TESZT-DM1', nap: '2026-01-13',
-        kezdes: '2026-01-13 22:00:00', vegzes: '2026-01-14 01:00:00',
-        elrendelve: false,
-        vart: { presenceMinutes: 180, breakMinutes: 0, workedMinutes: 180,
+    {
+        name: 'A szünet a tényleges munkaidőn kívülre esik',
+        code: 'TESZT-DM1', date: '2026-01-13',
+        start: '2026-01-13 22:00:00', end: '2026-01-14 01:00:00',
+        isOrdered: false,
+        expected: { presenceMinutes: 180, breakMinutes: 0, workedMinutes: 180,
                 scheduledMinutes: 480, balanceMinutes: -300, settledMinutes: 180,
                 allowances: { ejszakai: 180 } }
     }
 ];
 
-const azonosit = async (token) => {
-    const { status, adat } = await hivas(token, 'GET', '/employees');
+const resolveEmployeeIds = async (token) => {
+    const { status, data } = await callApi(token, 'GET', '/employees');
 
     if (status !== 200) {
         throw new Error(`A dolgozói lista nem kérhető le (${status}).`);
     }
 
-    const terkep = {};
-    for (const dolgozo of adat.employees) {
-        terkep[dolgozo.code] = dolgozo.id;
+    const idsByCode = {};
+    for (const employee of data.employees) {
+        idsByCode[employee.code] = employee.id;
     }
-    return terkep;
+    return idsByCode;
 };
 
-const rogzit = async (token, eset, employeeId) => {
-    const { adat: honap } = await hivas(
-        token, 'GET', `/time-entries?year=${EV}&month=${HONAP}&employeeId=${employeeId}`
+const saveEntry = async (token, testCase, employeeId) => {
+    const { data: report } = await callApi(
+        token, 'GET', `/time-entries?year=${YEAR}&month=${MONTH}&employeeId=${employeeId}`
     );
 
-    const letezo = honap.days.find((nap) => nap.date === eset.nap && nap.id);
+    const existing = report.days.find((day) => day.date === testCase.date && day.id);
 
-    const mezok = {
-        workStart: eset.kezdes,
-        workEnd: eset.vegzes,
+    const fields = {
+        workStart: testCase.start,
+        workEnd: testCase.end,
         note: 'Regressziós teszt'
     };
 
-    if (eset.szunetKezdes) {
-        mezok.breakStart = eset.szunetKezdes;
-        mezok.breakEnd = eset.szunetVegzes;
+    if (testCase.breakStart) {
+        fields.breakStart = testCase.breakStart;
+        fields.breakEnd = testCase.breakEnd;
     }
 
-    const valasz = letezo
-        ? await hivas(token, 'PATCH', `/time-entries/${letezo.id}`, mezok)
-        : await hivas(token, 'POST', '/time-entries', { employeeId, workingDate: eset.nap, ...mezok });
+    const response = existing
+        ? await callApi(token, 'PATCH', `/time-entries/${existing.id}`, fields)
+        : await callApi(token, 'POST', '/time-entries', { employeeId, workingDate: testCase.date, ...fields });
 
-    if (valasz.status !== 200 && valasz.status !== 201) {
+    if (response.status !== 200 && response.status !== 201) {
         throw new Error(
-            `Rögzítés sikertelen: ${eset.nev} (${valasz.status}) ${JSON.stringify(valasz.adat)}`
+            `Rögzítés sikertelen: ${testCase.name} (${response.status}) ${JSON.stringify(response.data)}`
         );
     }
 };
 
-const formaz = (percek) => {
-    if (percek === null || percek === undefined) return '-';
-    const elojel = percek < 0 ? '-' : '';
-    const abszolut = Math.abs(percek);
-    return `${elojel}${Math.floor(abszolut / 60)}:${String(abszolut % 60).padStart(2, '0')}`;
+const formatMinutes = (minutes) => {
+    if (minutes === null || minutes === undefined) return '-';
+    const sign = minutes < 0 ? '-' : '';
+    const absolute = Math.abs(minutes);
+    return `${sign}${Math.floor(absolute / 60)}:${String(absolute % 60).padStart(2, '0')}`;
 };
 
-const osszevet = (nap, vart) => {
-    const elteresek = [];
+const compare = (day, expected) => {
+    const differences = [];
 
-    for (const [kulcs, ertek] of Object.entries(vart)) {
-        if (kulcs === 'allowances') continue;
-        if (nap[kulcs] !== ertek) {
-            elteresek.push(`${kulcs}: várt ${formaz(ertek)}, kapott ${formaz(nap[kulcs])}`);
+    for (const [key, value] of Object.entries(expected)) {
+        if (key === 'allowances') continue;
+        if (day[key] !== value) {
+            differences.push(`${key}: várt ${formatMinutes(value)}, kapott ${formatMinutes(day[key])}`);
         }
     }
 
-    const kulcsok = new Set([
-        ...Object.keys(vart.allowances),
-        ...Object.keys(nap.allowances || {})
+    const keys = new Set([
+        ...Object.keys(expected.allowances),
+        ...Object.keys(day.allowances || {})
     ]);
 
-    for (const kulcs of kulcsok) {
-        const vartErtek = vart.allowances[kulcs] || 0;
-        const kapott = (nap.allowances || {})[kulcs] || 0;
-        if (vartErtek !== kapott) {
-            elteresek.push(`${kulcs}%: várt ${formaz(vartErtek)}, kapott ${formaz(kapott)}`);
+    for (const key of keys) {
+        const expectedValue = expected.allowances[key] || 0;
+        const actualValue = (day.allowances || {})[key] || 0;
+        if (expectedValue !== actualValue) {
+            differences.push(
+                `${key}: várt ${formatMinutes(expectedValue)}, kapott ${formatMinutes(actualValue)}`
+            );
         }
     }
 
-    return elteresek;
+    return differences;
 };
 
-const fut = async () => {
-    const tokenHr = await login('teszt.hr');
-    const tokenVezetoM = await login('teszt.vezeto.m');
-    const tokenVezetoNm = await login('teszt.vezeto.nm');
+const run = async () => {
+    const hrToken = await login('teszt.hr');
+    const shiftManagerToken = await login('teszt.vezeto.m');
+    const officeManagerToken = await login('teszt.vezeto.nm');
 
-    const dolgozok = await azonosit(tokenHr);
+    const idsByCode = await resolveEmployeeIds(hrToken);
 
-    for (const eset of ESETEK) {
-        const employeeId = dolgozok[eset.kod];
+    for (const testCase of CASES) {
+        const employeeId = idsByCode[testCase.code];
 
         if (!employeeId) {
-            throw new Error(`Nincs ilyen teszt dolgozó: ${eset.kod}`);
+            throw new Error(`Nincs ilyen teszt dolgozó: ${testCase.code}`);
         }
 
-        await rogzit(tokenHr, eset, employeeId);
+        await saveEntry(hrToken, testCase, employeeId);
 
-        const elrendeloToken = eset.kod === 'TESZT-DM1' ? tokenVezetoM : tokenVezetoNm;
+        const approverToken = testCase.code === 'TESZT-DM1'
+            ? shiftManagerToken
+            : officeManagerToken;
 
-        const valasz = await hivas(elrendeloToken, 'PUT', '/time-entries/ordered', {
+        const response = await callApi(approverToken, 'PUT', '/time-entries/ordered', {
             employeeId,
-            workingDate: eset.nap,
-            isOrdered: Boolean(eset.elrendelve)
+            workingDate: testCase.date,
+            isOrdered: Boolean(testCase.isOrdered)
         });
 
-        if (eset.elrendelve && valasz.status !== 200 && valasz.status !== 201) {
-            throw new Error(`Elrendelés sikertelen: ${eset.nev} (${valasz.status})`);
+        if (testCase.isOrdered && response.status !== 200 && response.status !== 201) {
+            throw new Error(`Elrendelés sikertelen: ${testCase.name} (${response.status})`);
         }
     }
 
-    const honapok = {};
-    for (const kod of new Set(ESETEK.map((eset) => eset.kod))) {
-        const employeeId = dolgozok[kod];
-        const { adat } = await hivas(
-            tokenHr, 'GET', `/time-entries?year=${EV}&month=${HONAP}&employeeId=${employeeId}`
+    const reportsByCode = {};
+    for (const code of new Set(CASES.map((testCase) => testCase.code))) {
+        const employeeId = idsByCode[code];
+        const { data } = await callApi(
+            hrToken, 'GET', `/time-entries?year=${YEAR}&month=${MONTH}&employeeId=${employeeId}`
         );
-        honapok[kod] = adat;
+        reportsByCode[code] = data;
     }
 
-    let hibas = 0;
+    let failureCount = 0;
 
     console.log('');
     console.log('Eset'.padEnd(52), 'Nap'.padEnd(12), 'Eredmény');
     console.log('-'.repeat(92));
 
-    for (const eset of ESETEK) {
-        const nap = honapok[eset.kod].days.find((elem) => elem.date === eset.nap);
-        const elteresek = nap ? osszevet(nap, eset.vart) : ['a nap nem található a válaszban'];
+    for (const testCase of CASES) {
+        const day = reportsByCode[testCase.code].days.find(
+            (item) => item.date === testCase.date
+        );
+        const differences = day
+            ? compare(day, testCase.expected)
+            : ['a nap nem található a válaszban'];
 
         console.log(
-            eset.nev.padEnd(52),
-            eset.nap.padEnd(12),
-            elteresek.length === 0 ? 'OK' : 'HIBA'
+            testCase.name.padEnd(52),
+            testCase.date.padEnd(12),
+            differences.length === 0 ? 'OK' : 'HIBA'
         );
 
-        for (const elteres of elteresek) {
-            console.log(' '.repeat(66), elteres);
-            hibas++;
+        for (const difference of differences) {
+            console.log(' '.repeat(66), difference);
+            failureCount++;
         }
     }
 
     console.log('-'.repeat(92));
     console.log(
-        hibas === 0
-            ? `${ESETEK.length} eset, mind megfelelt.`
-            : `${ESETEK.length} eset, ${hibas} eltérés.`
+        failureCount === 0
+            ? `${CASES.length} eset, mind megfelelt.`
+            : `${CASES.length} eset, ${failureCount} eltérés.`
     );
 
-    process.exit(hibas === 0 ? 0 : 1);
+    process.exit(failureCount === 0 ? 0 : 1);
 };
 
-fut().catch((hiba) => {
-    console.error('A futtatás megszakadt:', hiba.message);
+run().catch((error) => {
+    console.error('A futtatás megszakadt:', error.message);
     process.exit(1);
 });

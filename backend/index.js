@@ -8,6 +8,7 @@ const timeEntryRoutes = require('./src/routes/timeEntryRoutes');
 const requestRoutes = require('./src/routes/requestRoutes');
 const lookupRoutes = require('./src/routes/lookupRoutes');
 const reportRoutes = require('./src/routes/reportRoutes');
+const dashboardRoutes = require('./src/routes/dashboardRoutes');
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.use('/api', timeEntryRoutes);
 app.use('/api', requestRoutes);
 app.use('/api', lookupRoutes);
 app.use('/api', reportRoutes);
+app.use('/api', dashboardRoutes);
 
 const serverStart = async () => {
     try {

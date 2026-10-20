@@ -28,9 +28,9 @@ const toDate = (value) => new Date(String(value).replace(' ', 'T'));
 const minutesBetween = (from, to) => Math.round((toDate(to) - toDate(from)) / (1000 * 60));
 
 const overlapMinutes = (fromA, toA, fromB, toB) => {
-    const kezdet = Math.max(toDate(fromA).getTime(), toDate(fromB).getTime());
-    const veg = Math.min(toDate(toA).getTime(), toDate(toB).getTime());
-    return veg > kezdet ? Math.round((veg - kezdet) / (1000 * 60)) : 0;
+    const start = Math.max(toDate(fromA).getTime(), toDate(fromB).getTime());
+    const end = Math.min(toDate(toA).getTime(), toDate(toB).getTime());
+    return end > start ? Math.round((end - start) / (1000 * 60)) : 0;
 };
 
 module.exports = {

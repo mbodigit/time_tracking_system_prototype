@@ -143,8 +143,8 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
         summaryAbsenceMinutes += absenceMinutes;
 
         if (absenceMinutes > 0) {
-            const kulcs = absence.absence_payroll_code || absence.absence_name;
-            summaryAbsences[kulcs] = (summaryAbsences[kulcs] || 0) + absenceMinutes;
+            const payrollKey = absence.absence_payroll_code || absence.absence_name;
+            summaryAbsences[payrollKey] = (summaryAbsences[payrollKey] || 0) + absenceMinutes;
         }
 
         const absenceInfo = absence
