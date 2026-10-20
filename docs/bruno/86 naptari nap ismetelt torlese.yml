@@ -1,0 +1,24 @@
+info:
+  name: naptari nap ismetelt torlese
+  type: http
+  seq: 86
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/calendar/2030-06-15"
+  auth:
+    type: bearer
+    token: "{{hrToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "404"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

@@ -1,0 +1,32 @@
+info:
+  name: naptari nap felvetele
+  type: http
+  seq: 82
+
+http:
+  method: POST
+  url: "{{baseUrl}}/calendar"
+  body:
+    type: json
+    data: |-
+      {
+        "date": "2030-06-15",
+        "dayType": "Munkanap",
+        "note": "Bruno teszt, athelyezett munkanap"
+      }
+  auth:
+    type: bearer
+    token: "{{hrToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
