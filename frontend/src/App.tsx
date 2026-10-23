@@ -9,6 +9,7 @@ import { RequestsPage } from "./pages/requests-page/requests-page";
 import { ReportsPage } from "./pages/reports-page/reports-page";
 import { CalendarPage } from "./pages/calendar-page/calendar-page";
 import { RequireRole } from "./components/require-role/require-role";
+import { GroupsPage } from "./pages/groups-page/groups-page";
 
 const App = () => {
   return (
@@ -40,6 +41,14 @@ const App = () => {
             element={
               <RequireRole roles={["HR-Bér"]}>
                 <CalendarPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/admin-groups"
+            element={
+              <RequireRole roles={["Admin"]}>
+                <GroupsPage />
               </RequireRole>
             }
           />

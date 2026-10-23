@@ -1,0 +1,26 @@
+info:
+  name: csoportok lekerdezese admin fiokkal
+  type: http
+  seq: 89
+
+http:
+  method: GET
+  url: "{{baseUrl}}/groups"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.groups
+      operator: isArray
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

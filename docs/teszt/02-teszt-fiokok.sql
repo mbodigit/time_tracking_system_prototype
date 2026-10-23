@@ -36,6 +36,8 @@ FROM (
                    '07:00-15:00', '12:00:00', '12:30:00'
   UNION ALL SELECT 'TESZT-HR1', 'HR',        'Nem műszakos',
                    '07:00-15:00', '12:00:00', '12:30:00'
+  UNION ALL SELECT 'TESZT-A1',  'Admin',     'Nem műszakos',
+                   '07:00-15:00', '12:00:00', '12:30:00'
 ) v
 WHERE NOT EXISTS (SELECT 1 FROM Employees e WHERE e.employee_code = v.kod);
 
@@ -79,13 +81,13 @@ SET employee_core_hour_id =
     employee_break_end = '12:30:00',
     employee_break_minutes = 30,
     employee_break_paid = 0
-WHERE employee_code IN ('TESZT-VN1', 'TESZT-DN1', 'TESZT-HR1');
+WHERE employee_code IN ('TESZT-VN1', 'TESZT-DN1', 'TESZT-HR1', 'TESZT-A1');
 
 UPDATE Employees
 SET employee_working_hour_id =
       (SELECT working_hour_id FROM WorkingHours WHERE working_hour_num = 8)
 WHERE employee_code IN
-      ('TESZT-VM1', 'TESZT-VN1', 'TESZT-DM1', 'TESZT-DN1', 'TESZT-HR1')
+      ('TESZT-VM1', 'TESZT-VN1', 'TESZT-DM1', 'TESZT-DN1', 'TESZT-HR1', 'TESZT-A1')
   AND employee_working_hour_id IS NULL;
 
 UPDATE Employees
@@ -107,6 +109,7 @@ FROM (
   UNION ALL SELECT 'teszt.dolgozo.m',  'TESZT-DM1', 'Dolgozó', 1
   UNION ALL SELECT 'teszt.dolgozo.nm', 'TESZT-DN1', 'Dolgozó', 1
   UNION ALL SELECT 'teszt.hr',         'TESZT-HR1', 'HR-Bér',  1
+  UNION ALL SELECT 'teszt.admin',      'TESZT-A1',  'Admin',   1
   UNION ALL SELECT 'teszt.inaktiv',    'TESZT-D5',  'Dolgozó', 0
 ) v
 WHERE NOT EXISTS (SELECT 1 FROM Users u WHERE u.user_username = v.nev);

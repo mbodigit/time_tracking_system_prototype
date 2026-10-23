@@ -1,0 +1,33 @@
+info:
+  name: csoport modositasa
+  type: http
+  seq: 93
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/groups/{{newGroupId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Bruno teszt csoport modositva",
+        "areaId": {{areaId}},
+        "costCenterId": {{costCenterId}},
+        "managerId": {{managerUserId}}
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

@@ -12,7 +12,7 @@ const MENU: MenuItem[] = [
   { path: "/time-log", label: "Rögzítés" },
   { path: "/requests", label: "Kérelmek és elrendelések" },
   { path: "/reports", label: "Riport és export", roles: ["Vezető", "HR-Bér"] },
-  { path: "/admin", label: "Adminisztráció", roles: ["Admin"] },
+  { path: "/admin-groups", label: "Csoportok", roles: ["Admin"] },
   { path: "/admin-calendar", label: "Központi naptár", roles: ["HR-Bér"] },
 ];
 
