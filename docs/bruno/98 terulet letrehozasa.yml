@@ -1,0 +1,41 @@
+info:
+  name: terulet letrehozasa
+  type: http
+  seq: 98
+
+http:
+  method: POST
+  url: "{{baseUrl}}/org/areas"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Bruno teszt terulet",
+        "managerId": null
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "201"
+
+  actions:
+    - type: set-variable
+      phase: after-response
+      selector:
+        expression: res.body.id
+        method: jsonq
+      variable:
+        name: newAreaId
+        scope: runtime
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
