@@ -1,0 +1,32 @@
+info:
+  name: csoport letrehozasa vezeto nelkul
+  type: http
+  seq: 91
+
+http:
+  method: POST
+  url: "{{baseUrl}}/groups"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Bruno teszt csoport",
+        "areaId": {{areaId}},
+        "costCenterId": {{costCenterId}}
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "400"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

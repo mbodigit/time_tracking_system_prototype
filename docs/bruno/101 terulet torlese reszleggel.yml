@@ -1,0 +1,24 @@
+info:
+  name: terulet torlese reszleggel
+  type: http
+  seq: 101
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/org/areas/{{newAreaId}}"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "409"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

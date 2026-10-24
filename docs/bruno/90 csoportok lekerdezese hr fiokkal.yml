@@ -1,0 +1,24 @@
+info:
+  name: csoportok lekerdezese hr fiokkal
+  type: http
+  seq: 90
+
+http:
+  method: GET
+  url: "{{baseUrl}}/groups"
+  auth:
+    type: bearer
+    token: "{{hrToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "403"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

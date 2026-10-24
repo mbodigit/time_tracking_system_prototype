@@ -1,0 +1,30 @@
+info:
+  name: ismeretlen szervezeti egyseg
+  type: http
+  seq: 102
+
+http:
+  method: POST
+  url: "{{baseUrl}}/org/telephelyek"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Bruno teszt"
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "400"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

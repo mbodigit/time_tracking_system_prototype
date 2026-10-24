@@ -1,0 +1,42 @@
+info:
+  name: muszak letrehozasa
+  type: http
+  seq: 100
+
+http:
+  method: POST
+  url: "{{baseUrl}}/org/shifts"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Bruno teszt muszak",
+        "parentId": {{newDepartmentId}},
+        "managerId": {{managerUserId}}
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "201"
+
+  actions:
+    - type: set-variable
+      phase: after-response
+      selector:
+        expression: res.body.id
+        method: jsonq
+      variable:
+        name: newShiftId
+        scope: runtime
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
