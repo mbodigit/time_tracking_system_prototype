@@ -14,6 +14,21 @@ WHERE request_employee_id IN (
   SELECT employee_id FROM Employees WHERE employee_code LIKE 'TESZT-%'
 );
 
+DELETE FROM Users
+WHERE user_employee_id IN (
+  SELECT employee_id FROM Employees WHERE employee_last_name = 'Bruno'
+);
+
+DELETE FROM Employees WHERE employee_last_name = 'Bruno';
+
+DELETE FROM UserGroups WHERE user_group_name LIKE 'Bruno teszt%';
+
+DELETE FROM Shifts      WHERE shift_name       LIKE 'Bruno teszt%';
+DELETE FROM Departments WHERE department_name  LIKE 'Bruno teszt%';
+DELETE FROM Areas       WHERE area_name        LIKE 'Bruno teszt%';
+
+DELETE FROM GlobalCalendar WHERE gl_cal_note LIKE 'Bruno teszt%';
+
 SET @dm := (SELECT employee_id FROM Employees WHERE employee_code = 'TESZT-DM1');
 
 INSERT IGNORE INTO WorkingTimeTracking (

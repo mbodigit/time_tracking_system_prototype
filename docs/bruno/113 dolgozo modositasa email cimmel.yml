@@ -1,0 +1,36 @@
+info:
+  name: dolgozo modositasa email cimmel
+  type: http
+  seq: 113
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/admin/employees/{{newEmployeeId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "lastName": "Bruno",
+        "firstName": "Teszt",
+        "workEmail": "bruno.teszt@example.com",
+        "costCenterId": {{empCostCenterId}},
+        "categoryId": {{empCategoryId}},
+        "statusId": {{empStatusId}},
+        "annualLeaveDays": 25
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

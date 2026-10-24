@@ -1,0 +1,30 @@
+info:
+  name: fiok letrehozasa email nelkul
+  type: http
+  seq: 112
+
+http:
+  method: POST
+  url: "{{baseUrl}}/admin/employees/{{newEmployeeId}}/user"
+  body:
+    type: json
+    data: |-
+      {
+        "roleId": {{empRoleId}}
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "409"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
