@@ -44,7 +44,7 @@ MIGRACIOK = os.path.join(ITT, "..", "..", "backend", "migrations")
 FAJLOK = ["001_torzsadatok.sql", "002_szervezet.sql",
           "003_dolgozok.sql", "004_mukodes.sql", 
           "006_elrendeles.sql", "007_beosztas_es_szabadsagkeret.sql",
-          "011_potlek_jogcimkodok.sql", "012_berkodok.sql"
+          "011_potlek_jogcimkodok.sql", "012_berkodok.sql", "014_szervezeti_vezetok.sql"
           ]
 
 TIPUSOK = (r"(?:INT|TINYINT|BOOLEAN|VARCHAR\(\d+\)|DATETIME|DATE|TIME"
