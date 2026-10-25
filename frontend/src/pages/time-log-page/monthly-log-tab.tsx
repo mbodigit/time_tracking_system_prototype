@@ -75,6 +75,7 @@ export const MonthlyLogTab = () => {
 
   const summary = log?.summary;
   const allowanceTypes = log?.allowanceTypes ?? [];
+  const isFlexible = log?.isFlexible ?? false;
 
   return (
     <div className="space-y-4">
@@ -181,6 +182,18 @@ export const MonthlyLogTab = () => {
 
       {isLoading && <span className="loading loading-spinner" />}
 
+      {isFlexible && (
+        <div className="alert text-sm py-2">
+          <span>
+            Kötetlen munkarendben a napi munkaidő beosztása a munkavállaló joga,
+            ezért a munkaidő rögzítése nem szükséges. A rendszer minden
+            munkanapot teljesítettnek tekint, amelyre nincs jóváhagyott
+            távolléti jogcím. A havi keret a szerződéses napi óraszám és a hónap
+            munkanapjainak szorzata.
+          </span>
+        </div>
+      )}
+
       {log && (
         <div className="overflow-x-auto">
           <table className="table table-sm table-pin-rows">
@@ -278,12 +291,14 @@ export const MonthlyLogTab = () => {
                     </td>
                   ))}
                   <td>
-                    <button
-                      className="btn btn-xs"
-                      onClick={() => setEditedDay(day)}
-                    >
-                      {day.id ? "Módosítás" : "Rögzítés"}
-                    </button>
+                    {!isFlexible && (
+                      <button
+                        className="btn btn-xs"
+                        onClick={() => setEditedDay(day)}
+                      >
+                        {day.id ? "Módosítás" : "Rögzítés"}
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

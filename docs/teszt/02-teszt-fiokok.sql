@@ -87,7 +87,7 @@ UPDATE Employees
 SET employee_working_hour_id =
       (SELECT working_hour_id FROM WorkingHours WHERE working_hour_num = 8)
 WHERE employee_code IN
-      ('TESZT-VM1', 'TESZT-VN1', 'TESZT-DM1', 'TESZT-DN1', 'TESZT-HR1', 'TESZT-A1')
+      ('TESZT-VM1', 'TESZT-VN1', 'TESZT-DM1', 'TESZT-DN1', 'TESZT-HR1', 'TESZT-A1', 'TESZT-K1')
   AND employee_working_hour_id IS NULL;
 
 UPDATE Employees
