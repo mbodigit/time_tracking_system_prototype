@@ -12,6 +12,7 @@ const dashboardRoutes = require('./src/routes/dashboardRoutes');
 const calendarRoutes = require('./src/routes/calendarRoutes');
 const groupRoutes = require('./src/routes/groupRoutes');
 const orgRoutes = require('./src/routes/orgRoutes');
+const employeeAdminRoutes = require('./src/routes/employeeAdminRoutes');
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use('/api', dashboardRoutes);
 app.use('/api', calendarRoutes);
 app.use('/api', groupRoutes);
 app.use('/api', orgRoutes);
+app.use('/api', employeeAdminRoutes);
 
 const serverStart = async () => {
     try {

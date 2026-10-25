@@ -1,0 +1,42 @@
+info:
+  name: fiok letrehozasa
+  type: http
+  seq: 114
+
+http:
+  method: POST
+  url: "{{baseUrl}}/admin/employees/{{newEmployeeId}}/user"
+  body:
+    type: json
+    data: |-
+      {
+        "roleId": {{empRoleId}}
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "201"
+    - expression: res.body.password
+      operator: isNotEmpty
+
+  actions:
+    - type: set-variable
+      phase: after-response
+      selector:
+        expression: res.body.id
+        method: jsonq
+      variable:
+        name: newUserId
+        scope: runtime
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

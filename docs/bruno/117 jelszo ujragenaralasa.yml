@@ -1,0 +1,32 @@
+info:
+  name: jelszo ujragenaralasa
+  type: http
+  seq: 117
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/admin/users/{{newUserId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "resetPassword": true
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.password
+      operator: isNotEmpty
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

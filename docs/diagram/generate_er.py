@@ -44,7 +44,8 @@ MIGRACIOK = os.path.join(ITT, "..", "..", "backend", "migrations")
 FAJLOK = ["001_torzsadatok.sql", "002_szervezet.sql",
           "003_dolgozok.sql", "004_mukodes.sql", 
           "006_elrendeles.sql", "007_beosztas_es_szabadsagkeret.sql",
-          "011_potlek_jogcimkodok.sql", "012_berkodok.sql", "014_szervezeti_vezetok.sql"
+          "011_potlek_jogcimkodok.sql", "012_berkodok.sql", 
+          "014_szervezeti_vezetok.sql", "015_dolgozoi_kod_sorszam.sql"
           ]
 
 TIPUSOK = (r"(?:INT|TINYINT|BOOLEAN|VARCHAR\(\d+\)|DATETIME|DATE|TIME"
@@ -142,6 +143,10 @@ def sema_beolvasas():
                     "tipus": otipus.upper(),
                     "kotelezo": "NOT NULL" in ovege.upper(),
                 })
+            for onev in re.findall(r"DROP COLUMN (\w+)", darab):
+                tablak[tn]["oszlopok"] = [
+                    c for c in tablak[tn]["oszlopok"] if c["nev"] != onev
+                ]
 
     return tablak, sorrend
 
