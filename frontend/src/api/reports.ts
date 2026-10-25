@@ -14,7 +14,7 @@ export interface ReportRow {
   absenceMinutes: number;
   settledMinutes: number;
   allowances: Record<string, number>;
-  absences: Record<string, number>;
+  absences: Record<string, { minutes: number; payrollCode: string | null }>;
 }
 
 export interface MonthlyReport {
@@ -30,6 +30,7 @@ export interface MonthlyReport {
     absenceMinutes: number;
     settledMinutes: number;
     allowances: Record<string, number>;
+    absences: Record<string, number>;
   };
 }
 

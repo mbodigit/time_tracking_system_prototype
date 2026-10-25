@@ -170,9 +170,12 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
             flexibleWorkedMinutes += workedMinutes;
 
             if (absenceMinutes > 0) {
-                const payrollKey = absence.absence_payroll_code || absence.absence_name;
-                flexibleAbsences[payrollKey] =
-                    (flexibleAbsences[payrollKey] || 0) + absenceMinutes;
+                const name = absence.absence_name;
+                const current = flexibleAbsences[name]
+                    || { minutes: 0, payrollCode: absence.absence_payroll_code };
+
+                current.minutes += absenceMinutes;
+                flexibleAbsences[name] = current;
             }
 
             flexibleDays.push({
@@ -252,8 +255,12 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
         summaryAbsenceMinutes += absenceMinutes;
 
         if (absenceMinutes > 0) {
-            const payrollKey = absence.absence_payroll_code || absence.absence_name;
-            summaryAbsences[payrollKey] = (summaryAbsences[payrollKey] || 0) + absenceMinutes;
+            const name = absence.absence_name;
+            const current = summaryAbsences[name]
+                || { minutes: 0, payrollCode: absence.absence_payroll_code };
+
+            current.minutes += absenceMinutes;
+            summaryAbsences[name] = current;
         }
 
         const absenceInfo = absence

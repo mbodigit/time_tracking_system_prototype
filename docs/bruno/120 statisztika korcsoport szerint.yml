@@ -1,0 +1,26 @@
+info:
+  name: statisztika korcsoport szerint
+  type: http
+  seq: 120
+
+http:
+  method: GET
+  url: "{{baseUrl}}/reports/statistics?year={{ev}}&month={{honap}}&dimension=ageGroup"
+  auth:
+    type: bearer
+    token: "{{hrToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.rows
+      operator: isNotEmpty
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

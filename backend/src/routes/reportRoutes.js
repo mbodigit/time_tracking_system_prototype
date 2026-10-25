@@ -15,4 +15,10 @@ router.get('/reports/payroll',
     reportController.payroll
 );
 
+router.get('/reports/statistics',
+    authenticateToken,
+    authorizePermission('reports.view'),
+    reportController.statistics
+);
+
 module.exports = router;
