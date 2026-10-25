@@ -10,14 +10,18 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
             e.employee_break_minutes, e.employee_break_paid,
             e.employee_core_start, e.employee_core_end,
             e.employee_code, e.employee_first_name, e.employee_last_name,
+            e.employee_user_group_id,
             c.core_hour_start, c.core_hour_end,
             w.work_schedule_is_shift, w.work_schedule_name,
-            h.working_hour_num
-         FROM Employees e
-         LEFT JOIN CoreHours     c ON c.core_hour_id      = e.employee_core_hour_id
-         LEFT JOIN WorkSchedules w ON w.work_schedule_id  = e.employee_work_schedule_id
-         LEFT JOIN WorkingHours  h ON h.working_hour_id   = e.employee_working_hour_id
-         WHERE e.employee_id = ?`,
+            h.working_hour_num,
+            g.user_group_name, a.area_name
+            FROM Employees e
+            LEFT JOIN CoreHours     c ON c.core_hour_id      = e.employee_core_hour_id
+            LEFT JOIN WorkSchedules w ON w.work_schedule_id  = e.employee_work_schedule_id
+            LEFT JOIN WorkingHours  h ON h.working_hour_id   = e.employee_working_hour_id
+            LEFT JOIN UserGroups    g ON g.user_group_id     = e.employee_user_group_id
+            LEFT JOIN Areas         a ON a.area_id           = g.user_group_area_id
+            WHERE e.employee_id = ?`,
         [employeeId]
     );
 
@@ -407,6 +411,9 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
         employeeId,
         employeeCode: employee.employee_code,
         employeeName: `${employee.employee_last_name} ${employee.employee_first_name}`,
+        employeeGroupId: employee.employee_user_group_id,
+        employeeGroup: employee.user_group_name,
+        employeeArea: employee.area_name,
         year: yearNumber,
         month: monthNumber,
         isFlexible: false,

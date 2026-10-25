@@ -24,9 +24,28 @@ const collectEmployeeIds = async (req) => {
         return ids.includes(employeeId) ? [employeeId] : [];
     }
 
+    if (ids.length === 0) {
+        return ids;
+    }
+
+    const groupId = Number(req.query.groupId);
+
+    if (groupId) {
+        const groupPlaceholders = ids.map(() => '?').join(', ');
+
+        const [groupRows] = await pool.execute(
+            `SELECT employee_id FROM Employees
+             WHERE employee_user_group_id = ?
+               AND employee_id IN (${groupPlaceholders})`,
+            [groupId, ...ids]
+        );
+
+        return groupRows.map((row) => row.employee_id);
+    }
+
     const costCenterId = Number(req.query.costCenterId);
 
-    if (!costCenterId || ids.length === 0) {
+    if (!costCenterId) {
         return ids;
     }
 
@@ -114,6 +133,9 @@ const buildRows = async (ids, yearNumber, monthNumber) => {
             employeeId: report.employeeId,
             employeeCode: report.employeeCode,
             employeeName: report.employeeName,
+            employeeGroupId: report.employeeGroupId,
+            employeeGroup: report.employeeGroup,
+            employeeArea: report.employeeArea,
             ...report.summary
         });
     }

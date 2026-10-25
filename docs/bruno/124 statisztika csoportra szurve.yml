@@ -1,0 +1,27 @@
+info:
+  name: statisztika csoportra szurve
+  type: http
+  seq: 124
+
+http:
+  method: GET
+  url: "{{baseUrl}}/reports/statistics?year={{ev}}&month={{honap}}&dimension=shift&groupId={{firstGroupId}}"
+  auth:
+    type: bearer
+    token: "{{hrToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+    - expression: res.body.dimension
+      operator: eq
+      value: shift
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
