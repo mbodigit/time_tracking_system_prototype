@@ -88,7 +88,8 @@ const monthly = async (req, res) => {
             balanceMinutes: 0,
             absenceMinutes: 0,
             settledMinutes: 0,
-            allowances: {}
+            allowances: {},
+            absences: {}
         };
 
         for (const reportRow of reportRows) {
@@ -101,6 +102,10 @@ const monthly = async (req, res) => {
 
             for (const [code, minutes] of Object.entries(reportRow.allowances)) {
                 totals.allowances[code] = (totals.allowances[code] || 0) + minutes;
+            }
+
+            for (const [code, minutes] of Object.entries(reportRow.absences || {})) {
+                totals.absences[code] = (totals.absences[code] || 0) + minutes;
             }
         }
 
