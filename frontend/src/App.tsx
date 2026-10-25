@@ -3,7 +3,7 @@ import { LoginPage } from "./pages/login-page/login-page";
 import { DashboardPage } from "./pages/dashboard-page/dashboard-page";
 import { ChangePasswordPage } from "./pages/change-password-page/change-password-page";
 import { ProtectedRoute } from "./components/protected-route/protected-route";
-import { AppLayout } from "./components/app-layout/app-layout";
+import { Layout } from "./components/layout/layout";
 import { TimeLogPage } from "./pages/time-log-page/time-log-page";
 import { RequestsPage } from "./pages/requests-page/requests-page";
 import { ReportsPage } from "./pages/reports-page/reports-page";
@@ -23,7 +23,7 @@ const App = () => {
         <Route
           element={
             <ProtectedRoute>
-              <AppLayout />
+              <Layout />
             </ProtectedRoute>
           }
         >
