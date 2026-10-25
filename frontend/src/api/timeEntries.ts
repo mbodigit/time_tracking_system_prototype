@@ -37,6 +37,7 @@ export interface MonthlyLog {
   employeeId: number;
   year: number;
   month: number;
+  isFlexible: boolean;
   allowanceTypes: AllowanceType[];
   days: TimeEntryDay[];
   summary: {
@@ -47,6 +48,7 @@ export interface MonthlyLog {
     balanceMinutes: number;
     absenceMinutes: number;
     settledMinutes: number;
+    frameMinutes?: number;
     allowances: Record<string, number>;
   };
 }

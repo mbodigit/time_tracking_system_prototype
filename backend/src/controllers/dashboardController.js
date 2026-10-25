@@ -35,6 +35,10 @@ const buildSummary = (report) => {
 };
 
 const collectMissingRecordDays = (report, currentDate) => {
+    if (report.isFlexible) {
+        return [];
+    }
+
     const dates = [];
 
     for (const day of report.days) {

@@ -11,7 +11,7 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
             e.employee_core_start, e.employee_core_end,
             e.employee_code, e.employee_first_name, e.employee_last_name,
             c.core_hour_start, c.core_hour_end,
-            w.work_schedule_is_shift,
+            w.work_schedule_is_shift, w.work_schedule_name,
             h.working_hour_num
          FROM Employees e
          LEFT JOIN CoreHours     c ON c.core_hour_id      = e.employee_core_hour_id
@@ -29,6 +29,7 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
     const templateStart = employee.employee_core_start || employee.core_hour_start;
     const templateEnd = employee.employee_core_end || employee.core_hour_end;
     const isShiftWorker = Boolean(employee.work_schedule_is_shift);
+    const isFlexible = employee.work_schedule_name === 'Kötetlen';
 
     const monthPrefix = `${yearNumber}-${String(monthNumber).padStart(2, '0')}`;
     const lastDayNumber = new Date(yearNumber, monthNumber, 0).getDate();
@@ -107,6 +108,114 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
 
             cursor = addDays(cursor, 1);
         }
+    }
+
+    if (isFlexible) {
+        const flexibleDays = [];
+        const flexibleAbsences = {};
+        let flexibleWorkedMinutes = 0;
+        let flexibleAbsenceMinutes = 0;
+        let workingDayCount = 0;
+
+        for (let dayNumber = 1; dayNumber <= lastDayNumber; dayNumber++) {
+            const date = `${monthPrefix}-${String(dayNumber).padStart(2, '0')}`;
+            const dayType = calendar[date] || 'workday';
+            const weekdayNumber = new Date(`${date}T00:00:00`).getDay();
+            const isWorkingDay = dayType === 'transferred'
+                || (dayType === 'workday' && weekdayNumber !== 0 && weekdayNumber !== 6);
+
+            const absence = absenceByDate[date];
+            const coversDay = Boolean(absence)
+                && absence.request_status === 'Jóváhagyva'
+                && absence.absence_rec_type === 0
+                && isWorkingDay;
+
+            const absenceInfo = absence
+                ? {
+                    id: absence.absence_id,
+                    name: absence.absence_name,
+                    isPaid: Boolean(absence.absence_is_paid),
+                    status: absence.request_status,
+                    coversDay
+                  }
+                : null;
+
+            if (!isWorkingDay) {
+                flexibleDays.push({
+                    id: null,
+                    date,
+                    dayType,
+                    workStart: null,
+                    workEnd: null,
+                    absence: absenceInfo,
+                    absenceMinutes: 0,
+                    isOrdered: false,
+                    presenceMinutes: 0,
+                    breakMinutes: 0,
+                    scheduledMinutes: null,
+                    balanceMinutes: null,
+                    workedMinutes: 0,
+                    settledMinutes: 0,
+                    allowances: {}
+                });
+                continue;
+            }
+
+            workingDayCount++;
+
+            const absenceMinutes = coversDay ? contractedMinutes : 0;
+            const workedMinutes = coversDay ? 0 : contractedMinutes;
+
+            flexibleAbsenceMinutes += absenceMinutes;
+            flexibleWorkedMinutes += workedMinutes;
+
+            if (absenceMinutes > 0) {
+                const payrollKey = absence.absence_payroll_code || absence.absence_name;
+                flexibleAbsences[payrollKey] =
+                    (flexibleAbsences[payrollKey] || 0) + absenceMinutes;
+            }
+
+            flexibleDays.push({
+                id: null,
+                date,
+                dayType,
+                workStart: null,
+                workEnd: null,
+                absence: absenceInfo,
+                absenceMinutes,
+                isOrdered: false,
+                presenceMinutes: 0,
+                breakMinutes: 0,
+                scheduledMinutes: contractedMinutes,
+                balanceMinutes: 0,
+                workedMinutes,
+                settledMinutes: contractedMinutes,
+                allowances: {}
+            });
+        }
+
+        return {
+            employeeId,
+            employeeCode: employee.employee_code,
+            employeeName: `${employee.employee_last_name} ${employee.employee_first_name}`,
+            year: yearNumber,
+            month: monthNumber,
+            isFlexible: true,
+            allowanceTypes,
+            days: flexibleDays,
+            summary: {
+                recordedDays: 0,
+                workedMinutes: flexibleWorkedMinutes,
+                presenceMinutes: 0,
+                breakMinutes: 0,
+                balanceMinutes: 0,
+                absenceMinutes: flexibleAbsenceMinutes,
+                settledMinutes: flexibleWorkedMinutes + flexibleAbsenceMinutes,
+                frameMinutes: contractedMinutes * workingDayCount,
+                allowances: {},
+                absences: flexibleAbsences
+            }
+        };
     }
 
     const rowsByDate = {};
@@ -293,6 +402,7 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
         employeeName: `${employee.employee_last_name} ${employee.employee_first_name}`,
         year: yearNumber,
         month: monthNumber,
+        isFlexible: false,
         allowanceTypes,
         days,
         summary: {
