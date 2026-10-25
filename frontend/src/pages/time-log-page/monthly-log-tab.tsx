@@ -27,9 +27,13 @@ const getDayLabel = (day: TimeEntryDay): string => {
 };
 
 const getRowClass = (day: TimeEntryDay): string => {
-  if (day.dayType === "holiday") return "bg-error/10";
-  if (day.dayType === "restday" || isWeekend(day.date)) return "bg-base-200";
-  return "";
+  if (day.dayType === "holiday") {
+    return "bg-error/5 hover:bg-error/15";
+  }
+  if (day.dayType === "restday" || isWeekend(day.date)) {
+    return "bg-base-200/60 hover:bg-base-300";
+  }
+  return "hover:bg-base-200";
 };
 
 export const MonthlyLogTab = () => {
