@@ -15,6 +15,7 @@ const MENU: MenuItem[] = [
   { path: "/admin-groups", label: "Csoportok", roles: ["Admin"] },
   { path: "/admin-calendar", label: "Központi naptár", roles: ["HR-Bér"] },
   { path: "/admin-org-structure", label: "Szervezet", roles: ["Admin"] },
+  { path: "/admin-employees", label: "Dolgozók és fiókok", roles: ["HR-Bér"] },
 ];
 
 export const AppMenu = () => {

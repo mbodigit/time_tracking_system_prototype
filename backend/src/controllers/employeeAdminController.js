@@ -220,25 +220,23 @@ const create = async (req, res) => {
     try {
         await connection.beginTransaction();
 
-        const [costCenters] = await connection.execute(
-            `SELECT cost_center_code, cost_center_next_employee_seq
-             FROM CostCenters WHERE cost_center_id = ? FOR UPDATE`,
-            [Number(body.costCenterId)]
+        const [settings] = await connection.execute(
+            `SELECT company_next_employee_code
+             FROM CompanySettings WHERE company_settings_id = 1 FOR UPDATE`
         );
 
-        if (costCenters.length === 0) {
+        if (settings.length === 0) {
             await connection.rollback();
-            return res.status(400).json({ message: 'A költséghely nem található.' });
+            return res.status(500).json({ message: 'A cégadatok nem érhetők el.' });
         }
 
-        const sequence = costCenters[0].cost_center_next_employee_seq;
-        const employeeCode =
-            `${costCenters[0].cost_center_code}-${String(sequence).padStart(3, '0')}`;
+        const sequence = settings[0].company_next_employee_code;
+        const employeeCode = String(sequence).padStart(5, '0');
 
         await connection.execute(
-            `UPDATE CostCenters SET cost_center_next_employee_seq = ?
-             WHERE cost_center_id = ?`,
-            [sequence + 1, Number(body.costCenterId)]
+            `UPDATE CompanySettings SET company_next_employee_code = ?
+             WHERE company_settings_id = 1`,
+            [sequence + 1]
         );
 
         const [result] = await connection.execute(
