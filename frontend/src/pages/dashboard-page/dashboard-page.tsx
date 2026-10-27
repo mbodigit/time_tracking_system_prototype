@@ -1,4 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { getOverview, type DashboardOverview } from "../../api/dashboard";
 import { ApiError } from "../../api/client";
 import { getCurrentUser } from "../../utils/auth";
@@ -17,6 +30,22 @@ const difference = (current: number, previous: number | undefined) => {
   }
   return current - previous;
 };
+
+const CHART_COLORS = [
+  "#2563eb",
+  "#0ea5e9",
+  "#f59e0b",
+  "#ef4444",
+  "#10b981",
+  "#8b5cf6",
+  "#64748b",
+];
+
+const toHours = (minutes: number): number =>
+  Math.round((minutes / 60) * 100) / 100;
+
+const hourLabel = (value: number): string =>
+  `${value.toString().replace(".", ",")} óra`;
 
 export const DashboardPage = () => {
   const [period, setPeriod] = useState(getCurrentMonth());
@@ -53,6 +82,35 @@ export const DashboardPage = () => {
   const workedDifference = current
     ? difference(current.workedMinutes, previous?.workedMinutes)
     : null;
+
+  const comparisonData = current
+    ? [
+        {
+          name: "Ledolgozott",
+          "Ez a hónap": toHours(current.workedMinutes),
+          "Előző hónap": toHours(previous?.workedMinutes ?? 0),
+        },
+        {
+          name: "Jogcímmel fedett",
+          "Ez a hónap": toHours(current.absenceMinutes),
+          "Előző hónap": toHours(previous?.absenceMinutes ?? 0),
+        },
+        {
+          name: "Elszámolt",
+          "Ez a hónap": toHours(current.settledMinutes),
+          "Előző hónap": toHours(previous?.settledMinutes ?? 0),
+        },
+      ]
+    : [];
+
+  const allowanceData = current
+    ? allowanceTypes
+        .filter((type) => current.allowances[type.code])
+        .map((type) => ({
+          name: type.name,
+          value: toHours(current.allowances[type.code]),
+        }))
+    : [];
 
   return (
     <div className="space-y-4">
@@ -149,6 +207,13 @@ export const DashboardPage = () => {
                 <p className="text-3xl font-bold">
                   {overview.leave.remainingDays} nap
                 </p>
+
+                <progress
+                  className="progress progress-primary w-full"
+                  value={overview.leave.usedDays}
+                  max={overview.leave.entitlementDays || 1}
+                />
+
                 <p className="text-sm opacity-70">
                   {overview.leave.usedDays} nap felhasználva a keretből (
                   {overview.leave.entitlementDays} nap)
@@ -188,6 +253,80 @@ export const DashboardPage = () => {
                 </div>
               </div>
             )}
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="card bg-base-200">
+              <div className="card-body">
+                <h2 className="card-title text-base">
+                  Összehasonlítás az előző hónappal
+                </h2>
+                <p className="text-sm opacity-70">
+                  {formatMonth(period.year, period.month)} és{" "}
+                  {formatMonth(
+                    overview.previousPeriod.year,
+                    overview.previousPeriod.month,
+                  )}
+                </p>
+
+                <div className="h-72 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={comparisonData}>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                      <XAxis dataKey="name" fontSize={12} />
+                      <YAxis fontSize={12} unit=" ó" />
+                      <Tooltip
+                        formatter={(value) => hourLabel(Number(value))}
+                      />
+                      <Legend />
+                      <Bar dataKey="Ez a hónap" fill={CHART_COLORS[0]} />
+                      <Bar dataKey="Előző hónap" fill={CHART_COLORS[6]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+
+            <div className="card bg-base-200">
+              <div className="card-body">
+                <h2 className="card-title text-base">Pótlékok megoszlása</h2>
+                <p className="text-sm opacity-70">
+                  {formatMonth(period.year, period.month)}
+                </p>
+
+                {allowanceData.length === 0 ? (
+                  <p className="text-sm opacity-70 py-12 text-center">
+                    Ebben a hónapban nem keletkezett pótlék.
+                  </p>
+                ) : (
+                  <div className="h-72 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={allowanceData}
+                          dataKey="value"
+                          nameKey="name"
+                          innerRadius="45%"
+                          outerRadius="75%"
+                          paddingAngle={2}
+                        >
+                          {allowanceData.map((entry, index) => (
+                            <Cell
+                              key={entry.name}
+                              fill={CHART_COLORS[index % CHART_COLORS.length]}
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          formatter={(value) => hourLabel(Number(value))}
+                        />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           <div className="card bg-base-200">

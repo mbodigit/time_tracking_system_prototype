@@ -1,0 +1,24 @@
+info:
+  name: statisztika ismeretlen bontassal
+  type: http
+  seq: 121
+
+http:
+  method: GET
+  url: "{{baseUrl}}/reports/statistics?year={{ev}}&month={{honap}}&dimension=csillagjegy"
+  auth:
+    type: bearer
+    token: "{{hrToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "400"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

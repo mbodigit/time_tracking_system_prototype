@@ -8,7 +8,7 @@ export interface DashboardSummary {
   balanceMinutes: number;
   minusMinutes: number;
   allowances: Record<string, number>;
-  absences: Record<string, number>;
+  absences: Record<string, { minutes: number; payrollCode: string | null }>;
 }
 
 export interface DashboardOverview {
