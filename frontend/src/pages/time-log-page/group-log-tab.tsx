@@ -7,6 +7,11 @@ import {
 } from "../../api/timeEntries";
 import { ApiError } from "../../api/client";
 import { formatTime, getWeekdayName, isWeekend } from "../../utils/datetime";
+import {
+  useDataTable,
+  TableSearch,
+  SortableHeader,
+} from "../../components/data-table/data-table";
 
 const today = () => {
   const now = new Date();
@@ -17,6 +22,15 @@ const shiftDay = (date: string, offset: number) => {
   const value = new Date(`${date}T00:00:00`);
   value.setDate(value.getDate() + offset);
   return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
+};
+
+const dailySearchText = (item: DailyEmployee) =>
+  [item.name, item.code, item.workSchedule].filter(Boolean).join(" ");
+
+const dailySortValue = (item: DailyEmployee, key: string): number | string => {
+  if (key === "name") return item.name;
+  if (key === "schedule") return item.workSchedule ?? "";
+  return "";
 };
 
 type Draft = Record<
@@ -30,6 +44,12 @@ export const GroupLogTab = () => {
   const [dayType, setDayType] = useState("workday");
   const [draft, setDraft] = useState<Draft>({});
   const [results, setResults] = useState<BulkResult[]>([]);
+  const dailyTable = useDataTable({
+    rows: employees,
+    searchText: dailySearchText,
+    sortValue: dailySortValue,
+    initialSortKey: "name",
+  });
   const [errorMessage, setErrorMessage] = useState("");
   const [infoMessage, setInfoMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -204,12 +224,21 @@ export const GroupLogTab = () => {
         </div>
       )}
 
+      <TableSearch
+        table={dailyTable}
+        placeholder="Keresés dolgozó vagy kód szerint..."
+      />
+
       <div className="overflow-x-auto">
         <table className="table table-sm">
           <thead>
             <tr>
-              <th>Dolgozó</th>
-              <th>Munkarend</th>
+              <SortableHeader table={dailyTable} field="name" label="Dolgozó" />
+              <SortableHeader
+                table={dailyTable}
+                field="schedule"
+                label="Munkarend"
+              />
               <th>Kezdés</th>
               <th>Végzés</th>
               <th>Szünet</th>
@@ -217,7 +246,7 @@ export const GroupLogTab = () => {
             </tr>
           </thead>
           <tbody>
-            {employees.map((item) => {
+            {dailyTable.rows.map((item) => {
               const row = draft[item.id];
               const blocked =
                 Boolean(item.absence?.coversDay) ||
