@@ -6,12 +6,20 @@ import {
   type EmployeeOptions,
 } from "../../api/employeeAdmin";
 import { ApiError } from "../../api/client";
+import {
+  useDataTable,
+  TableSearch,
+  SortableHeader,
+} from "../../components/data-table/data-table";
 import { EmployeeModal } from "./employee-modal";
 import { AccountModal, type Credentials } from "./account-modal";
 
 type Tab = "employees" | "accounts";
 
-const searchText = (employee: AdminEmployee): string =>
+const fullName = (employee: AdminEmployee) =>
+  `${employee.lastName} ${employee.firstName}`;
+
+const employeeSearchText = (employee: AdminEmployee) =>
   [
     employee.code,
     employee.lastName,
@@ -22,17 +30,53 @@ const searchText = (employee: AdminEmployee): string =>
     employee.statusName,
     employee.workScheduleName,
     employee.username,
-    employee.userRoleName,
   ]
     .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
+    .join(" ");
+
+const employeeSortValue = (
+  employee: AdminEmployee,
+  key: string,
+): number | string => {
+  if (key === "code") return employee.code;
+  if (key === "name") return fullName(employee);
+  if (key === "group") return employee.groupName ?? "";
+  if (key === "category") return employee.categoryName ?? "";
+  if (key === "status") return employee.statusName ?? "";
+  if (key === "schedule") return employee.workScheduleName ?? "";
+  if (key === "account") return employee.username ?? "";
+  return "";
+};
+
+const accountSearchText = (employee: AdminEmployee) =>
+  [
+    employee.username,
+    employee.code,
+    employee.lastName,
+    employee.firstName,
+    employee.userRoleName,
+    employee.statusName,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+const accountSortValue = (
+  employee: AdminEmployee,
+  key: string,
+): number | string => {
+  if (key === "username") return employee.username ?? "";
+  if (key === "name") return fullName(employee);
+  if (key === "code") return employee.code;
+  if (key === "role") return employee.userRoleName ?? "";
+  if (key === "status") return employee.statusName ?? "";
+  if (key === "active") return employee.userActive ? 1 : 0;
+  return "";
+};
 
 export const EmployeesPage = () => {
   const [employees, setEmployees] = useState<AdminEmployee[]>([]);
   const [options, setOptions] = useState<EmployeeOptions | null>(null);
   const [tab, setTab] = useState<Tab>("employees");
-  const [search, setSearch] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [infoMessage, setInfoMessage] = useState("");
   const [credentials, setCredentials] = useState<Credentials | null>(null);
@@ -62,19 +106,9 @@ export const EmployeesPage = () => {
       .catch(() => setOptions(null));
   }, [load]);
 
-  const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase();
-
-    if (!term) {
-      return employees;
-    }
-
-    return employees.filter((employee) => searchText(employee).includes(term));
-  }, [employees, search]);
-
-  const accountRows = useMemo(
-    () => filtered.filter((employee) => employee.userId),
-    [filtered],
+  const accountSource = useMemo(
+    () => employees.filter((employee) => employee.userId),
+    [employees],
   );
 
   const candidates = useMemo(
@@ -82,6 +116,22 @@ export const EmployeesPage = () => {
       employees.filter((employee) => !employee.userId && employee.workEmail),
     [employees],
   );
+
+  const employeeTable = useDataTable({
+    rows: employees,
+    searchText: employeeSearchText,
+    sortValue: employeeSortValue,
+    initialSortKey: "name",
+  });
+
+  const accountTable = useDataTable({
+    rows: accountSource,
+    searchText: accountSearchText,
+    sortValue: accountSortValue,
+    initialSortKey: "username",
+  });
+
+  const activeTable = tab === "employees" ? employeeTable : accountTable;
 
   const handleSaved = async (message: string, next?: Credentials) => {
     setErrorMessage("");
@@ -97,13 +147,16 @@ export const EmployeesPage = () => {
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-bold">Dolgozók és fiókok</h1>
 
-        <input
-          type="search"
-          className="input input-sm input-bordered ml-auto w-64"
-          placeholder="Keresés név, kód, csoport szerint..."
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-        />
+        <div className="ml-auto">
+          <TableSearch
+            table={activeTable}
+            placeholder={
+              tab === "employees"
+                ? "Keresés név, kód, csoport szerint..."
+                : "Keresés felhasználónév, szerepkör szerint..."
+            }
+          />
+        </div>
 
         {tab === "employees" ? (
           <button
@@ -135,14 +188,14 @@ export const EmployeesPage = () => {
           className={`tab ${tab === "employees" ? "tab-active" : ""}`}
           onClick={() => setTab("employees")}
         >
-          Dolgozók ({filtered.length})
+          Dolgozók ({employeeTable.rows.length})
         </button>
         <button
           role="tab"
           className={`tab ${tab === "accounts" ? "tab-active" : ""}`}
           onClick={() => setTab("accounts")}
         >
-          Fiókok ({accountRows.length})
+          Fiókok ({accountTable.rows.length})
         </button>
       </div>
 
@@ -180,23 +233,49 @@ export const EmployeesPage = () => {
           <table className="table table-sm">
             <thead>
               <tr>
-                <th>Kód</th>
-                <th>Név</th>
-                <th>Csoport</th>
-                <th>Állománycsoport</th>
-                <th>Státusz</th>
-                <th>Munkarend</th>
-                <th>Fiók</th>
+                <SortableHeader
+                  table={employeeTable}
+                  field="code"
+                  label="Kód"
+                />
+                <SortableHeader
+                  table={employeeTable}
+                  field="name"
+                  label="Név"
+                />
+                <SortableHeader
+                  table={employeeTable}
+                  field="group"
+                  label="Csoport"
+                />
+                <SortableHeader
+                  table={employeeTable}
+                  field="category"
+                  label="Állománycsoport"
+                />
+                <SortableHeader
+                  table={employeeTable}
+                  field="status"
+                  label="Státusz"
+                />
+                <SortableHeader
+                  table={employeeTable}
+                  field="schedule"
+                  label="Munkarend"
+                />
+                <SortableHeader
+                  table={employeeTable}
+                  field="account"
+                  label="Fiók"
+                />
                 <th />
               </tr>
             </thead>
             <tbody>
-              {filtered.map((employee) => (
+              {employeeTable.rows.map((employee) => (
                 <tr key={employee.id} className="hover">
                   <td className="whitespace-nowrap">{employee.code}</td>
-                  <td className="whitespace-nowrap">
-                    {employee.lastName} {employee.firstName}
-                  </td>
+                  <td className="whitespace-nowrap">{fullName(employee)}</td>
                   <td>{employee.groupName ?? "-"}</td>
                   <td>{employee.categoryName ?? "-"}</td>
                   <td>
@@ -228,7 +307,7 @@ export const EmployeesPage = () => {
                 </tr>
               ))}
 
-              {filtered.length === 0 && (
+              {employeeTable.rows.length === 0 && (
                 <tr>
                   <td colSpan={8} className="text-center opacity-60">
                     Nincs a keresésnek megfelelő dolgozó.
@@ -245,22 +324,40 @@ export const EmployeesPage = () => {
           <table className="table table-sm">
             <thead>
               <tr>
-                <th>Felhasználónév</th>
-                <th>Dolgozó</th>
-                <th>Kód</th>
-                <th>Szerepkör</th>
-                <th>Dolgozó státusza</th>
-                <th>Fiók állapota</th>
+                <SortableHeader
+                  table={accountTable}
+                  field="username"
+                  label="Felhasználónév"
+                />
+                <SortableHeader
+                  table={accountTable}
+                  field="name"
+                  label="Dolgozó"
+                />
+                <SortableHeader table={accountTable} field="code" label="Kód" />
+                <SortableHeader
+                  table={accountTable}
+                  field="role"
+                  label="Szerepkör"
+                />
+                <SortableHeader
+                  table={accountTable}
+                  field="status"
+                  label="Dolgozó státusza"
+                />
+                <SortableHeader
+                  table={accountTable}
+                  field="active"
+                  label="Fiók állapota"
+                />
                 <th />
               </tr>
             </thead>
             <tbody>
-              {accountRows.map((employee) => (
+              {accountTable.rows.map((employee) => (
                 <tr key={employee.id} className="hover">
                   <td className="whitespace-nowrap">{employee.username}</td>
-                  <td className="whitespace-nowrap">
-                    {employee.lastName} {employee.firstName}
-                  </td>
+                  <td className="whitespace-nowrap">{fullName(employee)}</td>
                   <td className="whitespace-nowrap">{employee.code}</td>
                   <td>{employee.userRoleName ?? "-"}</td>
                   <td>{employee.statusName ?? "-"}</td>
@@ -285,7 +382,7 @@ export const EmployeesPage = () => {
                 </tr>
               ))}
 
-              {accountRows.length === 0 && (
+              {accountTable.rows.length === 0 && (
                 <tr>
                   <td colSpan={7} className="text-center opacity-60">
                     Nincs a keresésnek megfelelő fiók.
