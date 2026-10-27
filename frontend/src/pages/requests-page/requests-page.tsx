@@ -10,6 +10,11 @@ import {
 import { listEmployees, type ScopeEmployee } from "../../api/lookups";
 import { ApiError } from "../../api/client";
 import { RequestForm } from "./request-form";
+import {
+  useDataTable,
+  TableSearch,
+  SortableHeader,
+} from "../../components/data-table/data-table";
 
 type Tab = "own" | "pending" | "ordered";
 
@@ -27,6 +32,35 @@ const statusLabel = (item: AbsenceRequest) => {
   return item.status;
 };
 
+const ownSearchText = (item: AbsenceRequest) =>
+  [item.absenceName, item.status, item.decisionReason, item.startDate]
+    .filter(Boolean)
+    .join(" ");
+
+const ownSortValue = (item: AbsenceRequest, key: string): number | string => {
+  if (key === "absence") return item.absenceName;
+  if (key === "period") return item.startDate;
+  if (key === "status") return statusLabel(item);
+  if (key === "reason") return item.decisionReason ?? "";
+  return "";
+};
+
+const pendingSearchText = (item: AbsenceRequest) =>
+  [item.employeeName, item.absenceName, item.message, item.startDate]
+    .filter(Boolean)
+    .join(" ");
+
+const pendingSortValue = (
+  item: AbsenceRequest,
+  key: string,
+): number | string => {
+  if (key === "employee") return item.employeeName ?? "";
+  if (key === "absence") return item.absenceName;
+  if (key === "period") return item.startDate;
+  if (key === "message") return item.message ?? "";
+  return "";
+};
+
 export const RequestsPage = () => {
   const [tab, setTab] = useState<Tab>("own");
   const [own, setOwn] = useState<AbsenceRequest[]>([]);
@@ -38,6 +72,21 @@ export const RequestsPage = () => {
 
   const [orderEmployeeId, setOrderEmployeeId] = useState(0);
   const [orderDate, setOrderDate] = useState("");
+
+  const ownTable = useDataTable({
+    rows: own,
+    searchText: ownSearchText,
+    sortValue: ownSortValue,
+    initialSortKey: "period",
+    initialDirection: "desc",
+  });
+
+  const pendingTable = useDataTable({
+    rows: pending,
+    searchText: pendingSearchText,
+    sortValue: pendingSortValue,
+    initialSortKey: "period",
+  });
 
   const load = useCallback(async () => {
     setErrorMessage("");
@@ -145,26 +194,48 @@ export const RequestsPage = () => {
 
       {tab === "own" && (
         <div className="space-y-3">
-          <button
-            className="btn btn-primary btn-sm"
-            onClick={() => setIsFormOpen(true)}
-          >
-            Új kérelem
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => setIsFormOpen(true)}
+            >
+              Új kérelem
+            </button>
+            <TableSearch
+              table={ownTable}
+              placeholder="Keresés jogcím, állapot szerint..."
+            />
+          </div>
 
           <div className="overflow-x-auto">
             <table className="table table-sm">
               <thead>
                 <tr>
-                  <th>Jogcím</th>
-                  <th>Időszak</th>
-                  <th>Állapot</th>
-                  <th>Indoklás</th>
+                  <SortableHeader
+                    table={ownTable}
+                    field="absence"
+                    label="Jogcím"
+                  />
+                  <SortableHeader
+                    table={ownTable}
+                    field="period"
+                    label="Időszak"
+                  />
+                  <SortableHeader
+                    table={ownTable}
+                    field="status"
+                    label="Állapot"
+                  />
+                  <SortableHeader
+                    table={ownTable}
+                    field="reason"
+                    label="Indoklás"
+                  />
                   <th />
                 </tr>
               </thead>
               <tbody>
-                {own.map((item) => (
+                {ownTable.rows.map((item) => (
                   <tr key={item.id}>
                     <td>{item.absenceName}</td>
                     <td className="whitespace-nowrap">
@@ -193,7 +264,7 @@ export const RequestsPage = () => {
                     </td>
                   </tr>
                 ))}
-                {own.length === 0 && (
+                {ownTable.rows.length === 0 && (
                   <tr>
                     <td colSpan={5} className="text-center opacity-60">
                       Még nincs leadott kérelem.
@@ -207,67 +278,90 @@ export const RequestsPage = () => {
       )}
 
       {tab === "pending" && (
-        <div className="overflow-x-auto">
-          <table className="table table-sm">
-            <thead>
-              <tr>
-                <th>Dolgozó</th>
-                <th>Jogcím</th>
-                <th>Időszak</th>
-                <th>Megjegyzés</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {pending.map((item) => (
-                <tr
-                  key={item.id}
-                  className={item.isExpired ? "bg-error/10" : ""}
-                >
-                  <td className="whitespace-nowrap">{item.employeeName}</td>
-                  <td>
-                    {item.absenceName}
-                    {item.isUrgent && (
-                      <span className="badge badge-sm badge-error ml-2">
-                        sürgős
-                      </span>
-                    )}
-                    {item.isExpired && (
-                      <span className="badge badge-sm badge-ghost ml-2">
-                        lejárt
-                      </span>
-                    )}
-                  </td>
-                  <td className="whitespace-nowrap">
-                    {item.startDate}
-                    {item.endDate !== item.startDate && ` – ${item.endDate}`}
-                  </td>
-                  <td className="text-sm">{item.message ?? "-"}</td>
-                  <td className="whitespace-nowrap">
-                    <button
-                      className="btn btn-xs btn-success mr-2"
-                      onClick={() => handleDecide(item, true)}
-                    >
-                      Jóváhagyás
-                    </button>
-                    <button
-                      className="btn btn-xs btn-error"
-                      onClick={() => handleDecide(item, false)}
-                    >
-                      Elutasítás
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {pending.length === 0 && (
+        <div className="space-y-3">
+          <TableSearch
+            table={pendingTable}
+            placeholder="Keresés dolgozó, jogcím szerint..."
+          />
+
+          <div className="overflow-x-auto">
+            <table className="table table-sm">
+              <thead>
                 <tr>
-                  <td colSpan={5} className="text-center opacity-60">
-                    Nincs elbírálásra váró kérelem.
-                  </td>
+                  <SortableHeader
+                    table={pendingTable}
+                    field="employee"
+                    label="Dolgozó"
+                  />
+                  <SortableHeader
+                    table={pendingTable}
+                    field="absence"
+                    label="Jogcím"
+                  />
+                  <SortableHeader
+                    table={pendingTable}
+                    field="period"
+                    label="Időszak"
+                  />
+                  <SortableHeader
+                    table={pendingTable}
+                    field="message"
+                    label="Megjegyzés"
+                  />
+                  <th />
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {pendingTable.rows.map((item) => (
+                  <tr
+                    key={item.id}
+                    className={item.isExpired ? "bg-error/10" : ""}
+                  >
+                    <td className="whitespace-nowrap">{item.employeeName}</td>
+                    <td>
+                      {item.absenceName}
+                      {item.isUrgent && (
+                        <span className="badge badge-sm badge-error ml-2">
+                          sürgős
+                        </span>
+                      )}
+                      {item.isExpired && (
+                        <span className="badge badge-sm badge-ghost ml-2">
+                          lejárt
+                        </span>
+                      )}
+                    </td>
+                    <td className="whitespace-nowrap">
+                      {item.startDate}
+                      {item.endDate !== item.startDate && ` – ${item.endDate}`}
+                    </td>
+                    <td className="text-sm">{item.message ?? "-"}</td>
+                    <td className="whitespace-nowrap">
+                      <button
+                        className="btn btn-xs btn-success mr-2"
+                        onClick={() => handleDecide(item, true)}
+                      >
+                        Jóváhagyás
+                      </button>
+                      <button
+                        className="btn btn-xs btn-error"
+                        onClick={() => handleDecide(item, false)}
+                      >
+                        Elutasítás
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {pendingTable.rows.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="text-center opacity-60">
+                      Nincs elbírálásra váró kérelem.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
