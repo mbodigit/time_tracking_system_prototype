@@ -5,7 +5,7 @@ const pool = require('../config/db');
 const PASSWORD_ALPHABET =
     'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
 const PASSWORD_LENGTH = 12;
-const CLOSED_STATUSES = ['Kilépett', 'Elhunyt'];
+const ADMIN_ROLE = 'Admin';
 
 const generatePassword = () => {
     let password = '';
@@ -456,10 +456,9 @@ const updateUser = async (req, res) => {
 
     try {
         const [users] = await pool.execute(
-            `SELECT u.user_id, st.employee_status_name
+            `SELECT u.user_id, r.user_role_name
              FROM Users u
-             JOIN Employees e      ON e.employee_id        = u.user_employee_id
-             JOIN EmployeeStatus st ON st.employee_status_id = e.employee_status_id
+             JOIN UserRoles r ON r.user_role_id = u.user_role_id
              WHERE u.user_id = ?`,
             [userId]
         );
@@ -468,10 +467,29 @@ const updateUser = async (req, res) => {
             return res.status(404).json({ message: 'A felhasználói fiók nem található.' });
         }
 
-        if (isActive === false && !CLOSED_STATUSES.includes(users[0].employee_status_name)) {
-            return res.status(409).json({
-                message: 'A fiók csak Kilépett vagy Elhunyt státuszú dolgozónál tiltható le.'
-            });
+        if (isActive === false) {
+            if (userId === Number(req.user?.userId)) {
+                return res.status(409).json({
+                    message: 'A saját fiók nem tiltható le.'
+                });
+            }
+
+            if (users[0].user_role_name === ADMIN_ROLE) {
+                const [admins] = await pool.execute(
+                    `SELECT COUNT(*) AS aktiv_admin
+                     FROM Users u
+                     JOIN UserRoles r ON r.user_role_id = u.user_role_id
+                     WHERE r.user_role_name = ? AND u.user_status = 1`,
+                    [ADMIN_ROLE]
+                );
+
+                if (admins[0].aktiv_admin <= 1) {
+                    return res.status(409).json({
+                        message: 'Az utolsó aktív Admin fiók nem tiltható le, '
+                            + 'mert utána a fiókok kezelése lehetetlenné válna.'
+                    });
+                }
+            }
         }
 
         if (resetPassword) {
