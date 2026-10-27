@@ -29,6 +29,12 @@ import {
   shiftMonth,
 } from "../../utils/datetime";
 
+import {
+  useDataTable,
+  TableSearch,
+  SortableHeader,
+} from "../../components/data-table/data-table";
+
 const EXPORT_ROLES = ["Vezető", "HR-Bér", "Admin"];
 
 const MEASURES: {
@@ -50,7 +56,17 @@ const MEASURES: {
 const toHours = (minutes: number): number =>
   Math.round((minutes / 60) * 100) / 100;
 
-type SortDirection = "asc" | "desc";
+const reportSearchText = (row: ReportRow) =>
+  `${row.employeeName} ${row.employeeCode}`;
+
+const reportSortValue = (row: ReportRow, key: string): number | string => {
+  if (key === "employeeName") return row.employeeName;
+  if (key === "employeeGroup") return row.employeeGroup ?? "";
+  if (key.startsWith("allowance:")) {
+    return row.allowances[key.slice("allowance:".length)] ?? 0;
+  }
+  return (row as unknown as Record<string, number>)[key] ?? 0;
+};
 
 export const ReportsPage = () => {
   const [tab, setTab] = useState<"employees" | "statistics">("employees");
@@ -58,10 +74,6 @@ export const ReportsPage = () => {
   const [period, setPeriod] = useState(getCurrentMonth());
   const [employeeId, setEmployeeId] = useState<number | null>(null);
   const [groupId, setGroupId] = useState<number | null>(null);
-
-  const [search, setSearch] = useState("");
-  const [sortKey, setSortKey] = useState("employeeName");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
   const [dimension, setDimension] = useState("workSchedule");
   const [measure, setMeasure] = useState<keyof StatisticsRow>("workedMinutes");
@@ -174,50 +186,12 @@ export const ReportsPage = () => {
 
   const allowanceTypes = report?.allowanceTypes ?? [];
 
-  const sortValue = (row: ReportRow, key: string): number | string => {
-    if (key === "employeeName") return row.employeeName;
-    if (key === "employeeGroup") return row.employeeGroup ?? "";
-    if (key.startsWith("allowance:")) {
-      return row.allowances[key.slice("allowance:".length)] ?? 0;
-    }
-    return (row as unknown as Record<string, number>)[key] ?? 0;
-  };
-
-  const handleSort = (key: string) => {
-    if (sortKey === key) {
-      setSortDirection((direction) => (direction === "asc" ? "desc" : "asc"));
-      return;
-    }
-    setSortKey(key);
-    setSortDirection("asc");
-  };
-
-  const sortIndicator = (key: string) =>
-    sortKey === key ? (sortDirection === "asc" ? " ▲" : " ▼") : "";
-
-  const visibleRows = useMemo(() => {
-    const term = search.trim().toLowerCase();
-
-    const rows = (report?.employees ?? []).filter((row) => {
-      if (!term) return true;
-      return (
-        row.employeeName.toLowerCase().includes(term) ||
-        row.employeeCode.toLowerCase().includes(term)
-      );
-    });
-
-    return [...rows].sort((a, b) => {
-      const left = sortValue(a, sortKey);
-      const right = sortValue(b, sortKey);
-
-      const result =
-        typeof left === "string" && typeof right === "string"
-          ? left.localeCompare(right, "hu")
-          : Number(left) - Number(right);
-
-      return sortDirection === "asc" ? result : -result;
-    });
-  }, [report, search, sortKey, sortDirection]);
+  const reportTable = useDataTable({
+    rows: report?.employees ?? [],
+    searchText: reportSearchText,
+    sortValue: reportSortValue,
+    initialSortKey: "employeeName",
+  });
 
   const visibleTotals = useMemo(() => {
     const totals = {
@@ -230,7 +204,7 @@ export const ReportsPage = () => {
       allowances: {} as Record<string, number>,
     };
 
-    for (const row of visibleRows) {
+    for (const row of reportTable.rows) {
       totals.workedMinutes += row.workedMinutes;
       totals.presenceMinutes += row.presenceMinutes;
       totals.breakMinutes += row.breakMinutes;
@@ -244,7 +218,7 @@ export const ReportsPage = () => {
     }
 
     return totals;
-  }, [visibleRows]);
+  }, [reportTable.rows]);
 
   const activeMeasure =
     MEASURES.find((item) => item.key === measure) ?? MEASURES[1];
@@ -359,76 +333,64 @@ export const ReportsPage = () => {
 
       {tab === "employees" && report && (
         <>
-          <input
-            type="search"
-            className="input input-sm input-bordered w-72"
+          <TableSearch
+            table={reportTable}
             placeholder="Keresés névre vagy dolgozói kódra"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            className="input input-sm input-bordered w-72"
           />
 
           <div className="overflow-x-auto">
             <table className="table table-sm table-pin-rows">
               <thead>
                 <tr>
-                  <th
-                    className="cursor-pointer"
-                    onClick={() => handleSort("employeeName")}
-                  >
-                    Dolgozó{sortIndicator("employeeName")}
-                  </th>
-                  <th
-                    className="cursor-pointer"
-                    onClick={() => handleSort("employeeGroup")}
-                  >
-                    Csoport{sortIndicator("employeeGroup")}
-                  </th>
-                  <th
-                    className="cursor-pointer"
-                    onClick={() => handleSort("recordedDays")}
-                  >
-                    Rögzített napok{sortIndicator("recordedDays")}
-                  </th>
-                  <th
-                    className="cursor-pointer"
-                    onClick={() => handleSort("workedMinutes")}
-                  >
-                    Ledolgozott{sortIndicator("workedMinutes")}
-                  </th>
-                  <th
-                    className="cursor-pointer"
-                    onClick={() => handleSort("absenceMinutes")}
-                  >
-                    Jogcímmel fedett{sortIndicator("absenceMinutes")}
-                  </th>
-                  <th
-                    className="cursor-pointer"
-                    onClick={() => handleSort("settledMinutes")}
-                  >
-                    Elszámolt{sortIndicator("settledMinutes")}
-                  </th>
-                  <th
-                    className="cursor-pointer"
-                    onClick={() => handleSort("balanceMinutes")}
-                  >
-                    Egyenleg{sortIndicator("balanceMinutes")}
-                  </th>
+                  <SortableHeader
+                    table={reportTable}
+                    field="employeeName"
+                    label="Dolgozó"
+                  />
+                  <SortableHeader
+                    table={reportTable}
+                    field="employeeGroup"
+                    label="Csoport"
+                  />
+                  <SortableHeader
+                    table={reportTable}
+                    field="recordedDays"
+                    label="Rögzített napok"
+                  />
+                  <SortableHeader
+                    table={reportTable}
+                    field="workedMinutes"
+                    label="Ledolgozott"
+                  />
+                  <SortableHeader
+                    table={reportTable}
+                    field="absenceMinutes"
+                    label="Jogcímmel fedett"
+                  />
+                  <SortableHeader
+                    table={reportTable}
+                    field="settledMinutes"
+                    label="Elszámolt"
+                  />
+                  <SortableHeader
+                    table={reportTable}
+                    field="balanceMinutes"
+                    label="Egyenleg"
+                  />
                   {allowanceTypes.map((type) => (
-                    <th
+                    <SortableHeader
                       key={type.code}
-                      className="cursor-pointer"
-                      onClick={() => handleSort(`allowance:${type.code}`)}
-                    >
-                      {type.name}
-                      <div className="font-normal opacity-60">
-                        {type.percent}%{sortIndicator(`allowance:${type.code}`)}
-                      </div>
-                    </th>
+                      table={reportTable}
+                      field={`allowance:${type.code}`}
+                      label={type.name}
+                      sublabel={`${type.percent}%`}
+                    />
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {visibleRows.map((row) => (
+                {reportTable.rows.map((row) => (
                   <tr key={row.employeeId} className="hover:bg-base-200">
                     <td className="whitespace-nowrap">
                       {row.employeeName}
@@ -454,7 +416,7 @@ export const ReportsPage = () => {
                   </tr>
                 ))}
 
-                {visibleRows.length === 0 && (
+                {reportTable.rows.length === 0 && (
                   <tr>
                     <td
                       colSpan={7 + allowanceTypes.length}
@@ -466,10 +428,10 @@ export const ReportsPage = () => {
                 )}
               </tbody>
 
-              {visibleRows.length > 0 && (
+              {reportTable.rows.length > 0 && (
                 <tfoot>
                   <tr className="font-bold">
-                    <td>Összesen ({visibleRows.length} fő)</td>
+                    <td>Összesen ({reportTable.rows.length} fő)</td>
                     <td />
                     <td />
                     <td>{formatMinutes(visibleTotals.workedMinutes)}</td>

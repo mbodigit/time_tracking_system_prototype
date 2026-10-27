@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 
 export type SortDirection = "asc" | "desc";
 
@@ -99,7 +99,8 @@ interface HeaderProps {
     "sortKey" | "sortDirection" | "toggleSort"
   >;
   field: string;
-  label: string;
+  label: ReactNode;
+  sublabel?: ReactNode;
   align?: "left" | "right";
 }
 
@@ -107,6 +108,7 @@ export const SortableHeader = ({
   table,
   field,
   label,
+  sublabel,
   align = "left",
 }: HeaderProps) => (
   <th
@@ -122,5 +124,6 @@ export const SortableHeader = ({
         ? " ▲"
         : " ▼"
       : ""}
+    {sublabel && <div className="font-normal opacity-60">{sublabel}</div>}
   </th>
 );
