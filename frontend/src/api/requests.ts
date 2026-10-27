@@ -26,8 +26,8 @@ export interface AbsenceRequest {
 export const listOwnRequests = () =>
   apiGet<{ requests: AbsenceRequest[] }>("/requests");
 
-export const listPendingRequests = () =>
-  apiGet<{ requests: AbsenceRequest[] }>("/requests?scope=pending");
+export const listManagedRequests = () =>
+  apiGet<{ requests: AbsenceRequest[] }>("/requests?scope=managed");
 
 export const createRequest = (payload: Record<string, unknown>) =>
   apiPost<{ message: string; id: number }>("/requests", payload);

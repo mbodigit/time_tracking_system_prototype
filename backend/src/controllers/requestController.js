@@ -161,10 +161,12 @@ const create = async (req, res) => {
 };
 
 const list = async (req, res) => {
-    const pendingOnly = req.query.scope === 'pending';
+    const scope = req.query.scope;
+    const isManaged = scope === 'pending' || scope === 'managed';
+    const pendingOnly = scope === 'pending';
 
     try {
-        if (!pendingOnly) {
+        if (!isManaged) {
             const [rows] = await pool.execute(
                 `SELECT ${SELECT_FIELDS} ${FROM_CLAUSE}
                  WHERE r.request_employee_id = ?
@@ -187,11 +189,15 @@ const list = async (req, res) => {
 
         const placeholders = others.map(() => '?').join(', ');
 
+        const statusFilter = pendingOnly
+            ? `AND r.request_status = 'Függőben'`
+            : '';
+
         const [rows] = await pool.execute(
             `SELECT ${SELECT_FIELDS} ${FROM_CLAUSE}
              WHERE r.request_employee_id IN (${placeholders})
-               AND r.request_status = 'Függőben'
-             ORDER BY r.request_start_date`,
+               ${statusFilter}
+             ORDER BY r.request_start_date DESC`,
             others
         );
 
