@@ -27,6 +27,12 @@ router.patch('/admin/employees/:id',
     employeeAdminController.update
 );
 
+router.delete('/admin/employees/:id',
+    authenticateToken,
+    authorizePermission('admin.employees'),
+    employeeAdminController.remove
+);
+
 router.post('/admin/employees/:id/user',
     authenticateToken,
     authorizePermission('admin.users'),

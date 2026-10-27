@@ -13,7 +13,7 @@ variables:
     value: 2026-10-26
     description: FUTTATAS ELOTT az elozo napra allitando
   - name: csoportNap
-    value: 2026-10-24
+    value: 2026-10-25
     description: "FUTTATAS ELOTT: ket nappal a ma elott, a csoportos tesztekhez"
   - name: ev
     value: "2026"

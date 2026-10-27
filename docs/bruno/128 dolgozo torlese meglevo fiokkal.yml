@@ -1,17 +1,11 @@
 info:
-  name: fiok tiltasa aktiv dolgozonal
+  name: dolgozo torlese meglevo fiokkal
   type: http
-  seq: 116
+  seq: 128
 
 http:
-  method: PATCH
-  url: "{{baseUrl}}/admin/users/{{newUserId}}"
-  body:
-    type: json
-    data: |-
-      {
-        "isActive": false
-      }
+  method: DELETE
+  url: "{{baseUrl}}/admin/employees/{{newEmployeeId}}"
   auth:
     type: bearer
     token: "{{adminToken}}"

@@ -53,6 +53,14 @@ runtime:
       variable:
         name: empRoleId
         scope: runtime
+    - type: set-variable
+      phase: after-response
+      selector:
+        expression: res.body.roles[1].id
+        method: jsonq
+      variable:
+        name: empRoleId2
+        scope: runtime
 
 settings:
   encodeUrl: true

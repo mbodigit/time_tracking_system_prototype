@@ -5,7 +5,7 @@ const pool = require('../config/db');
 const PASSWORD_ALPHABET =
     'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
 const PASSWORD_LENGTH = 12;
-const CLOSED_STATUSES = ['Kilépett', 'Elhunyt'];
+const ADMIN_ROLE = 'Admin';
 
 const generatePassword = () => {
     let password = '';
@@ -35,7 +35,8 @@ const list = async (req, res) => {
                     e.employee_manager_id,
                     m.employee_last_name  AS manager_last_name,
                     m.employee_first_name AS manager_first_name,
-                    u.user_id, u.user_username, u.user_status
+                    u.user_id, u.user_username, u.user_status,
+                    u.user_role_id, r.user_role_name
              FROM Employees e
              LEFT JOIN UserGroups         g   ON g.user_group_id         = e.employee_user_group_id
              LEFT JOIN EmployeeCategories cat ON cat.employee_category_id = e.employee_category_id
@@ -46,6 +47,7 @@ const list = async (req, res) => {
              LEFT JOIN CoreHours          ch  ON ch.core_hour_id          = e.employee_core_hour_id
              LEFT JOIN Employees          m   ON m.employee_id            = e.employee_manager_id
              LEFT JOIN Users              u   ON u.user_employee_id       = e.employee_id
+             LEFT JOIN UserRoles          r   ON r.user_role_id           = u.user_role_id
              ORDER BY e.employee_last_name, e.employee_first_name`
         );
 
@@ -81,7 +83,9 @@ const list = async (req, res) => {
                 : null,
             userId: row.user_id,
             username: row.user_username,
-            userActive: row.user_id ? Boolean(row.user_status) : null
+            userActive: row.user_id ? Boolean(row.user_status) : null,
+            userRoleId: row.user_role_id,
+            userRoleName: row.user_role_name
         }));
 
         return res.status(200).json({ employees });
@@ -308,6 +312,74 @@ const update = async (req, res) => {
     }
 };
 
+const remove = async (req, res) => {
+    const employeeId = Number(req.params.id);
+
+    if (!employeeId) {
+        return res.status(400).json({ message: 'Érvénytelen dolgozói azonosító.' });
+    }
+
+    try {
+        const [employees] = await pool.execute(
+            `SELECT employee_code FROM Employees WHERE employee_id = ?`,
+            [employeeId]
+        );
+
+        if (employees.length === 0) {
+            return res.status(404).json({ message: 'A dolgozó nem található.' });
+        }
+
+        const [blockers] = await pool.execute(
+            `SELECT
+                (SELECT COUNT(*) FROM WorkingTimeTracking
+                  WHERE wtt_employee_id = ?)      AS entries,
+                (SELECT COUNT(*) FROM Requests
+                  WHERE request_employee_id = ?)  AS requests,
+                (SELECT COUNT(*) FROM Users
+                  WHERE user_employee_id = ?)     AS accounts,
+                (SELECT COUNT(*) FROM Employees
+                  WHERE employee_manager_id = ?)  AS subordinates`,
+            [employeeId, employeeId, employeeId, employeeId]
+        );
+
+        const reasons = [];
+
+        if (blockers[0].entries > 0) {
+            reasons.push('rögzített munkaidő-adat');
+        }
+
+        if (blockers[0].requests > 0) {
+            reasons.push('távolléti kérelem');
+        }
+
+        if (blockers[0].accounts > 0) {
+            reasons.push('felhasználói fiók');
+        }
+
+        if (blockers[0].subordinates > 0) {
+            reasons.push('hozzá rendelt beosztott');
+        }
+
+        if (reasons.length > 0) {
+            return res.status(409).json({
+                message: 'A dolgozó nem törölhető, mert tartozik hozzá: '
+                    + `${reasons.join(', ')}. Ilyen esetben a dolgozót `
+                    + 'Kilépett státuszra kell állítani.'
+            });
+        }
+
+        await pool.execute(
+            `DELETE FROM Employees WHERE employee_id = ?`,
+            [employeeId]
+        );
+
+        return res.status(200).json({ message: 'A dolgozó törlésre került.' });
+    } catch (error) {
+        console.error('Dolgozó törlési hiba:', error);
+        return res.status(500).json({ message: 'Szerver hiba.' });
+    }
+};
+
 const createUser = async (req, res) => {
     const employeeId = Number(req.params.id);
     const roleId = Number(req.body?.roleId);
@@ -376,7 +448,7 @@ const createUser = async (req, res) => {
 
 const updateUser = async (req, res) => {
     const userId = Number(req.params.id);
-    const { isActive, resetPassword } = req.body || {};
+    const { isActive, resetPassword, roleId } = req.body || {};
 
     if (!userId) {
         return res.status(400).json({ message: 'Érvénytelen felhasználói azonosító.' });
@@ -384,10 +456,9 @@ const updateUser = async (req, res) => {
 
     try {
         const [users] = await pool.execute(
-            `SELECT u.user_id, st.employee_status_name
+            `SELECT u.user_id, r.user_role_name
              FROM Users u
-             JOIN Employees e      ON e.employee_id        = u.user_employee_id
-             JOIN EmployeeStatus st ON st.employee_status_id = e.employee_status_id
+             JOIN UserRoles r ON r.user_role_id = u.user_role_id
              WHERE u.user_id = ?`,
             [userId]
         );
@@ -396,10 +467,29 @@ const updateUser = async (req, res) => {
             return res.status(404).json({ message: 'A felhasználói fiók nem található.' });
         }
 
-        if (isActive === false && !CLOSED_STATUSES.includes(users[0].employee_status_name)) {
-            return res.status(409).json({
-                message: 'A fiók csak Kilépett vagy Elhunyt státuszú dolgozónál tiltható le.'
-            });
+        if (isActive === false) {
+            if (userId === Number(req.user?.userId)) {
+                return res.status(409).json({
+                    message: 'A saját fiók nem tiltható le.'
+                });
+            }
+
+            if (users[0].user_role_name === ADMIN_ROLE) {
+                const [admins] = await pool.execute(
+                    `SELECT COUNT(*) AS aktiv_admin
+                     FROM Users u
+                     JOIN UserRoles r ON r.user_role_id = u.user_role_id
+                     WHERE r.user_role_name = ? AND u.user_status = 1`,
+                    [ADMIN_ROLE]
+                );
+
+                if (admins[0].aktiv_admin <= 1) {
+                    return res.status(409).json({
+                        message: 'Az utolsó aktív Admin fiók nem tiltható le, '
+                            + 'mert utána a fiókok kezelése lehetetlenné válna.'
+                    });
+                }
+            }
         }
 
         if (resetPassword) {
@@ -432,6 +522,17 @@ const updateUser = async (req, res) => {
             });
         }
 
+        if (Number(roleId)) {
+            await pool.execute(
+                `UPDATE Users SET user_role_id = ? WHERE user_id = ?`,
+                [Number(roleId), userId]
+            );
+
+            return res.status(200).json({
+                message: 'A fiók szerepköre módosításra került.'
+            });
+        }
+
         return res.status(400).json({ message: 'Nincs végrehajtható művelet a kérésben.' });
     } catch (error) {
         console.error('Fiók módosítási hiba:', error);
@@ -439,4 +540,4 @@ const updateUser = async (req, res) => {
     }
 };
 
-module.exports = { list, options, create, update, createUser, updateUser };
+module.exports = { list, options, create, update, remove, createUser, updateUser };
