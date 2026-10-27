@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   listOwnRequests,
-  listPendingRequests,
+  listManagedRequests,
   decideRequest,
   withdrawRequest,
   setOrdered,
@@ -32,6 +32,17 @@ const statusLabel = (item: AbsenceRequest) => {
   return item.status;
 };
 
+const STATUS_FILTERS = [
+  "Mind",
+  "Függőben",
+  "Jóváhagyva",
+  "Elutasítva",
+  "Visszavonva",
+];
+
+const formatStamp = (value: string | null) =>
+  value ? String(value).slice(0, 16).replace("T", " ") : "-";
+
 const ownSearchText = (item: AbsenceRequest) =>
   [item.absenceName, item.status, item.decisionReason, item.startDate]
     .filter(Boolean)
@@ -41,30 +52,43 @@ const ownSortValue = (item: AbsenceRequest, key: string): number | string => {
   if (key === "absence") return item.absenceName;
   if (key === "period") return item.startDate;
   if (key === "status") return statusLabel(item);
+  if (key === "createdAt") return item.createdAt;
+  if (key === "decisionBy") return item.decisionBy ?? "";
+  if (key === "decisionAt") return item.decisionAt ?? "";
   if (key === "reason") return item.decisionReason ?? "";
   return "";
 };
 
-const pendingSearchText = (item: AbsenceRequest) =>
-  [item.employeeName, item.absenceName, item.message, item.startDate]
+const managedSearchText = (item: AbsenceRequest) =>
+  [
+    item.employeeName,
+    item.absenceName,
+    item.message,
+    item.status,
+    item.decisionBy,
+    item.startDate,
+  ]
     .filter(Boolean)
     .join(" ");
 
-const pendingSortValue = (
+const managedSortValue = (
   item: AbsenceRequest,
   key: string,
 ): number | string => {
   if (key === "employee") return item.employeeName ?? "";
   if (key === "absence") return item.absenceName;
   if (key === "period") return item.startDate;
+  if (key === "status") return statusLabel(item);
   if (key === "message") return item.message ?? "";
+  if (key === "decisionBy") return item.decisionBy ?? "";
+  if (key === "decisionAt") return item.decisionAt ?? "";
   return "";
 };
 
 export const RequestsPage = () => {
   const [tab, setTab] = useState<Tab>("own");
   const [own, setOwn] = useState<AbsenceRequest[]>([]);
-  const [pending, setPending] = useState<AbsenceRequest[]>([]);
+  const [managed, setManaged] = useState<AbsenceRequest[]>([]);
   const [employees, setEmployees] = useState<ScopeEmployee[]>([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [infoMessage, setInfoMessage] = useState("");
@@ -73,19 +97,43 @@ export const RequestsPage = () => {
   const [orderEmployeeId, setOrderEmployeeId] = useState(0);
   const [orderDate, setOrderDate] = useState("");
 
+  const [ownStatus, setOwnStatus] = useState("Mind");
+  const [managedStatus, setManagedStatus] = useState("Függőben");
+
+  const ownRows = useMemo(
+    () =>
+      ownStatus === "Mind"
+        ? own
+        : own.filter((item) => item.status === ownStatus),
+    [own, ownStatus],
+  );
+
+  const managedRows = useMemo(
+    () =>
+      managedStatus === "Mind"
+        ? managed
+        : managed.filter((item) => item.status === managedStatus),
+    [managed, managedStatus],
+  );
+
+  const pendingCount = managed.filter(
+    (item) => item.status === "Függőben",
+  ).length;
+
   const ownTable = useDataTable({
-    rows: own,
+    rows: ownRows,
     searchText: ownSearchText,
     sortValue: ownSortValue,
     initialSortKey: "period",
     initialDirection: "desc",
   });
 
-  const pendingTable = useDataTable({
-    rows: pending,
-    searchText: pendingSearchText,
-    sortValue: pendingSortValue,
+  const managedTable = useDataTable({
+    rows: managedRows,
+    searchText: managedSearchText,
+    sortValue: managedSortValue,
     initialSortKey: "period",
+    initialDirection: "desc",
   });
 
   const load = useCallback(async () => {
@@ -100,8 +148,8 @@ export const RequestsPage = () => {
 
       const others = employeeData.employees.filter((item) => !item.isSelf);
       if (others.length > 0) {
-        const pendingData = await listPendingRequests();
-        setPending(pendingData.requests);
+        const managedData = await listManagedRequests();
+        setManaged(managedData.requests);
         setOrderEmployeeId((current) => current || others[0].id);
       }
     } catch (error) {
@@ -162,9 +210,9 @@ export const RequestsPage = () => {
             onClick={() => setTab("pending")}
           >
             Elbírálás
-            {pending.length > 0 && (
+            {pendingCount > 0 && (
               <span className="badge badge-sm badge-warning ml-2">
-                {pending.length}
+                {pendingCount}
               </span>
             )}
           </button>
@@ -195,16 +243,27 @@ export const RequestsPage = () => {
       {tab === "own" && (
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-3">
+            <TableSearch
+              table={ownTable}
+              placeholder="Keresés jogcím, elbíráló szerint..."
+            />
+            <select
+              className="select select-sm select-bordered"
+              value={ownStatus}
+              onChange={(event) => setOwnStatus(event.target.value)}
+            >
+              {STATUS_FILTERS.map((item) => (
+                <option key={item} value={item}>
+                  {item === "Mind" ? "Minden állapot" : item}
+                </option>
+              ))}
+            </select>
             <button
-              className="btn btn-primary btn-sm"
+              className="btn btn-primary btn-sm ml-auto"
               onClick={() => setIsFormOpen(true)}
             >
               Új kérelem
             </button>
-            <TableSearch
-              table={ownTable}
-              placeholder="Keresés jogcím, állapot szerint..."
-            />
           </div>
 
           <div className="overflow-x-auto">
@@ -228,6 +287,21 @@ export const RequestsPage = () => {
                   />
                   <SortableHeader
                     table={ownTable}
+                    field="createdAt"
+                    label="Beadva"
+                  />
+                  <SortableHeader
+                    table={ownTable}
+                    field="decisionBy"
+                    label="Elbíráló"
+                  />
+                  <SortableHeader
+                    table={ownTable}
+                    field="decisionAt"
+                    label="Elbírálva"
+                  />
+                  <SortableHeader
+                    table={ownTable}
                     field="reason"
                     label="Indoklás"
                   />
@@ -236,7 +310,7 @@ export const RequestsPage = () => {
               </thead>
               <tbody>
                 {ownTable.rows.map((item) => (
-                  <tr key={item.id}>
+                  <tr key={item.id} className="hover">
                     <td>{item.absenceName}</td>
                     <td className="whitespace-nowrap">
                       {item.startDate}
@@ -248,6 +322,13 @@ export const RequestsPage = () => {
                       >
                         {statusLabel(item)}
                       </span>
+                    </td>
+                    <td className="whitespace-nowrap text-sm">
+                      {formatStamp(item.createdAt)}
+                    </td>
+                    <td className="text-sm">{item.decisionBy ?? "-"}</td>
+                    <td className="whitespace-nowrap text-sm">
+                      {formatStamp(item.decisionAt)}
                     </td>
                     <td className="text-sm">{item.decisionReason ?? "-"}</td>
                     <td>
@@ -266,8 +347,8 @@ export const RequestsPage = () => {
                 ))}
                 {ownTable.rows.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="text-center opacity-60">
-                      Még nincs leadott kérelem.
+                    <td colSpan={8} className="text-center opacity-60">
+                      Nincs a szűrésnek megfelelő kérelem.
                     </td>
                   </tr>
                 )}
@@ -279,43 +360,71 @@ export const RequestsPage = () => {
 
       {tab === "pending" && (
         <div className="space-y-3">
-          <TableSearch
-            table={pendingTable}
-            placeholder="Keresés dolgozó, jogcím szerint..."
-          />
+          <div className="flex flex-wrap items-center gap-3">
+            <TableSearch
+              table={managedTable}
+              placeholder="Keresés dolgozó, jogcím, elbíráló szerint..."
+            />
+            <select
+              className="select select-sm select-bordered"
+              value={managedStatus}
+              onChange={(event) => setManagedStatus(event.target.value)}
+            >
+              {STATUS_FILTERS.map((item) => (
+                <option key={item} value={item}>
+                  {item === "Mind" ? "Minden állapot" : item}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <div className="overflow-x-auto">
             <table className="table table-sm">
               <thead>
                 <tr>
                   <SortableHeader
-                    table={pendingTable}
+                    table={managedTable}
                     field="employee"
                     label="Dolgozó"
                   />
                   <SortableHeader
-                    table={pendingTable}
+                    table={managedTable}
                     field="absence"
                     label="Jogcím"
                   />
                   <SortableHeader
-                    table={pendingTable}
+                    table={managedTable}
                     field="period"
                     label="Időszak"
                   />
                   <SortableHeader
-                    table={pendingTable}
+                    table={managedTable}
+                    field="status"
+                    label="Állapot"
+                  />
+                  <SortableHeader
+                    table={managedTable}
                     field="message"
                     label="Megjegyzés"
+                  />
+                  <SortableHeader
+                    table={managedTable}
+                    field="decisionBy"
+                    label="Elbíráló"
+                  />
+                  <SortableHeader
+                    table={managedTable}
+                    field="decisionAt"
+                    label="Elbírálva"
                   />
                   <th />
                 </tr>
               </thead>
               <tbody>
-                {pendingTable.rows.map((item) => (
+                {managedTable.rows.map((item) => (
                   <tr
                     key={item.id}
-                    className={item.isExpired ? "bg-error/10" : ""}
+                    className={item.isExpired ? "bg-error/10" : "hover"}
                   >
                     <td className="whitespace-nowrap">{item.employeeName}</td>
                     <td>
@@ -335,27 +444,44 @@ export const RequestsPage = () => {
                       {item.startDate}
                       {item.endDate !== item.startDate && ` – ${item.endDate}`}
                     </td>
+                    <td>
+                      <span
+                        className={`badge badge-sm ${STATUS_CLASS[item.status]}`}
+                      >
+                        {statusLabel(item)}
+                      </span>
+                    </td>
                     <td className="text-sm">{item.message ?? "-"}</td>
+                    <td className="text-sm">{item.decisionBy ?? "-"}</td>
+                    <td className="whitespace-nowrap text-sm">
+                      {formatStamp(item.decisionAt)}
+                    </td>
                     <td className="whitespace-nowrap">
-                      <button
-                        className="btn btn-xs btn-success mr-2"
-                        onClick={() => handleDecide(item, true)}
-                      >
-                        Jóváhagyás
-                      </button>
-                      <button
-                        className="btn btn-xs btn-error"
-                        onClick={() => handleDecide(item, false)}
-                      >
-                        Elutasítás
-                      </button>
+                      {item.status === "Függőben" ? (
+                        <>
+                          <button
+                            className="btn btn-xs btn-success mr-2"
+                            onClick={() => handleDecide(item, true)}
+                          >
+                            Jóváhagyás
+                          </button>
+                          <button
+                            className="btn btn-xs btn-error"
+                            onClick={() => handleDecide(item, false)}
+                          >
+                            Elutasítás
+                          </button>
+                        </>
+                      ) : (
+                        <span className="text-sm opacity-60">lezárva</span>
+                      )}
                     </td>
                   </tr>
                 ))}
-                {pendingTable.rows.length === 0 && (
+                {managedTable.rows.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="text-center opacity-60">
-                      Nincs elbírálásra váró kérelem.
+                    <td colSpan={8} className="text-center opacity-60">
+                      Nincs a szűrésnek megfelelő kérelem.
                     </td>
                   </tr>
                 )}
