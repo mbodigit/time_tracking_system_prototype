@@ -116,6 +116,40 @@ const emptyBucket = (key) => ({
     vacationMinutes: 0
 });
 
+const AGE_GROUPS = [
+    '25 év alatt', '25-34 év', '35-44 év', '45-54 év', '55 év és fölötte'
+];
+
+const GENDERS = ['Férfi', 'Nő'];
+
+const listDimensionValues = async (dimension) => {
+    if (dimension === 'ageGroup') {
+        return AGE_GROUPS;
+    }
+
+    if (dimension === 'gender') {
+        return GENDERS;
+    }
+
+    if (dimension === 'workSchedule') {
+        const [rows] = await pool.execute(
+            `SELECT work_schedule_name AS name FROM WorkSchedules
+             ORDER BY work_schedule_name`
+        );
+        return rows.map((row) => row.name);
+    }
+
+    if (dimension === 'category') {
+        const [rows] = await pool.execute(
+            `SELECT employee_category_name AS name FROM EmployeeCategories
+             ORDER BY employee_category_name`
+        );
+        return rows.map((row) => row.name);
+    }
+
+    return [];
+};
+
 const buildRows = async (ids, yearNumber, monthNumber) => {
     const reportRows = [];
     let allowanceTypes = [];
@@ -371,6 +405,12 @@ const statistics = async (req, res) => {
             const absences = report.summary.absences || {};
             bucket.sickMinutes += absences[SICK_ABSENCE]?.minutes || 0;
             bucket.vacationMinutes += absences[VACATION_ABSENCE]?.minutes || 0;
+        }
+
+        for (const value of await listDimensionValues(dimension)) {
+            if (!buckets[value]) {
+                buckets[value] = emptyBucket(value);
+            }
         }
 
         const rows = Object.values(buckets)
