@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiPatch } from "./client";
+import { apiGet, apiPost, apiPatch, apiDelete } from "./client";
 
 export interface AdminEmployee {
   id: number;
@@ -31,6 +31,8 @@ export interface AdminEmployee {
   userId: number | null;
   username: string | null;
   userActive: boolean | null;
+  userRoleId: number | null;
+  userRoleName: string | null;
 }
 
 export interface AdminOption {
@@ -98,3 +100,9 @@ export const resetUserPassword = (userId: number) =>
   apiPatch<{ message: string; password: string }>(`/admin/users/${userId}`, {
     resetPassword: true,
   });
+
+export const deleteEmployee = (id: number) =>
+  apiDelete<{ message: string }>(`/admin/employees/${id}`);
+
+export const setUserRole = (userId: number, roleId: number) =>
+  apiPatch<{ message: string }>(`/admin/users/${userId}`, { roleId });
