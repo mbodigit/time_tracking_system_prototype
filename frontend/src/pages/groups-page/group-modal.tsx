@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   createGroup,
   updateGroup,
   deleteGroup,
+  listAssignableEmployees,
+  updateGroupMembers,
+  type AssignableEmployee,
   type Group,
   type GroupOptions,
   type GroupPayload,
@@ -57,6 +60,68 @@ const Field = ({
   </label>
 );
 
+interface PersonListProps {
+  title: string;
+  people: AssignableEmployee[];
+  selected: number[];
+  showGroup?: boolean;
+  onToggle: (id: number) => void;
+  onToggleAll: () => void;
+}
+
+const PersonList = ({
+  title,
+  people,
+  selected,
+  showGroup,
+  onToggle,
+  onToggleAll,
+}: PersonListProps) => (
+  <div className="flex flex-col rounded border border-base-300">
+    <div className="flex items-center gap-2 border-b border-base-300 bg-base-200 px-2 py-1">
+      <input
+        type="checkbox"
+        className="checkbox checkbox-xs"
+        checked={people.length > 0 && selected.length === people.length}
+        onChange={onToggleAll}
+        disabled={people.length === 0}
+      />
+      <span className="text-sm font-semibold">
+        {title} ({people.length})
+      </span>
+    </div>
+
+    <div className="h-64 overflow-y-auto">
+      {people.map((item) => (
+        <label
+          key={item.id}
+          className="flex cursor-pointer items-center gap-2 px-2 py-1 hover:bg-base-200"
+        >
+          <input
+            type="checkbox"
+            className="checkbox checkbox-xs"
+            checked={selected.includes(item.id)}
+            onChange={() => onToggle(item.id)}
+          />
+          <span className="flex-1 text-sm">{item.name}</span>
+          {showGroup && (
+            <span className="text-xs opacity-60">
+              {item.groupName ?? "nincs csoport"}
+            </span>
+          )}
+          <span className="text-xs opacity-60">{item.code}</span>
+        </label>
+      ))}
+
+      {people.length === 0 && (
+        <p className="px-2 py-3 text-center text-sm opacity-60">
+          Nincs találat.
+        </p>
+      )}
+    </div>
+  </div>
+);
+
 interface GroupModalProps {
   group: Group | null;
   options: GroupOptions;
@@ -71,16 +136,42 @@ export const GroupModal = ({
   onSaved,
 }: GroupModalProps) => {
   const isNew = group === null;
+
+  const [tab, setTab] = useState<"data" | "members">("data");
   const [form, setForm] = useState<GroupPayload>(
     group ? toForm(group) : EMPTY_FORM,
   );
+
+  const [assignable, setAssignable] = useState<AssignableEmployee[]>([]);
+  const [memberIds, setMemberIds] = useState<number[]>([]);
+  const [savedMemberIds, setSavedMemberIds] = useState<number[]>([]);
+  const [filter, setFilter] = useState("");
+  const [pickedMembers, setPickedMembers] = useState<number[]>([]);
+  const [pickedCandidates, setPickedCandidates] = useState<number[]>([]);
+
   const [errorMessage, setErrorMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [askDelete, setAskDelete] = useState(false);
+  const [deleteStep, setDeleteStep] = useState<"members" | "group" | null>(
+    null,
+  );
 
   const isBusy = isSaving || isDeleting;
-  const canDelete = Boolean(group) && group!.activeEmployees === 0;
+
+  useEffect(() => {
+    listAssignableEmployees()
+      .then((data) => {
+        setAssignable(data.employees);
+        const current = group
+          ? data.employees
+              .filter((item) => item.groupId === group.id)
+              .map((item) => item.id)
+          : [];
+        setMemberIds(current);
+        setSavedMemberIds(current);
+      })
+      .catch(() => setAssignable([]));
+  }, [group]);
 
   const patch = (changes: Partial<GroupPayload>) =>
     setForm((current) => ({ ...current, ...changes }));
@@ -98,19 +189,103 @@ export const GroupModal = ({
     (item) => item.departmentId === form.departmentId,
   );
 
+  const term = filter.trim().toLowerCase();
+
+  const members = assignable.filter((item) => memberIds.includes(item.id));
+
+  const candidates = assignable
+    .filter((item) => !memberIds.includes(item.id))
+    .filter(
+      (item) =>
+        !term ||
+        [
+          item.name,
+          item.code,
+          item.groupName,
+          item.categoryName,
+          item.workScheduleName,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase()
+          .includes(term),
+    );
+
+  const toggle = (list: number[], id: number) =>
+    list.includes(id) ? list.filter((item) => item !== id) : [...list, id];
+
+  const addPicked = () => {
+    setMemberIds((current) => [...current, ...pickedCandidates]);
+    setPickedCandidates([]);
+  };
+
+  const removePicked = () => {
+    setMemberIds((current) =>
+      current.filter((id) => !pickedMembers.includes(id)),
+    );
+    setPickedMembers([]);
+  };
+
+  const memberDiff = (saved: number[], wanted: number[]) => ({
+    add: wanted.filter((id) => !saved.includes(id)),
+    remove: saved.filter((id) => !wanted.includes(id)),
+  });
+
   const handleSave = async () => {
     setErrorMessage("");
     setIsSaving(true);
 
     try {
-      const response = group
-        ? await updateGroup(group.id, form)
-        : await createGroup(form);
-      onSaved(response.message);
+      let groupId = group?.id ?? 0;
+      let message = "";
+
+      if (group) {
+        const response = await updateGroup(group.id, form);
+        message = response.message;
+      } else {
+        const response = await createGroup(form);
+        groupId = response.id;
+        message = response.message;
+      }
+
+      const diff = memberDiff(savedMemberIds, memberIds);
+
+      if (diff.add.length > 0 || diff.remove.length > 0) {
+        const response = await updateGroupMembers(groupId, diff);
+        message = `${message} ${response.message}`;
+      }
+
+      onSaved(message);
     } catch (error) {
       fail(error);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDeleteClick = () => {
+    setErrorMessage("");
+    setDeleteStep(savedMemberIds.length > 0 ? "members" : "group");
+  };
+
+  const handleRemoveAll = async () => {
+    if (!group) {
+      return;
+    }
+
+    setErrorMessage("");
+    setIsDeleting(true);
+
+    try {
+      await updateGroupMembers(group.id, { add: [], remove: savedMemberIds });
+      setSavedMemberIds([]);
+      setMemberIds([]);
+      setDeleteStep("group");
+    } catch (error) {
+      fail(error);
+      setDeleteStep(null);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -127,7 +302,7 @@ export const GroupModal = ({
       onSaved(response.message);
     } catch (error) {
       fail(error);
-      setAskDelete(false);
+      setDeleteStep(null);
     } finally {
       setIsDeleting(false);
     }
@@ -135,17 +310,13 @@ export const GroupModal = ({
 
   return (
     <div className="modal modal-open">
-      <div className="modal-box max-w-3xl max-h-[90vh] flex flex-col p-0">
+      <div className="modal-box max-w-4xl max-h-[90vh] flex flex-col p-0">
         <div className="flex items-start justify-between gap-3 border-b border-base-300 px-6 pb-3 pt-5">
           <div>
             <h3 className="text-xl font-bold text-primary">
               {isNew ? "Új csoport felvétele" : "Csoport módosítása"}
             </h3>
-            {group && (
-              <p className="mt-0.5 text-xs opacity-60">
-                {group.name} — {group.activeEmployees} aktív dolgozó
-              </p>
-            )}
+            {group && <p className="mt-0.5 text-xs opacity-60">{group.name}</p>}
           </div>
           <button
             type="button"
@@ -158,6 +329,23 @@ export const GroupModal = ({
           </button>
         </div>
 
+        <div role="tablist" className="tabs tabs-bordered px-6 pt-2">
+          <button
+            role="tab"
+            className={`tab ${tab === "data" ? "tab-active" : ""}`}
+            onClick={() => setTab("data")}
+          >
+            Adatok
+          </button>
+          <button
+            role="tab"
+            className={`tab ${tab === "members" ? "tab-active" : ""}`}
+            onClick={() => setTab("members")}
+          >
+            Tagok ({memberIds.length})
+          </button>
+        </div>
+
         <div className="space-y-3 overflow-y-auto px-6 py-4">
           {errorMessage && (
             <div className="alert alert-error py-2 text-sm">
@@ -165,191 +353,313 @@ export const GroupModal = ({
             </div>
           )}
 
-          <div className="grid gap-3 md:grid-cols-3">
-            <Field label="Megnevezés">
+          {tab === "data" && (
+            <div className="grid gap-3 md:grid-cols-3">
+              <Field label="Megnevezés">
+                <input
+                  type="text"
+                  className="input input-sm input-bordered"
+                  value={form.name}
+                  onChange={(event) => patch({ name: event.target.value })}
+                />
+              </Field>
+
+              <Field label="Terület">
+                <select
+                  className="select select-sm select-bordered"
+                  value={form.areaId ?? ""}
+                  onChange={(event) =>
+                    patch({
+                      areaId: toNumber(event.target.value),
+                      departmentId: null,
+                      shiftId: null,
+                    })
+                  }
+                >
+                  <option value="">Válassz</option>
+                  {options.areas.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Részleg">
+                <select
+                  className="select select-sm select-bordered"
+                  value={form.departmentId ?? ""}
+                  disabled={!form.areaId}
+                  onChange={(event) =>
+                    patch({
+                      departmentId: toNumber(event.target.value),
+                      shiftId: null,
+                    })
+                  }
+                >
+                  <option value="">Nincs</option>
+                  {departments.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Műszak">
+                <select
+                  className="select select-sm select-bordered"
+                  value={form.shiftId ?? ""}
+                  disabled={!form.departmentId}
+                  onChange={(event) =>
+                    patch({ shiftId: toNumber(event.target.value) })
+                  }
+                >
+                  <option value="">Nincs</option>
+                  {shifts.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Költséghely">
+                <select
+                  className="select select-sm select-bordered"
+                  value={form.costCenterId ?? ""}
+                  onChange={(event) =>
+                    patch({ costCenterId: toNumber(event.target.value) })
+                  }
+                >
+                  <option value="">Válassz</option>
+                  {options.costCenters.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Munkarend">
+                <select
+                  className="select select-sm select-bordered"
+                  value={form.workScheduleId ?? ""}
+                  onChange={(event) =>
+                    patch({ workScheduleId: toNumber(event.target.value) })
+                  }
+                >
+                  <option value="">Nincs</option>
+                  {options.workSchedules.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Munkaidő">
+                <select
+                  className="select select-sm select-bordered"
+                  value={form.workingHourId ?? ""}
+                  onChange={(event) =>
+                    patch({ workingHourId: toNumber(event.target.value) })
+                  }
+                >
+                  <option value="">Nincs</option>
+                  {options.workingHours.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Törzsidő">
+                <select
+                  className="select select-sm select-bordered"
+                  value={form.coreHourId ?? ""}
+                  onChange={(event) =>
+                    patch({ coreHourId: toNumber(event.target.value) })
+                  }
+                >
+                  <option value="">Nincs</option>
+                  {options.coreHours.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Területi vezető">
+                <select
+                  className="select select-sm select-bordered"
+                  value={form.managerId ?? ""}
+                  onChange={(event) =>
+                    patch({ managerId: toNumber(event.target.value) })
+                  }
+                >
+                  <option value="">Válassz</option>
+                  {options.managers.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Megjegyzés" wide>
+                <input
+                  type="text"
+                  className="input input-sm input-bordered"
+                  value={form.description ?? ""}
+                  onChange={(event) =>
+                    patch({ description: event.target.value })
+                  }
+                />
+              </Field>
+
+              <Field label="Állapot">
+                <select
+                  className="select select-sm select-bordered"
+                  value={form.status}
+                  onChange={(event) => patch({ status: event.target.value })}
+                >
+                  <option value="Aktív">Aktív</option>
+                  <option value="Inaktív">Inaktív</option>
+                </select>
+              </Field>
+            </div>
+          )}
+
+          {tab === "members" && (
+            <div className="space-y-3">
               <input
-                type="text"
-                className="input input-sm input-bordered"
-                value={form.name}
-                onChange={(event) => patch({ name: event.target.value })}
+                type="search"
+                className="input input-sm input-bordered w-full"
+                placeholder="Szűrés névre, kódra, jelenlegi csoportra, munkarendre..."
+                value={filter}
+                onChange={(event) => setFilter(event.target.value)}
               />
-            </Field>
 
-            <Field label="Terület">
-              <select
-                className="select select-sm select-bordered"
-                value={form.areaId ?? ""}
-                onChange={(event) =>
-                  patch({
-                    areaId: toNumber(event.target.value),
-                    departmentId: null,
-                    shiftId: null,
-                  })
-                }
-              >
-                <option value="">Válassz</option>
-                {options.areas.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
+              <div className="grid items-start gap-3 md:grid-cols-[1fr_auto_1fr]">
+                <PersonList
+                  title="A csoport tagjai"
+                  people={members}
+                  selected={pickedMembers}
+                  onToggle={(id) =>
+                    setPickedMembers((current) => toggle(current, id))
+                  }
+                  onToggleAll={() =>
+                    setPickedMembers((current) =>
+                      current.length === members.length
+                        ? []
+                        : members.map((item) => item.id),
+                    )
+                  }
+                />
 
-            <Field label="Részleg">
-              <select
-                className="select select-sm select-bordered"
-                value={form.departmentId ?? ""}
-                disabled={!form.areaId}
-                onChange={(event) =>
-                  patch({
-                    departmentId: toNumber(event.target.value),
-                    shiftId: null,
-                  })
-                }
-              >
-                <option value="">Nincs</option>
-                {departments.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
+                <div className="flex flex-row justify-center gap-2 md:mt-16 md:flex-col">
+                  <button
+                    className="btn btn-sm"
+                    onClick={removePicked}
+                    disabled={pickedMembers.length === 0}
+                    title="Kijelöltek eltávolítása a csoportból"
+                  >
+                    →
+                  </button>
+                  <button
+                    className="btn btn-sm"
+                    onClick={addPicked}
+                    disabled={pickedCandidates.length === 0}
+                    title="Kijelöltek hozzáadása a csoporthoz"
+                  >
+                    ←
+                  </button>
+                </div>
 
-            <Field label="Műszak">
-              <select
-                className="select select-sm select-bordered"
-                value={form.shiftId ?? ""}
-                disabled={!form.departmentId}
-                onChange={(event) =>
-                  patch({ shiftId: toNumber(event.target.value) })
-                }
-              >
-                <option value="">Nincs</option>
-                {shifts.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
+                <PersonList
+                  title="Hozzáadható dolgozók"
+                  people={candidates}
+                  selected={pickedCandidates}
+                  showGroup
+                  onToggle={(id) =>
+                    setPickedCandidates((current) => toggle(current, id))
+                  }
+                  onToggleAll={() =>
+                    setPickedCandidates((current) =>
+                      current.length === candidates.length
+                        ? []
+                        : candidates.map((item) => item.id),
+                    )
+                  }
+                />
+              </div>
 
-            <Field label="Költséghely">
-              <select
-                className="select select-sm select-bordered"
-                value={form.costCenterId ?? ""}
-                onChange={(event) =>
-                  patch({ costCenterId: toNumber(event.target.value) })
-                }
-              >
-                <option value="">Válassz</option>
-                {options.costCenters.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
+              <p className="text-sm opacity-70">
+                A jobb oldali listában a dolgozó mellett a jelenlegi csoportja
+                látszik. Ha olyat adsz hozzá, aki már máshová tartozik, az
+                átkerül ebbe a csoportba. A tagság csak mentéskor változik meg.
+              </p>
+            </div>
+          )}
 
-            <Field label="Munkarend">
-              <select
-                className="select select-sm select-bordered"
-                value={form.workScheduleId ?? ""}
-                onChange={(event) =>
-                  patch({ workScheduleId: toNumber(event.target.value) })
-                }
-              >
-                <option value="">Nincs</option>
-                {options.workSchedules.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
-
-            <Field label="Munkaidő">
-              <select
-                className="select select-sm select-bordered"
-                value={form.workingHourId ?? ""}
-                onChange={(event) =>
-                  patch({ workingHourId: toNumber(event.target.value) })
-                }
-              >
-                <option value="">Nincs</option>
-                {options.workingHours.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
-
-            <Field label="Törzsidő">
-              <select
-                className="select select-sm select-bordered"
-                value={form.coreHourId ?? ""}
-                onChange={(event) =>
-                  patch({ coreHourId: toNumber(event.target.value) })
-                }
-              >
-                <option value="">Nincs</option>
-                {options.coreHours.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
-
-            <Field label="Területi vezető">
-              <select
-                className="select select-sm select-bordered"
-                value={form.managerId ?? ""}
-                onChange={(event) =>
-                  patch({ managerId: toNumber(event.target.value) })
-                }
-              >
-                <option value="">Válassz</option>
-                {options.managers.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
-
-            <Field label="Megjegyzés" wide>
-              <input
-                type="text"
-                className="input input-sm input-bordered"
-                value={form.description ?? ""}
-                onChange={(event) => patch({ description: event.target.value })}
-              />
-            </Field>
-
-            <Field label="Állapot">
-              <select
-                className="select select-sm select-bordered"
-                value={form.status}
-                onChange={(event) => patch({ status: event.target.value })}
-              >
-                <option value="Aktív">Aktív</option>
-                <option value="Inaktív">Inaktív</option>
-              </select>
-            </Field>
-          </div>
-
-          {askDelete && (
+          {deleteStep === "members" && (
             <div className="alert alert-warning text-sm">
+              <div>
+                <p className="font-semibold">
+                  A csoportban még {savedMemberIds.length} dolgozó van.
+                </p>
+                <p>
+                  A csoport csak üresen törölhető. Eltávolítsam előbb az összes
+                  dolgozót? Ők megmaradnak, csak csoport nélkül, és később másik
+                  csoportba sorolhatók.
+                </p>
+                <div className="mt-2 flex gap-2">
+                  <button
+                    className="btn btn-sm btn-warning"
+                    onClick={handleRemoveAll}
+                    disabled={isBusy}
+                  >
+                    {isDeleting ? "Eltávolítás..." : "Igen, eltávolítom"}
+                  </button>
+                  <button
+                    className="btn btn-sm btn-ghost"
+                    onClick={() => setDeleteStep(null)}
+                    disabled={isBusy}
+                  >
+                    Mégse
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {deleteStep === "group" && (
+            <div className="alert alert-error text-sm">
               <div>
                 <p className="font-semibold">Biztosan törlöd a csoportot?</p>
                 <p>
-                  A törlés csak akkor lehetséges, ha a csoporthoz nem tartozik
-                  aktív dolgozó. Ha a csoport már nem használatos, de meg kell
-                  őrizni, állítsd Inaktív állapotra.
+                  A csoport üres, a törlés véglegesen eltávolítja. Ha később még
+                  szükség lehet rá, inkább állítsd Inaktív állapotra.
                 </p>
+                <div className="mt-2 flex gap-2">
+                  <button
+                    className="btn btn-sm btn-error"
+                    onClick={handleDelete}
+                    disabled={isBusy}
+                  >
+                    {isDeleting ? "Törlés..." : "Igen, törlöm"}
+                  </button>
+                  <button
+                    className="btn btn-sm btn-ghost"
+                    onClick={() => setDeleteStep(null)}
+                    disabled={isBusy}
+                  >
+                    Mégse
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -357,37 +667,13 @@ export const GroupModal = ({
 
         <div className="flex items-center justify-between gap-2 border-t border-base-300 px-6 pb-5 pt-3">
           {group ? (
-            askDelete ? (
-              <div className="flex gap-2">
-                <button
-                  className="btn btn-sm btn-error"
-                  onClick={handleDelete}
-                  disabled={isBusy}
-                >
-                  {isDeleting ? "Törlés..." : "Igen, törlöm"}
-                </button>
-                <button
-                  className="btn btn-sm btn-ghost"
-                  onClick={() => setAskDelete(false)}
-                  disabled={isBusy}
-                >
-                  Vissza
-                </button>
-              </div>
-            ) : (
-              <button
-                className="btn btn-sm btn-outline btn-error"
-                onClick={() => setAskDelete(true)}
-                disabled={isBusy || !canDelete}
-                title={
-                  canDelete
-                    ? undefined
-                    : "Aktív dolgozóval rendelkező csoport nem törölhető"
-                }
-              >
-                Törlés
-              </button>
-            )
+            <button
+              className="btn btn-sm btn-outline btn-error"
+              onClick={handleDeleteClick}
+              disabled={isBusy || deleteStep !== null}
+            >
+              Törlés
+            </button>
           ) : (
             <span />
           )}
