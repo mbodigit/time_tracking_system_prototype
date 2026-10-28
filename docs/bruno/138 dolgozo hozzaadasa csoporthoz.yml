@@ -1,0 +1,30 @@
+info:
+  name: dolgozo hozzaadasa csoporthoz
+  type: http
+  seq: 138
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/groups/{{memberGroupId}}/members"
+  body:
+    type: json
+    data: |-
+      {
+        "add": [{{newEmployeeId}}]
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
