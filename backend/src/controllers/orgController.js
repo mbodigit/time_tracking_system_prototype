@@ -6,7 +6,9 @@ const ENTITIES = {
         idColumn: 'area_id',
         nameColumn: 'area_name',
         managerColumn: 'area_manager_id',
-        parentColumn: null,
+        parentColumn: 'area_parent_id',
+        parentRequired: false,
+        selfParent: true,
         label: 'terület'
     },
     departments: {
@@ -15,6 +17,8 @@ const ENTITIES = {
         nameColumn: 'department_name',
         managerColumn: 'department_manager_id',
         parentColumn: 'department_area_id',
+        parentRequired: true,
+        selfParent: false,
         label: 'részleg'
     },
     shifts: {
@@ -23,8 +27,28 @@ const ENTITIES = {
         nameColumn: 'shift_name',
         managerColumn: 'shift_manager_id',
         parentColumn: 'shift_department_id',
+        parentRequired: true,
+        selfParent: false,
         label: 'műszak'
     }
+};
+
+const isDescendant = async (entity, rootId, candidateId) => {
+    const [rows] = await pool.execute(
+        `WITH RECURSIVE sub AS (
+            SELECT ${entity.idColumn} AS id
+            FROM ${entity.table}
+            WHERE ${entity.idColumn} = ?
+            UNION ALL
+            SELECT t.${entity.idColumn}
+            FROM ${entity.table} t
+            JOIN sub s ON s.id = t.${entity.parentColumn}
+         )
+         SELECT 1 FROM sub WHERE id = ? LIMIT 1`,
+        [rootId, candidateId]
+    );
+
+    return rows.length > 0;
 };
 
 const managerName = (row) => {
@@ -39,7 +63,8 @@ const managerName = (row) => {
 const tree = async (req, res) => {
     try {
         const [areaRows] = await pool.execute(
-            `SELECT a.area_id, a.area_name, a.area_manager_id AS manager_user_id,
+            `SELECT a.area_id, a.area_name, a.area_parent_id,
+                    a.area_manager_id AS manager_user_id,
                     u.user_username, e.employee_last_name, e.employee_first_name
              FROM Areas a
              LEFT JOIN Users u     ON u.user_id     = a.area_manager_id
@@ -96,6 +121,7 @@ const tree = async (req, res) => {
         const areas = areaRows.map((row) => ({
             id: row.area_id,
             name: row.area_name,
+            parentId: row.area_parent_id,
             managerId: row.manager_user_id,
             managerName: managerName(row),
             departments: departments.filter((item) => item.areaId === row.area_id)
@@ -141,7 +167,7 @@ const create = async (req, res) => {
         return res.status(400).json({ message: 'A megnevezés kötelező.' });
     }
 
-    if (entity.parentColumn && !parentId) {
+    if (entity.parentRequired && !parentId) {
         return res.status(400).json({
             message: 'A felettes szervezeti egység megadása kötelező.'
         });
@@ -190,6 +216,10 @@ const update = async (req, res) => {
     const id = Number(req.params.id);
     const name = String(req.body?.name || '').trim();
     const managerId = Number(req.body?.managerId) || null;
+    const hasParent = Object.prototype.hasOwnProperty.call(
+        req.body || {}, 'parentId'
+    );
+    const parentId = hasParent ? (Number(req.body.parentId) || null) : null;
 
     if (!id) {
         return res.status(400).json({ message: 'Érvénytelen azonosító.' });
@@ -199,12 +229,45 @@ const update = async (req, res) => {
         return res.status(400).json({ message: 'A megnevezés kötelező.' });
     }
 
+    if (hasParent && entity.parentRequired && !parentId) {
+        return res.status(400).json({
+            message: 'A felettes szervezeti egység megadása kötelező.'
+        });
+    }
+
     try {
+        if (hasParent && entity.selfParent && parentId) {
+            if (parentId === id) {
+                return res.status(409).json({
+                    message: `A ${entity.label} nem lehet önmaga felettese.`
+                });
+            }
+
+            if (await isDescendant(entity, id, parentId)) {
+                return res.status(409).json({
+                    message: `A ${entity.label} nem rendelhető a saját `
+                        + 'leszármazottja alá, mert azzal kör keletkezne a '
+                        + 'szervezeti felépítésben.'
+                });
+            }
+        }
+
+        const assignments = [
+            `${entity.nameColumn} = ?`,
+            `${entity.managerColumn} = ?`
+        ];
+        const values = [name, managerId];
+
+        if (hasParent && entity.parentColumn) {
+            assignments.push(`${entity.parentColumn} = ?`);
+            values.push(parentId);
+        }
+
         const [result] = await pool.execute(
             `UPDATE ${entity.table}
-             SET ${entity.nameColumn} = ?, ${entity.managerColumn} = ?
+             SET ${assignments.join(', ')}
              WHERE ${entity.idColumn} = ?`,
-            [name, managerId, id]
+            [...values, id]
         );
 
         if (result.affectedRows === 0) {

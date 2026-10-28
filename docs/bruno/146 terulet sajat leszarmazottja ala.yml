@@ -1,0 +1,32 @@
+info:
+  name: terulet sajat leszarmazottja ala
+  type: http
+  seq: 146
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/org/areas/{{parentAreaId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Bruno Ugyvezetes",
+        "parentId": {{childAreaId}},
+        "managerId": null
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "409"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

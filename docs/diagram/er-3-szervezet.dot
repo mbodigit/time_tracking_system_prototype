@@ -12,6 +12,8 @@ graph ER {
   "Areas" -- "Areas__area_name" [len=0.8, weight=4];
   "Areas__area_manager_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="area_manager_id"];
   "Areas" -- "Areas__area_manager_id" [len=0.8, weight=4];
+  "Areas__area_parent_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="area_parent_id"];
+  "Areas" -- "Areas__area_parent_id" [len=0.8, weight=4];
   "Departments" [shape=box, style="filled,bold", fillcolor="#DDEEDD", color="#3B7A3B", penwidth=1.6];
   "Departments__department_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label=<<U>department_id</U>>];
   "Departments" -- "Departments__department_id" [len=0.8, weight=4];

@@ -1,6 +1,18 @@
 const pool = require('../config/db');
 
-const PRIVILEGED_ROLES = ['HR-Bér', 'Admin'];
+const PRIVILEGED_ROLES = ['Admin', 'HR-Bér'];
+
+const MANAGED_AREAS = `
+    WITH RECURSIVE managed_areas AS (
+        SELECT area_id
+        FROM Areas
+        WHERE area_manager_id = ?
+        UNION ALL
+        SELECT a.area_id
+        FROM Areas a
+        JOIN managed_areas m ON m.area_id = a.area_parent_id
+    )
+`;
 
 const getAccessibleEmployeeIds = async (userId, employeeId, role) => {
     if (PRIVILEGED_ROLES.includes(role)) {
@@ -9,14 +21,14 @@ const getAccessibleEmployeeIds = async (userId, employeeId, role) => {
     }
 
     const [rows] = await pool.execute(
-        `SELECT e.employee_id
+        `${MANAGED_AREAS}
+         SELECT e.employee_id
          FROM Employees e
          LEFT JOIN UserGroups  g ON g.user_group_id       = e.employee_user_group_id
-         LEFT JOIN Areas       a ON a.area_id             = g.user_group_area_id
          LEFT JOIN Departments d ON d.department_id       = g.user_group_department_id
          LEFT JOIN Shifts      s ON s.shift_id            = g.user_group_shift_id
          WHERE g.user_group_manager_id = ?
-            OR a.area_manager_id       = ?
+            OR g.user_group_area_id IN (SELECT area_id FROM managed_areas)
             OR d.department_manager_id = ?
             OR s.shift_manager_id      = ?
             OR e.employee_manager_id   = ?`,
@@ -36,20 +48,20 @@ const canAccessEmployee = async (userId, employeeId, targetEmployeeId, role) => 
     }
 
     const [rows] = await pool.execute(
-        `SELECT 1
+        `${MANAGED_AREAS}
+         SELECT 1
          FROM Employees e
          LEFT JOIN UserGroups  g ON g.user_group_id       = e.employee_user_group_id
-         LEFT JOIN Areas       a ON a.area_id             = g.user_group_area_id
          LEFT JOIN Departments d ON d.department_id       = g.user_group_department_id
          LEFT JOIN Shifts      s ON s.shift_id            = g.user_group_shift_id
          WHERE e.employee_id = ?
            AND (g.user_group_manager_id = ?
-                OR a.area_manager_id       = ?
+                OR g.user_group_area_id IN (SELECT area_id FROM managed_areas)
                 OR d.department_manager_id = ?
                 OR s.shift_manager_id      = ?
                 OR e.employee_manager_id   = ?)
          LIMIT 1`,
-        [targetEmployeeId, userId, userId, userId, userId, employeeId]
+        [userId, targetEmployeeId, userId, userId, userId, employeeId]
     );
 
     return rows.length > 0;
