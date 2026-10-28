@@ -64,6 +64,10 @@ export const UnitModal = ({
 
   const isBusy = isSaving || isDeleting;
 
+  const availableManagers = managers.filter(
+    (item) => !item.assignedUnit || item.id === unit?.managerId,
+  );
+
   const totalEmployees = derivedGroups.reduce(
     (sum, item) => sum + item.activeEmployees,
     0,
@@ -188,7 +192,7 @@ export const UnitModal = ({
 
             <Field
               label="Vezető"
-              hint="A csoport vezetője innen öröklődik, cserénél az is változik."
+              hint="Egy vezető egyetlen szervezeti egységet vezethet, ezért csak a még szabad vezetők választhatók. A csoport vezetője innen öröklődik."
             >
               <select
                 className="select select-sm select-bordered"
@@ -200,7 +204,7 @@ export const UnitModal = ({
                 }
               >
                 <option value="">Nincs vezető</option>
-                {managers.map((item) => (
+                {availableManagers.map((item) => (
                   <option key={item.id} value={item.id}>
                     {item.name}
                   </option>

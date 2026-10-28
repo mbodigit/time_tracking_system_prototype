@@ -5,6 +5,7 @@ export type OrgEntity = "areas" | "departments" | "shifts";
 export interface OrgManager {
   id: number;
   name: string;
+  assignedUnit: string | null;
 }
 
 export interface OrgGroup {

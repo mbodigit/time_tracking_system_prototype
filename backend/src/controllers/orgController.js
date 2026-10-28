@@ -9,6 +9,7 @@ const ENTITIES = {
         parentColumn: 'area_parent_id',
         parentRequired: false,
         selfParent: true,
+        levelKey: 'area',
         groupCondition: 'user_group_area_id = ? '
             + 'AND user_group_department_id IS NULL '
             + 'AND user_group_shift_id IS NULL',
@@ -22,6 +23,7 @@ const ENTITIES = {
         parentColumn: 'department_area_id',
         parentRequired: true,
         selfParent: false,
+        levelKey: 'department',
         groupCondition: 'user_group_department_id = ? '
             + 'AND user_group_shift_id IS NULL',
         label: 'részleg'
@@ -34,6 +36,7 @@ const ENTITIES = {
         parentColumn: 'shift_department_id',
         parentRequired: true,
         selfParent: false,
+        levelKey: 'shift',
         groupCondition: 'user_group_shift_id = ?',
         label: 'műszak'
     }
@@ -100,7 +103,15 @@ const tree = async (req, res) => {
 
         const [managerRows] = await pool.execute(
             `SELECT u.user_id, u.user_username,
-                    e.employee_last_name, e.employee_first_name
+                    e.employee_last_name, e.employee_first_name,
+                    COALESCE(
+                      (SELECT a.area_name FROM Areas a
+                        WHERE a.area_manager_id = u.user_id LIMIT 1),
+                      (SELECT d.department_name FROM Departments d
+                        WHERE d.department_manager_id = u.user_id LIMIT 1),
+                      (SELECT s.shift_name FROM Shifts s
+                        WHERE s.shift_manager_id = u.user_id LIMIT 1)
+                    ) AS assigned_unit
              FROM Users u
              JOIN UserRoles r      ON r.user_role_id = u.user_role_id
              LEFT JOIN Employees e ON e.employee_id  = u.user_employee_id
@@ -181,7 +192,8 @@ const tree = async (req, res) => {
             id: row.user_id,
             name: row.employee_last_name
                 ? `${row.employee_last_name} ${row.employee_first_name}`
-                : row.user_username
+                : row.user_username,
+            assignedUnit: row.assigned_unit
         }));
 
         return res.status(200).json({ areas, managers });
@@ -191,7 +203,7 @@ const tree = async (req, res) => {
     }
 };
 
-const checkManager = async (managerId) => {
+const checkManager = async (managerId, entity, unitId) => {
     if (!managerId) {
         return null;
     }
@@ -211,6 +223,27 @@ const checkManager = async (managerId) => {
     if (rows[0].user_role_name !== 'Vezető') {
         return 'Szervezeti egység vezetője csak vezetői szerepkörű '
             + 'felhasználó lehet.';
+    }
+
+    const [assigned] = await pool.execute(
+        `SELECT 'area' AS szint, area_name AS nev, area_id AS egyseg_id
+         FROM Areas WHERE area_manager_id = ?
+         UNION ALL
+         SELECT 'department', department_name, department_id
+         FROM Departments WHERE department_manager_id = ?
+         UNION ALL
+         SELECT 'shift', shift_name, shift_id
+         FROM Shifts WHERE shift_manager_id = ?`,
+        [managerId, managerId, managerId]
+    );
+
+    const masik = assigned.find((row) => (
+        row.szint !== entity.levelKey || row.egyseg_id !== unitId
+    ));
+
+    if (masik) {
+        return `Ez a vezető már a(z) "${masik.nev}" szervezeti egységet `
+            + 'vezeti. Egy vezető egyetlen szervezeti egységet vezethet.';
     }
 
     return null;
@@ -249,7 +282,7 @@ const create = async (req, res) => {
     }
 
     try {
-        const managerError = await checkManager(managerId);
+        const managerError = await checkManager(managerId, entity, 0);
 
         if (managerError) {
             return res.status(400).json({ message: managerError });
@@ -317,7 +350,7 @@ const update = async (req, res) => {
     }
 
     try {
-        const managerError = await checkManager(managerId);
+        const managerError = await checkManager(managerId, entity, id);
 
         if (managerError) {
             return res.status(400).json({ message: managerError });

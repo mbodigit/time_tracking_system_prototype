@@ -165,6 +165,7 @@ export const OrgPage = () => {
     icon: string,
     name: string,
     managerName: string | null,
+    derived: DerivedGroup[],
     group: OrgGroup | null,
     node: GroupNode,
     onEdit: () => void,
@@ -181,7 +182,18 @@ export const OrgPage = () => {
         </div>
       </td>
       <td className="whitespace-nowrap">
-        {managerName ?? <span className="opacity-50">nincs vezető</span>}
+        {managerName ? (
+          <div className="flex flex-col">
+            <span>{managerName}</span>
+            <span className="text-xs opacity-60">
+              {derived.length} csoport ·{" "}
+              {derived.reduce((sum, item) => sum + item.activeEmployees, 0)} fő
+              a hatókörében
+            </span>
+          </div>
+        ) : (
+          <span className="opacity-50">nincs vezető</span>
+        )}
       </td>
       <td>{groupCell(group, node)}</td>
       <td className="whitespace-nowrap text-right">
@@ -206,6 +218,7 @@ export const OrgPage = () => {
       "└",
       shift.name,
       shift.managerName,
+      toDerived(shift.group),
       shift.group,
       {
         areaId: area.id,
@@ -250,6 +263,7 @@ export const OrgPage = () => {
         "├",
         department.name,
         department.managerName,
+        derivedOfDepartment(department),
         department.group,
         {
           areaId: area.id,
@@ -317,6 +331,7 @@ export const OrgPage = () => {
         depth === 0 ? "■" : "├",
         area.name,
         area.managerName,
+        derivedOfArea(area),
         area.group,
         {
           areaId: area.id,
