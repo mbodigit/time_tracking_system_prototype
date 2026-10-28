@@ -193,6 +193,7 @@ export const GroupsPage = () => {
         <GroupModal
           group={modal.group}
           options={options}
+          onChanged={load}
           onClose={() => setModal(null)}
           onSaved={handleSaved}
         />

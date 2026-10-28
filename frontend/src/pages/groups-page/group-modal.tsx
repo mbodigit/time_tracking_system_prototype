@@ -65,6 +65,7 @@ interface PersonListProps {
   people: AssignableEmployee[];
   selected: number[];
   showGroup?: boolean;
+  lockedId?: number | null;
   onToggle: (id: number) => void;
   onToggleAll: () => void;
 }
@@ -74,6 +75,7 @@ const PersonList = ({
   people,
   selected,
   showGroup,
+  lockedId,
   onToggle,
   onToggleAll,
 }: PersonListProps) => (
@@ -82,9 +84,13 @@ const PersonList = ({
       <input
         type="checkbox"
         className="checkbox checkbox-xs"
-        checked={people.length > 0 && selected.length === people.length}
+        checked={
+          people.filter((item) => item.id !== lockedId).length > 0 &&
+          selected.length ===
+            people.filter((item) => item.id !== lockedId).length
+        }
         onChange={onToggleAll}
-        disabled={people.length === 0}
+        disabled={people.filter((item) => item.id !== lockedId).length === 0}
       />
       <span className="text-sm font-semibold">
         {title} ({people.length})
@@ -100,10 +106,16 @@ const PersonList = ({
           <input
             type="checkbox"
             className="checkbox checkbox-xs"
-            checked={selected.includes(item.id)}
+            checked={item.id !== lockedId && selected.includes(item.id)}
+            disabled={item.id === lockedId}
             onChange={() => onToggle(item.id)}
           />
-          <span className="flex-1 text-sm">{item.name}</span>
+          <span className="flex-1 text-sm">
+            {item.name}
+            {item.id === lockedId && (
+              <span className="badge badge-sm badge-primary ml-2">vezető</span>
+            )}
+          </span>
           {showGroup && (
             <span className="text-xs opacity-60">
               {item.groupName ?? "nincs csoport"}
@@ -127,6 +139,7 @@ interface GroupModalProps {
   options: GroupOptions;
   onClose: () => void;
   onSaved: (message: string) => void;
+  onChanged: () => void;
 }
 
 export const GroupModal = ({
@@ -134,6 +147,7 @@ export const GroupModal = ({
   options,
   onClose,
   onSaved,
+  onChanged,
 }: GroupModalProps) => {
   const isNew = group === null;
 
@@ -162,16 +176,27 @@ export const GroupModal = ({
     listAssignableEmployees()
       .then((data) => {
         setAssignable(data.employees);
-        const current = group
+
+        const saved = group
           ? data.employees
               .filter((item) => item.groupId === group.id)
               .map((item) => item.id)
           : [];
-        setMemberIds(current);
-        setSavedMemberIds(current);
+
+        const managerEmployee = group
+          ? (options.managers.find((item) => item.id === group.managerId)
+              ?.employeeId ?? null)
+          : null;
+
+        setSavedMemberIds(saved);
+        setMemberIds(
+          managerEmployee && !saved.includes(managerEmployee)
+            ? [...saved, managerEmployee]
+            : saved,
+        );
       })
       .catch(() => setAssignable([]));
-  }, [group]);
+  }, [group, options]);
 
   const patch = (changes: Partial<GroupPayload>) =>
     setForm((current) => ({ ...current, ...changes }));
@@ -188,6 +213,18 @@ export const GroupModal = ({
   const shifts = options.shifts.filter(
     (item) => item.departmentId === form.departmentId,
   );
+
+  const workingHour = options.workingHours.find(
+    (item) => item.id === form.workingHourId,
+  );
+
+  const coreHours = workingHour
+    ? options.coreHours.filter((item) => item.hours === workingHour.num)
+    : [];
+
+  const managerEmployeeId =
+    options.managers.find((item) => item.id === form.managerId)?.employeeId ??
+    null;
 
   const term = filter.trim().toLowerCase();
 
@@ -280,6 +317,7 @@ export const GroupModal = ({
       await updateGroupMembers(group.id, { add: [], remove: savedMemberIds });
       setSavedMemberIds([]);
       setMemberIds([]);
+      onChanged();
       setDeleteStep("group");
     } catch (error) {
       fail(error);
@@ -463,7 +501,10 @@ export const GroupModal = ({
                   className="select select-sm select-bordered"
                   value={form.workingHourId ?? ""}
                   onChange={(event) =>
-                    patch({ workingHourId: toNumber(event.target.value) })
+                    patch({
+                      workingHourId: toNumber(event.target.value),
+                      coreHourId: null,
+                    })
                   }
                 >
                   <option value="">Nincs</option>
@@ -479,26 +520,49 @@ export const GroupModal = ({
                 <select
                   className="select select-sm select-bordered"
                   value={form.coreHourId ?? ""}
+                  disabled={!workingHour || coreHours.length === 0}
                   onChange={(event) =>
                     patch({ coreHourId: toNumber(event.target.value) })
                   }
                 >
                   <option value="">Nincs</option>
-                  {options.coreHours.map((item) => (
+                  {coreHours.map((item) => (
                     <option key={item.id} value={item.id}>
                       {item.name}
                     </option>
                   ))}
                 </select>
+                {workingHour && coreHours.length === 0 && (
+                  <div className="label py-1">
+                    <span className="label-text-alt opacity-70">
+                      Nincs {workingHour.num} órás törzsidő a törzsadatok
+                      között.
+                    </span>
+                  </div>
+                )}
               </Field>
 
               <Field label="Területi vezető">
                 <select
                   className="select select-sm select-bordered"
                   value={form.managerId ?? ""}
-                  onChange={(event) =>
-                    patch({ managerId: toNumber(event.target.value) })
-                  }
+                  onChange={(event) => {
+                    const nextManagerId = toNumber(event.target.value);
+                    const previous = managerEmployeeId;
+                    const next =
+                      options.managers.find((item) => item.id === nextManagerId)
+                        ?.employeeId ?? null;
+
+                    patch({ managerId: nextManagerId });
+
+                    setMemberIds((current) => {
+                      const kept = current.filter((id) => id !== previous);
+                      return next && !kept.includes(next)
+                        ? [...kept, next]
+                        : kept;
+                    });
+                    setPickedMembers([]);
+                  }}
                 >
                   <option value="">Válassz</option>
                   {options.managers.map((item) => (
@@ -546,18 +610,21 @@ export const GroupModal = ({
               <div className="grid items-start gap-3 md:grid-cols-[1fr_auto_1fr]">
                 <PersonList
                   title="A csoport tagjai"
+                  lockedId={managerEmployeeId}
                   people={members}
                   selected={pickedMembers}
                   onToggle={(id) =>
                     setPickedMembers((current) => toggle(current, id))
                   }
-                  onToggleAll={() =>
+                  onToggleAll={() => {
+                    const selectable = members
+                      .filter((item) => item.id !== managerEmployeeId)
+                      .map((item) => item.id);
+
                     setPickedMembers((current) =>
-                      current.length === members.length
-                        ? []
-                        : members.map((item) => item.id),
-                    )
-                  }
+                      current.length === selectable.length ? [] : selectable,
+                    );
+                  }}
                 />
 
                 <div className="flex flex-row justify-center gap-2 md:mt-16 md:flex-col">
@@ -600,7 +667,10 @@ export const GroupModal = ({
               <p className="text-sm opacity-70">
                 A jobb oldali listában a dolgozó mellett a jelenlegi csoportja
                 látszik. Ha olyat adsz hozzá, aki már máshová tartozik, az
-                átkerül ebbe a csoportba. A tagság csak mentéskor változik meg.
+                átkerül ebbe a csoportba. A csoport vezetője mindig tagja a
+                csoportnak, és nem vehető ki belőle - ha mást kell megbízni, az
+                Adatok fülön válassz másik vezetőt, és a rendszer egy lépésben
+                elvégzi a cserét. A tagság csak mentéskor változik meg.
               </p>
             </div>
           )}
