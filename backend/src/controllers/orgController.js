@@ -9,6 +9,9 @@ const ENTITIES = {
         parentColumn: 'area_parent_id',
         parentRequired: false,
         selfParent: true,
+        groupCondition: 'user_group_area_id = ? '
+            + 'AND user_group_department_id IS NULL '
+            + 'AND user_group_shift_id IS NULL',
         label: 'terület'
     },
     departments: {
@@ -19,6 +22,8 @@ const ENTITIES = {
         parentColumn: 'department_area_id',
         parentRequired: true,
         selfParent: false,
+        groupCondition: 'user_group_department_id = ? '
+            + 'AND user_group_shift_id IS NULL',
         label: 'részleg'
     },
     shifts: {
@@ -29,6 +34,7 @@ const ENTITIES = {
         parentColumn: 'shift_department_id',
         parentRequired: true,
         selfParent: false,
+        groupCondition: 'user_group_shift_id = ?',
         label: 'műszak'
     }
 };
@@ -101,12 +107,52 @@ const tree = async (req, res) => {
              ORDER BY e.employee_last_name, e.employee_first_name`
         );
 
+        const [groupRows] = await pool.execute(
+            `SELECT g.user_group_id, g.user_group_name, g.user_group_status,
+                    g.user_group_area_id, g.user_group_department_id,
+                    g.user_group_shift_id,
+                    SUM(CASE WHEN st.employee_status_is_active = 1
+                             THEN 1 ELSE 0 END) AS active_employees
+             FROM UserGroups g
+             LEFT JOIN Employees e       ON e.employee_user_group_id = g.user_group_id
+             LEFT JOIN EmployeeStatus st ON st.employee_status_id    = e.employee_status_id
+             GROUP BY g.user_group_id, g.user_group_name, g.user_group_status,
+                      g.user_group_area_id, g.user_group_department_id,
+                      g.user_group_shift_id
+             ORDER BY g.user_group_name`
+        );
+
+        const toGroup = (row) => (row ? {
+            id: row.user_group_id,
+            name: row.user_group_name,
+            status: row.user_group_status,
+            activeEmployees: Number(row.active_employees) || 0
+        } : null);
+
+        const groupOfShift = (shiftId) => toGroup(
+            groupRows.find((row) => row.user_group_shift_id === shiftId)
+        );
+
+        const groupOfDepartment = (departmentId) => toGroup(
+            groupRows.find((row) =>
+                row.user_group_department_id === departmentId
+                && row.user_group_shift_id === null)
+        );
+
+        const groupOfArea = (areaId) => toGroup(
+            groupRows.find((row) =>
+                row.user_group_area_id === areaId
+                && row.user_group_department_id === null
+                && row.user_group_shift_id === null)
+        );
+
         const shifts = shiftRows.map((row) => ({
             id: row.shift_id,
             name: row.shift_name,
             departmentId: row.shift_department_id,
             managerId: row.manager_user_id,
-            managerName: managerName(row)
+            managerName: managerName(row),
+            group: groupOfShift(row.shift_id)
         }));
 
         const departments = departmentRows.map((row) => ({
@@ -115,6 +161,7 @@ const tree = async (req, res) => {
             areaId: row.department_area_id,
             managerId: row.manager_user_id,
             managerName: managerName(row),
+            group: groupOfDepartment(row.department_id),
             shifts: shifts.filter((item) => item.departmentId === row.department_id)
         }));
 
@@ -124,6 +171,7 @@ const tree = async (req, res) => {
             parentId: row.area_parent_id,
             managerId: row.manager_user_id,
             managerName: managerName(row),
+            group: groupOfArea(row.area_id),
             departments: departments.filter((item) => item.areaId === row.area_id)
         }));
 
@@ -236,6 +284,22 @@ const update = async (req, res) => {
     }
 
     try {
+        if (!managerId) {
+            const [attached] = await pool.execute(
+                `SELECT user_group_name FROM UserGroups
+                 WHERE ${entity.groupCondition} LIMIT 1`,
+                [id]
+            );
+
+            if (attached.length > 0) {
+                return res.status(409).json({
+                    message: 'A vezető nem törölhető, mert a szervezeti egységhez '
+                        + `csoport tartozik (${attached[0].user_group_name}), `
+                        + 'és a csoport vezetője innen öröklődik.'
+                });
+            }
+        }
+
         if (hasParent && entity.selfParent && parentId) {
             if (parentId === id) {
                 return res.status(409).json({
@@ -274,8 +338,22 @@ const update = async (req, res) => {
             return res.status(404).json({ message: 'A szervezeti egység nem található.' });
         }
 
+        let syncMessage = '';
+
+        if (managerId) {
+            const [sync] = await pool.execute(
+                `UPDATE UserGroups SET user_group_manager_id = ?
+                 WHERE ${entity.groupCondition}`,
+                [managerId, id]
+            );
+
+            if (sync.affectedRows > 0) {
+                syncMessage = ' A hozzá tartozó csoport vezetője is frissült.';
+            }
+        }
+
         return res.status(200).json({
-            message: `A ${entity.label} módosításra került.`
+            message: `A ${entity.label} módosításra került.${syncMessage}`
         });
     } catch (error) {
         if (error.code === 'ER_DUP_ENTRY') {
