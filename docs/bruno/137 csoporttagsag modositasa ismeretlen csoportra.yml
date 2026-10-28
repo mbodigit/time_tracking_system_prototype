@@ -1,0 +1,30 @@
+info:
+  name: csoporttagsag modositasa ismeretlen csoportra
+  type: http
+  seq: 137
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/groups/999999/members"
+  body:
+    type: json
+    data: |-
+      {
+        "add": [{{newEmployeeId}}]
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "404"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

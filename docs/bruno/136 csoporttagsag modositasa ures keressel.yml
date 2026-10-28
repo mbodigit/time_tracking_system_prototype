@@ -1,0 +1,31 @@
+info:
+  name: csoporttagsag modositasa ures keressel
+  type: http
+  seq: 136
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/groups/{{memberGroupId}}/members"
+  body:
+    type: json
+    data: |-
+      {
+        "add": [],
+        "remove": []
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "400"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

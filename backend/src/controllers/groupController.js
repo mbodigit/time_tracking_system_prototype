@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { coreHourLength } = require('../services/dateHelpers');
 
 const list = async (req, res) => {
     try {
@@ -92,14 +93,17 @@ const options = async (req, res) => {
              FROM WorkingHours ORDER BY working_hour_num`
         );
         const [coreHours] = await pool.execute(
-            `SELECT core_hour_id, core_hour_name FROM CoreHours ORDER BY core_hour_start`
+            `SELECT core_hour_id, core_hour_name, core_hour_start, core_hour_end
+             FROM CoreHours ORDER BY core_hour_start`
         );
         const [managers] = await pool.execute(
-            `SELECT u.user_id, u.user_username,
+            `SELECT u.user_id, u.user_username, e.employee_id,
                     e.employee_last_name, e.employee_first_name
              FROM Users u
-             LEFT JOIN Employees e ON e.employee_id = u.user_employee_id
+             JOIN UserRoles r      ON r.user_role_id   = u.user_role_id
+             LEFT JOIN Employees e ON e.employee_id    = u.user_employee_id
              WHERE u.user_status = 1
+               AND r.user_role_name = 'Vezető'
              ORDER BY e.employee_last_name, e.employee_first_name`
         );
 
@@ -125,14 +129,17 @@ const options = async (req, res) => {
             })),
             workingHours: workingHours.map((row) => ({
                 id: row.working_hour_id,
-                name: row.working_hour_name || `${row.working_hour_num} óra`
+                name: row.working_hour_name || `${row.working_hour_num} óra`,
+                num: row.working_hour_num
             })),
             coreHours: coreHours.map((row) => ({
                 id: row.core_hour_id,
-                name: row.core_hour_name
+                name: row.core_hour_name,
+                hours: coreHourLength(row.core_hour_start, row.core_hour_end)
             })),
             managers: managers.map((row) => ({
                 id: row.user_id,
+                employeeId: row.employee_id,
                 name: row.employee_last_name
                     ? `${row.employee_last_name} ${row.employee_first_name}`
                     : row.user_username
@@ -168,12 +175,19 @@ const validate = async (body) => {
     }
 
     const [managers] = await pool.execute(
-        `SELECT user_status FROM Users WHERE user_id = ?`,
+        `SELECT u.user_status, r.user_role_name
+         FROM Users u
+         JOIN UserRoles r ON r.user_role_id = u.user_role_id
+         WHERE u.user_id = ?`,
         [Number(body.managerId)]
     );
 
     if (managers.length === 0 || !managers[0].user_status) {
         return 'A csoport vezetőjének aktív rendszerfelhasználónak kell lennie.';
+    }
+
+    if (managers[0].user_role_name !== 'Vezető') {
+        return 'A csoport vezetőjének vezetői szerepkörrel kell rendelkeznie.';
     }
 
     return null;
@@ -272,6 +286,111 @@ const update = async (req, res) => {
     }
 };
 
+const listAssignable = async (req, res) => {
+    try {
+        const [rows] = await pool.execute(
+            `SELECT e.employee_id, e.employee_code,
+                    e.employee_last_name, e.employee_first_name,
+                    e.employee_user_group_id, g.user_group_name,
+                    cat.employee_category_name, w.work_schedule_name
+             FROM Employees e
+             JOIN EmployeeStatus st           ON st.employee_status_id     = e.employee_status_id
+             LEFT JOIN UserGroups g           ON g.user_group_id           = e.employee_user_group_id
+             LEFT JOIN EmployeeCategories cat ON cat.employee_category_id  = e.employee_category_id
+             LEFT JOIN WorkSchedules w        ON w.work_schedule_id        = e.employee_work_schedule_id
+             WHERE st.employee_status_is_active = 1
+             ORDER BY e.employee_last_name, e.employee_first_name`
+        );
+
+        return res.status(200).json({
+            employees: rows.map((row) => ({
+                id: row.employee_id,
+                code: row.employee_code,
+                name: `${row.employee_last_name} ${row.employee_first_name}`,
+                groupId: row.employee_user_group_id,
+                groupName: row.user_group_name,
+                categoryName: row.employee_category_name,
+                workScheduleName: row.work_schedule_name
+            }))
+        });
+    } catch (error) {
+        console.error('Csoporttag lista hiba:', error);
+        return res.status(500).json({ message: 'Szerver hiba.' });
+    }
+};
+
+const toIdList = (value) => (
+    Array.isArray(value)
+        ? [...new Set(value.map(Number).filter(Boolean))]
+        : []
+);
+
+const updateMembers = async (req, res) => {
+    const groupId = Number(req.params.id);
+    const add = toIdList(req.body?.add);
+    const remove = toIdList(req.body?.remove);
+
+    if (!groupId) {
+        return res.status(400).json({ message: 'Érvénytelen csoportazonosító.' });
+    }
+
+    if (add.length === 0 && remove.length === 0) {
+        return res.status(400).json({ message: 'Nincs végrehajtható művelet a kérésben.' });
+    }
+
+    try {
+        const [groups] = await pool.execute(
+            `SELECT user_group_id FROM UserGroups WHERE user_group_id = ?`,
+            [groupId]
+        );
+
+        if (groups.length === 0) {
+            return res.status(404).json({ message: 'A csoport nem található.' });
+        }
+    } catch (error) {
+        console.error('Csoport ellenőrzési hiba:', error);
+        return res.status(500).json({ message: 'Szerver hiba.' });
+    }
+
+    const connection = await pool.getConnection();
+
+    try {
+        await connection.beginTransaction();
+
+        if (remove.length > 0) {
+            const placeholders = remove.map(() => '?').join(', ');
+            await connection.execute(
+                `UPDATE Employees SET employee_user_group_id = NULL
+                 WHERE employee_user_group_id = ?
+                   AND employee_id IN (${placeholders})`,
+                [groupId, ...remove]
+            );
+        }
+
+        if (add.length > 0) {
+            const placeholders = add.map(() => '?').join(', ');
+            await connection.execute(
+                `UPDATE Employees SET employee_user_group_id = ?
+                 WHERE employee_id IN (${placeholders})`,
+                [groupId, ...add]
+            );
+        }
+
+        await connection.commit();
+
+        return res.status(200).json({
+            message: 'A csoport tagsága módosításra került. '
+                + `Hozzáadva: ${add.length}, eltávolítva: ${remove.length}.`
+        });
+    } catch (error) {
+        await connection.rollback();
+        console.error('Csoporttagság módosítási hiba:', error);
+        return res.status(500).json({ message: 'Szerver hiba.' });
+    } finally {
+        connection.release();
+    }
+};
+
 const remove = async (req, res) => {
     const groupId = Number(req.params.id);
 
@@ -311,4 +430,6 @@ const remove = async (req, res) => {
     }
 };
 
-module.exports = { list, options, create, update, remove };
+module.exports = {
+    list, options, create, update, remove, listAssignable, updateMembers
+};

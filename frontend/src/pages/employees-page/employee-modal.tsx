@@ -124,6 +124,14 @@ export const EmployeeModal = ({
 
   const isBusy = isSaving || isDeleting;
 
+  const workingHour = options.workingHours.find(
+    (item) => item.id === form.workingHourId,
+  );
+
+  const coreHours = workingHour
+    ? options.coreHours.filter((item) => item.hours === workingHour.num)
+    : [];
+
   const patch = (changes: Partial<EmployeePayload>) =>
     setForm((current) => ({ ...current, ...changes }));
 
@@ -275,13 +283,15 @@ export const EmployeeModal = ({
               value={form.workingHourId}
               items={options.workingHours}
               placeholder="Nincs"
-              onChange={(workingHourId) => patch({ workingHourId })}
+              onChange={(workingHourId) =>
+                patch({ workingHourId, coreHourId: null })
+              }
             />
 
             <SelectField
               label="Törzsidő"
               value={form.coreHourId}
-              items={options.coreHours}
+              items={coreHours}
               placeholder="Nincs"
               onChange={(coreHourId) => patch({ coreHourId })}
             />

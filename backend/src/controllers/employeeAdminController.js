@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const pool = require('../config/db');
+const { coreHourLength } = require('../services/dateHelpers');
 
 const PASSWORD_ALPHABET =
     'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
@@ -122,7 +123,8 @@ const options = async (req, res) => {
              FROM WorkingHours ORDER BY working_hour_num`
         );
         const [coreHours] = await pool.execute(
-            `SELECT core_hour_id, core_hour_name FROM CoreHours ORDER BY core_hour_start`
+            `SELECT core_hour_id, core_hour_name, core_hour_start, core_hour_end
+             FROM CoreHours ORDER BY core_hour_start`
         );
         const [managers] = await pool.execute(
             `SELECT employee_id, employee_last_name, employee_first_name
@@ -153,10 +155,13 @@ const options = async (req, res) => {
             })),
             workingHours: workingHours.map((row) => ({
                 id: row.working_hour_id,
-                name: row.working_hour_name || `${row.working_hour_num} óra`
+                name: row.working_hour_name || `${row.working_hour_num} óra`,
+                num: row.working_hour_num
             })),
             coreHours: coreHours.map((row) => ({
-                id: row.core_hour_id, name: row.core_hour_name
+                id: row.core_hour_id,
+                name: row.core_hour_name,
+                hours: coreHourLength(row.core_hour_start, row.core_hour_end)
             })),
             managers: managers.map((row) => ({
                 id: row.employee_id,

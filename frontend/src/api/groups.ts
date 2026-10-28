@@ -40,9 +40,9 @@ export interface GroupOptions {
   shifts: DependentOption[];
   costCenters: Option[];
   workSchedules: Option[];
-  workingHours: Option[];
-  coreHours: Option[];
-  managers: Option[];
+  workingHours: (Option & { num: number })[];
+  coreHours: (Option & { hours: number })[];
+  managers: (Option & { employeeId: number | null })[];
 }
 
 export interface GroupPayload {
@@ -59,6 +59,16 @@ export interface GroupPayload {
   managerId: number | null;
 }
 
+export interface AssignableEmployee {
+  id: number;
+  code: string;
+  name: string;
+  groupId: number | null;
+  groupName: string | null;
+  categoryName: string | null;
+  workScheduleName: string | null;
+}
+
 export const listGroups = () => apiGet<{ groups: Group[] }>("/groups");
 
 export const listGroupOptions = () => apiGet<GroupOptions>("/groups/options");
@@ -71,3 +81,11 @@ export const updateGroup = (id: number, payload: GroupPayload) =>
 
 export const deleteGroup = (id: number) =>
   apiDelete<{ message: string }>(`/groups/${id}`);
+
+export const listAssignableEmployees = () =>
+  apiGet<{ employees: AssignableEmployee[] }>("/groups/members");
+
+export const updateGroupMembers = (
+  id: number,
+  payload: { add: number[]; remove: number[] },
+) => apiPatch<{ message: string }>(`/groups/${id}/members`, payload);
