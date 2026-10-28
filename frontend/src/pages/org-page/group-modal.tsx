@@ -11,6 +11,16 @@ import {
   type GroupPayload,
 } from "../../api/groups";
 import { ApiError } from "../../api/client";
+import { Field, FormGrid } from "../../components/form-field/form-field";
+
+export interface GroupNode {
+  areaId: number;
+  departmentId: number | null;
+  shiftId: number | null;
+  label: string;
+  path: string;
+  managerName: string | null;
+}
 
 const EMPTY_FORM: GroupPayload = {
   name: "",
@@ -43,29 +53,11 @@ const toForm = (group: Group): GroupPayload => ({
   managerId: group.managerId,
 });
 
-const Field = ({
-  label,
-  wide,
-  children,
-}: {
-  label: string;
-  wide?: boolean;
-  children: React.ReactNode;
-}) => (
-  <label className={`form-control ${wide ? "md:col-span-2" : ""}`}>
-    <div className="label py-1">
-      <span className="label-text">{label}</span>
-    </div>
-    {children}
-  </label>
-);
-
 interface PersonListProps {
   title: string;
   people: AssignableEmployee[];
   selected: number[];
   showGroup?: boolean;
-  lockedId?: number | null;
   onToggle: (id: number) => void;
   onToggleAll: () => void;
 }
@@ -75,7 +67,6 @@ const PersonList = ({
   people,
   selected,
   showGroup,
-  lockedId,
   onToggle,
   onToggleAll,
 }: PersonListProps) => (
@@ -84,13 +75,9 @@ const PersonList = ({
       <input
         type="checkbox"
         className="checkbox checkbox-xs"
-        checked={
-          people.filter((item) => item.id !== lockedId).length > 0 &&
-          selected.length ===
-            people.filter((item) => item.id !== lockedId).length
-        }
+        checked={people.length > 0 && selected.length === people.length}
         onChange={onToggleAll}
-        disabled={people.filter((item) => item.id !== lockedId).length === 0}
+        disabled={people.length === 0}
       />
       <span className="text-sm font-semibold">
         {title} ({people.length})
@@ -106,16 +93,10 @@ const PersonList = ({
           <input
             type="checkbox"
             className="checkbox checkbox-xs"
-            checked={item.id !== lockedId && selected.includes(item.id)}
-            disabled={item.id === lockedId}
+            checked={selected.includes(item.id)}
             onChange={() => onToggle(item.id)}
           />
-          <span className="flex-1 text-sm">
-            {item.name}
-            {item.id === lockedId && (
-              <span className="badge badge-sm badge-primary ml-2">vezető</span>
-            )}
-          </span>
+          <span className="flex-1 text-sm">{item.name}</span>
           {showGroup && (
             <span className="text-xs opacity-60">
               {item.groupName ?? "nincs csoport"}
@@ -136,6 +117,7 @@ const PersonList = ({
 
 interface GroupModalProps {
   group: Group | null;
+  node: GroupNode;
   options: GroupOptions;
   onClose: () => void;
   onSaved: (message: string) => void;
@@ -144,6 +126,7 @@ interface GroupModalProps {
 
 export const GroupModal = ({
   group,
+  node,
   options,
   onClose,
   onSaved,
@@ -183,20 +166,11 @@ export const GroupModal = ({
               .map((item) => item.id)
           : [];
 
-        const managerEmployee = group
-          ? (options.managers.find((item) => item.id === group.managerId)
-              ?.employeeId ?? null)
-          : null;
-
         setSavedMemberIds(saved);
-        setMemberIds(
-          managerEmployee && !saved.includes(managerEmployee)
-            ? [...saved, managerEmployee]
-            : saved,
-        );
+        setMemberIds(saved);
       })
       .catch(() => setAssignable([]));
-  }, [group, options]);
+  }, [group]);
 
   const patch = (changes: Partial<GroupPayload>) =>
     setForm((current) => ({ ...current, ...changes }));
@@ -206,14 +180,6 @@ export const GroupModal = ({
       error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
     );
 
-  const departments = options.departments.filter(
-    (item) => item.areaId === form.areaId,
-  );
-
-  const shifts = options.shifts.filter(
-    (item) => item.departmentId === form.departmentId,
-  );
-
   const workingHour = options.workingHours.find(
     (item) => item.id === form.workingHourId,
   );
@@ -221,10 +187,6 @@ export const GroupModal = ({
   const coreHours = workingHour
     ? options.coreHours.filter((item) => item.hours === workingHour.num)
     : [];
-
-  const managerEmployeeId =
-    options.managers.find((item) => item.id === form.managerId)?.employeeId ??
-    null;
 
   const term = filter.trim().toLowerCase();
 
@@ -272,15 +234,23 @@ export const GroupModal = ({
     setErrorMessage("");
     setIsSaving(true);
 
+    const payload: GroupPayload = {
+      ...form,
+      areaId: node.areaId,
+      departmentId: node.departmentId,
+      shiftId: node.shiftId,
+      managerId: null,
+    };
+
     try {
       let groupId = group?.id ?? 0;
       let message = "";
 
       if (group) {
-        const response = await updateGroup(group.id, form);
+        const response = await updateGroup(group.id, payload);
         message = response.message;
       } else {
-        const response = await createGroup(form);
+        const response = await createGroup(payload);
         groupId = response.id;
         message = response.message;
       }
@@ -354,7 +324,7 @@ export const GroupModal = ({
             <h3 className="text-xl font-bold text-primary">
               {isNew ? "Új csoport felvétele" : "Csoport módosítása"}
             </h3>
-            {group && <p className="mt-0.5 text-xs opacity-60">{group.name}</p>}
+            <p className="mt-0.5 text-xs opacity-60">{node.path}</p>
           </div>
           <button
             type="button"
@@ -392,209 +362,131 @@ export const GroupModal = ({
           )}
 
           {tab === "data" && (
-            <div className="grid gap-3 md:grid-cols-3">
-              <Field label="Megnevezés">
-                <input
-                  type="text"
-                  className="input input-sm input-bordered"
-                  value={form.name}
-                  onChange={(event) => patch({ name: event.target.value })}
-                />
-              </Field>
+            <>
+              <div className="rounded border border-base-300 bg-base-200 px-3 py-2 text-sm">
+                <p>
+                  Szervezeti egység:{" "}
+                  <span className="font-semibold">{node.label}</span>
+                </p>
+                <p className="opacity-70">
+                  Vezető: {node.managerName ?? "nincs megadva"} - a csoport
+                  vezetője a szervezeti egységtől öröklődik, itt nem
+                  módosítható.
+                </p>
+              </div>
 
-              <Field label="Terület">
-                <select
-                  className="select select-sm select-bordered"
-                  value={form.areaId ?? ""}
-                  onChange={(event) =>
-                    patch({
-                      areaId: toNumber(event.target.value),
-                      departmentId: null,
-                      shiftId: null,
-                    })
+              <FormGrid>
+                <Field label="Megnevezés" span={2}>
+                  <input
+                    type="text"
+                    className="input input-sm input-bordered"
+                    value={form.name}
+                    onChange={(event) => patch({ name: event.target.value })}
+                  />
+                </Field>
+
+                <Field label="Állapot">
+                  <select
+                    className="select select-sm select-bordered"
+                    value={form.status}
+                    onChange={(event) => patch({ status: event.target.value })}
+                  >
+                    <option value="Aktív">Aktív</option>
+                    <option value="Inaktív">Inaktív</option>
+                  </select>
+                </Field>
+
+                <Field label="Költséghely">
+                  <select
+                    className="select select-sm select-bordered"
+                    value={form.costCenterId ?? ""}
+                    onChange={(event) =>
+                      patch({ costCenterId: toNumber(event.target.value) })
+                    }
+                  >
+                    <option value="">Válassz</option>
+                    {options.costCenters.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+
+                <Field label="Munkarend">
+                  <select
+                    className="select select-sm select-bordered"
+                    value={form.workScheduleId ?? ""}
+                    onChange={(event) =>
+                      patch({ workScheduleId: toNumber(event.target.value) })
+                    }
+                  >
+                    <option value="">Nincs</option>
+                    {options.workSchedules.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+
+                <Field label="Munkaidő">
+                  <select
+                    className="select select-sm select-bordered"
+                    value={form.workingHourId ?? ""}
+                    onChange={(event) =>
+                      patch({
+                        workingHourId: toNumber(event.target.value),
+                        coreHourId: null,
+                      })
+                    }
+                  >
+                    <option value="">Nincs</option>
+                    {options.workingHours.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+
+                <Field
+                  label="Törzsidő"
+                  hint={
+                    workingHour && coreHours.length === 0
+                      ? `Nincs ${workingHour.num} órás törzsidő a törzsadatok között.`
+                      : undefined
                   }
                 >
-                  <option value="">Válassz</option>
-                  {options.areas.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-              </Field>
+                  <select
+                    className="select select-sm select-bordered"
+                    value={form.coreHourId ?? ""}
+                    disabled={!workingHour || coreHours.length === 0}
+                    onChange={(event) =>
+                      patch({ coreHourId: toNumber(event.target.value) })
+                    }
+                  >
+                    <option value="">Nincs</option>
+                    {coreHours.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
 
-              <Field label="Részleg">
-                <select
-                  className="select select-sm select-bordered"
-                  value={form.departmentId ?? ""}
-                  disabled={!form.areaId}
-                  onChange={(event) =>
-                    patch({
-                      departmentId: toNumber(event.target.value),
-                      shiftId: null,
-                    })
-                  }
-                >
-                  <option value="">Nincs</option>
-                  {departments.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-
-              <Field label="Műszak">
-                <select
-                  className="select select-sm select-bordered"
-                  value={form.shiftId ?? ""}
-                  disabled={!form.departmentId}
-                  onChange={(event) =>
-                    patch({ shiftId: toNumber(event.target.value) })
-                  }
-                >
-                  <option value="">Nincs</option>
-                  {shifts.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-
-              <Field label="Költséghely">
-                <select
-                  className="select select-sm select-bordered"
-                  value={form.costCenterId ?? ""}
-                  onChange={(event) =>
-                    patch({ costCenterId: toNumber(event.target.value) })
-                  }
-                >
-                  <option value="">Válassz</option>
-                  {options.costCenters.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-
-              <Field label="Munkarend">
-                <select
-                  className="select select-sm select-bordered"
-                  value={form.workScheduleId ?? ""}
-                  onChange={(event) =>
-                    patch({ workScheduleId: toNumber(event.target.value) })
-                  }
-                >
-                  <option value="">Nincs</option>
-                  {options.workSchedules.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-
-              <Field label="Munkaidő">
-                <select
-                  className="select select-sm select-bordered"
-                  value={form.workingHourId ?? ""}
-                  onChange={(event) =>
-                    patch({
-                      workingHourId: toNumber(event.target.value),
-                      coreHourId: null,
-                    })
-                  }
-                >
-                  <option value="">Nincs</option>
-                  {options.workingHours.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-
-              <Field label="Törzsidő">
-                <select
-                  className="select select-sm select-bordered"
-                  value={form.coreHourId ?? ""}
-                  disabled={!workingHour || coreHours.length === 0}
-                  onChange={(event) =>
-                    patch({ coreHourId: toNumber(event.target.value) })
-                  }
-                >
-                  <option value="">Nincs</option>
-                  {coreHours.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-                {workingHour && coreHours.length === 0 && (
-                  <div className="label py-1">
-                    <span className="label-text-alt opacity-70">
-                      Nincs {workingHour.num} órás törzsidő a törzsadatok
-                      között.
-                    </span>
-                  </div>
-                )}
-              </Field>
-
-              <Field label="Területi vezető">
-                <select
-                  className="select select-sm select-bordered"
-                  value={form.managerId ?? ""}
-                  onChange={(event) => {
-                    const nextManagerId = toNumber(event.target.value);
-                    const previous = managerEmployeeId;
-                    const next =
-                      options.managers.find((item) => item.id === nextManagerId)
-                        ?.employeeId ?? null;
-
-                    patch({ managerId: nextManagerId });
-
-                    setMemberIds((current) => {
-                      const kept = current.filter((id) => id !== previous);
-                      return next && !kept.includes(next)
-                        ? [...kept, next]
-                        : kept;
-                    });
-                    setPickedMembers([]);
-                  }}
-                >
-                  <option value="">Válassz</option>
-                  {options.managers.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-
-              <Field label="Megjegyzés" wide>
-                <input
-                  type="text"
-                  className="input input-sm input-bordered"
-                  value={form.description ?? ""}
-                  onChange={(event) =>
-                    patch({ description: event.target.value })
-                  }
-                />
-              </Field>
-
-              <Field label="Állapot">
-                <select
-                  className="select select-sm select-bordered"
-                  value={form.status}
-                  onChange={(event) => patch({ status: event.target.value })}
-                >
-                  <option value="Aktív">Aktív</option>
-                  <option value="Inaktív">Inaktív</option>
-                </select>
-              </Field>
-            </div>
+                <Field label="Megjegyzés" span={2}>
+                  <input
+                    type="text"
+                    className="input input-sm input-bordered"
+                    value={form.description ?? ""}
+                    onChange={(event) =>
+                      patch({ description: event.target.value })
+                    }
+                  />
+                </Field>
+              </FormGrid>
+            </>
           )}
 
           {tab === "members" && (
@@ -610,21 +502,18 @@ export const GroupModal = ({
               <div className="grid items-start gap-3 md:grid-cols-[1fr_auto_1fr]">
                 <PersonList
                   title="A csoport tagjai"
-                  lockedId={managerEmployeeId}
                   people={members}
                   selected={pickedMembers}
                   onToggle={(id) =>
                     setPickedMembers((current) => toggle(current, id))
                   }
-                  onToggleAll={() => {
-                    const selectable = members
-                      .filter((item) => item.id !== managerEmployeeId)
-                      .map((item) => item.id);
-
+                  onToggleAll={() =>
                     setPickedMembers((current) =>
-                      current.length === selectable.length ? [] : selectable,
-                    );
-                  }}
+                      current.length === members.length
+                        ? []
+                        : members.map((item) => item.id),
+                    )
+                  }
                 />
 
                 <div className="flex flex-row justify-center gap-2 md:mt-16 md:flex-col">
@@ -667,10 +556,7 @@ export const GroupModal = ({
               <p className="text-sm opacity-70">
                 A jobb oldali listában a dolgozó mellett a jelenlegi csoportja
                 látszik. Ha olyat adsz hozzá, aki már máshová tartozik, az
-                átkerül ebbe a csoportba. A csoport vezetője mindig tagja a
-                csoportnak, és nem vehető ki belőle - ha mást kell megbízni, az
-                Adatok fülön válassz másik vezetőt, és a rendszer egy lépésben
-                elvégzi a cserét. A tagság csak mentéskor változik meg.
+                átkerül ebbe a csoportba. A tagság csak mentéskor változik meg.
               </p>
             </div>
           )}
@@ -683,8 +569,8 @@ export const GroupModal = ({
                 </p>
                 <p>
                   A csoport csak üresen törölhető. Eltávolítsam előbb az összes
-                  dolgozót? Ők megmaradnak, csak csoport nélkül, és később másik
-                  csoportba sorolhatók.
+                  dolgozót? Ők megmaradnak, csak csoport nélkül, és később
+                  másik csoportba sorolhatók.
                 </p>
                 <div className="mt-2 flex gap-2">
                   <button
@@ -711,8 +597,8 @@ export const GroupModal = ({
               <div>
                 <p className="font-semibold">Biztosan törlöd a csoportot?</p>
                 <p>
-                  A csoport üres, a törlés véglegesen eltávolítja. Ha később még
-                  szükség lehet rá, inkább állítsd Inaktív állapotra.
+                  A csoport üres, a törlés véglegesen eltávolítja. Ha később
+                  még szükség lehet rá, inkább állítsd Inaktív állapotra.
                 </p>
                 <div className="mt-2 flex gap-2">
                   <button

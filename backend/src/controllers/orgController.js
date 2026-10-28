@@ -102,8 +102,10 @@ const tree = async (req, res) => {
             `SELECT u.user_id, u.user_username,
                     e.employee_last_name, e.employee_first_name
              FROM Users u
-             LEFT JOIN Employees e ON e.employee_id = u.user_employee_id
+             JOIN UserRoles r      ON r.user_role_id = u.user_role_id
+             LEFT JOIN Employees e ON e.employee_id  = u.user_employee_id
              WHERE u.user_status = 1
+               AND r.user_role_name = 'Vezető'
              ORDER BY e.employee_last_name, e.employee_first_name`
         );
 
@@ -189,6 +191,31 @@ const tree = async (req, res) => {
     }
 };
 
+const checkManager = async (managerId) => {
+    if (!managerId) {
+        return null;
+    }
+
+    const [rows] = await pool.execute(
+        `SELECT u.user_status, r.user_role_name
+         FROM Users u
+         JOIN UserRoles r ON r.user_role_id = u.user_role_id
+         WHERE u.user_id = ?`,
+        [managerId]
+    );
+
+    if (rows.length === 0 || !rows[0].user_status) {
+        return 'A vezetőnek aktív rendszerfelhasználónak kell lennie.';
+    }
+
+    if (rows[0].user_role_name !== 'Vezető') {
+        return 'Szervezeti egység vezetője csak vezetői szerepkörű '
+            + 'felhasználó lehet.';
+    }
+
+    return null;
+};
+
 const resolveEntity = (req, res) => {
     const entity = ENTITIES[req.params.entity];
 
@@ -222,6 +249,12 @@ const create = async (req, res) => {
     }
 
     try {
+        const managerError = await checkManager(managerId);
+
+        if (managerError) {
+            return res.status(400).json({ message: managerError });
+        }
+
         const columns = [entity.nameColumn, entity.managerColumn];
         const values = [name, managerId];
 
@@ -284,6 +317,12 @@ const update = async (req, res) => {
     }
 
     try {
+        const managerError = await checkManager(managerId);
+
+        if (managerError) {
+            return res.status(400).json({ message: managerError });
+        }
+
         if (!managerId) {
             const [attached] = await pool.execute(
                 `SELECT user_group_name FROM UserGroups
