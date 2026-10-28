@@ -1,0 +1,32 @@
+info:
+  name: terulet onmaga felettese
+  type: http
+  seq: 145
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/org/areas/{{childAreaId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Bruno Divizio",
+        "parentId": {{childAreaId}},
+        "managerId": null
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "409"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

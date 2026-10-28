@@ -45,7 +45,8 @@ FAJLOK = ["001_torzsadatok.sql", "002_szervezet.sql",
           "003_dolgozok.sql", "004_mukodes.sql", 
           "006_elrendeles.sql", "007_beosztas_es_szabadsagkeret.sql",
           "011_potlek_jogcimkodok.sql", "012_berkodok.sql", 
-          "014_szervezeti_vezetok.sql", "015_dolgozoi_kod_sorszam.sql"
+          "014_szervezeti_vezetok.sql", "015_dolgozoi_kod_sorszam.sql",
+          "016_terulet_szulo.sql"
           ]
 
 TIPUSOK = (r"(?:INT|TINYINT|BOOLEAN|VARCHAR\(\d+\)|DATETIME|DATE|TIME"
