@@ -15,6 +15,18 @@ router.get('/groups/options',
     groupController.options
 );
 
+router.get('/groups/members',
+    authenticateToken,
+    authorizePermission('admin.groups'),
+    groupController.listAssignable
+);
+
+router.patch('/groups/:id/members',
+    authenticateToken,
+    authorizePermission('admin.groups'),
+    groupController.updateMembers
+);
+
 router.post('/groups',
     authenticateToken,
     authorizePermission('admin.groups'),
