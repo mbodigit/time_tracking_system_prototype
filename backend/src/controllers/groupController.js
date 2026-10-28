@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { coreHourLength } = require('../services/dateHelpers');
 
 const list = async (req, res) => {
     try {
@@ -92,10 +93,11 @@ const options = async (req, res) => {
              FROM WorkingHours ORDER BY working_hour_num`
         );
         const [coreHours] = await pool.execute(
-            `SELECT core_hour_id, core_hour_name FROM CoreHours ORDER BY core_hour_start`
+            `SELECT core_hour_id, core_hour_name, core_hour_start, core_hour_end
+             FROM CoreHours ORDER BY core_hour_start`
         );
         const [managers] = await pool.execute(
-            `SELECT u.user_id, u.user_username,
+            `SELECT u.user_id, u.user_username, e.employee_id,
                     e.employee_last_name, e.employee_first_name
              FROM Users u
              JOIN UserRoles r      ON r.user_role_id   = u.user_role_id
@@ -127,14 +129,17 @@ const options = async (req, res) => {
             })),
             workingHours: workingHours.map((row) => ({
                 id: row.working_hour_id,
-                name: row.working_hour_name || `${row.working_hour_num} óra`
+                name: row.working_hour_name || `${row.working_hour_num} óra`,
+                num: row.working_hour_num
             })),
             coreHours: coreHours.map((row) => ({
                 id: row.core_hour_id,
-                name: row.core_hour_name
+                name: row.core_hour_name,
+                hours: coreHourLength(row.core_hour_start, row.core_hour_end)
             })),
             managers: managers.map((row) => ({
                 id: row.user_id,
+                employeeId: row.employee_id,
                 name: row.employee_last_name
                     ? `${row.employee_last_name} ${row.employee_first_name}`
                     : row.user_username

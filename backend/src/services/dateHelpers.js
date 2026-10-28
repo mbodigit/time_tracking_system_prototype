@@ -33,6 +33,17 @@ const overlapMinutes = (fromA, toA, fromB, toB) => {
     return end > start ? Math.round((end - start) / (1000 * 60)) : 0;
 };
 
+const coreHourLength = (start, end) => {
+    const toMinutes = (value) => {
+        const [hours, minutes] = String(value).split(':').map(Number);
+        return (hours * 60) + minutes;
+    };
+
+    const diff = toMinutes(end) - toMinutes(start);
+
+    return (diff > 0 ? diff : diff + (24 * 60)) / 60;
+};
+
 module.exports = {
     DAY_TYPE_MAP,
     toSqlDateTime,
@@ -40,5 +51,6 @@ module.exports = {
     addDays,
     toDate,
     minutesBetween,
-    overlapMinutes
+    overlapMinutes,
+    coreHourLength
 };

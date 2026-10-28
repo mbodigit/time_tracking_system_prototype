@@ -40,9 +40,9 @@ export interface GroupOptions {
   shifts: DependentOption[];
   costCenters: Option[];
   workSchedules: Option[];
-  workingHours: Option[];
-  coreHours: Option[];
-  managers: Option[];
+  workingHours: (Option & { num: number })[];
+  coreHours: (Option & { hours: number })[];
+  managers: (Option & { employeeId: number | null })[];
 }
 
 export interface GroupPayload {

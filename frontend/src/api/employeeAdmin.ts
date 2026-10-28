@@ -39,6 +39,8 @@ export interface AdminOption {
   id: number;
   name: string;
   isActive?: boolean;
+  num?: number;
+  hours?: number;
 }
 
 export interface EmployeeOptions {
