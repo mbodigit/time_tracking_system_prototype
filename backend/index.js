@@ -14,6 +14,7 @@ const groupRoutes = require('./src/routes/groupRoutes');
 const orgRoutes = require('./src/routes/orgRoutes');
 const employeeAdminRoutes = require('./src/routes/employeeAdminRoutes');
 const masterDataRoutes = require('./src/routes/masterDataRoutes');
+const absenceAdminRoutes = require('./src/routes/absenceAdminRoutes');
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use('/api', groupRoutes);
 app.use('/api', orgRoutes);
 app.use('/api', employeeAdminRoutes);
 app.use('/api', masterDataRoutes);
+app.use('/api', absenceAdminRoutes);
 
 const serverStart = async () => {
     try {
