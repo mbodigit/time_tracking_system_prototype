@@ -1,0 +1,31 @@
+info:
+  name: munkarend ismetelt letrehozasa
+  type: http
+  seq: 157
+
+http:
+  method: POST
+  url: "{{baseUrl}}/admin/master-data/work-schedules"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Bruno munkarend",
+        "isShift": false
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "409"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

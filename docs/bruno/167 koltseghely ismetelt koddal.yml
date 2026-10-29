@@ -1,0 +1,31 @@
+info:
+  name: koltseghely ismetelt koddal
+  type: http
+  seq: 167
+
+http:
+  method: POST
+  url: "{{baseUrl}}/admin/master-data/cost-centers"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Bruno masik",
+        "code": "BRUNO"
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "409"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

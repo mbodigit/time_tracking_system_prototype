@@ -1,0 +1,31 @@
+info:
+  name: napi munkaido ervenytelen oraszammal
+  type: http
+  seq: 160
+
+http:
+  method: POST
+  url: "{{baseUrl}}/admin/master-data/working-hours"
+  body:
+    type: json
+    data: |-
+      {
+        "num": 0,
+        "name": "Hibas"
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "400"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

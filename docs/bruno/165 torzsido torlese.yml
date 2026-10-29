@@ -1,0 +1,24 @@
+info:
+  name: torzsido torlese
+  type: http
+  seq: 165
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/admin/master-data/core-hours/{{msCoreHourId}}"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

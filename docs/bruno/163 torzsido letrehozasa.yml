@@ -1,0 +1,42 @@
+info:
+  name: torzsido letrehozasa
+  type: http
+  seq: 163
+
+http:
+  method: POST
+  url: "{{baseUrl}}/admin/master-data/core-hours"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Bruno 06-13",
+        "start": "06:00",
+        "end": "13:00"
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "201"
+
+  actions:
+    - type: set-variable
+      phase: after-response
+      selector:
+        expression: res.body.id
+        method: jsonq
+      variable:
+        name: msCoreHourId
+        scope: runtime
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

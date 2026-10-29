@@ -12,6 +12,7 @@ import { RequireRole } from "./components/require-role/require-role";
 import { OrgPage } from "./pages/org-page/org-page";
 import { EmployeesPage } from "./pages/employees-page/employees-page";
 import { ConnectionGuard } from "./components/connection-guard/connection-guard";
+import { MasterDataPage } from "./pages/master-data-page/master-data-page";
 
 const App = () => {
   return (
@@ -60,6 +61,14 @@ const App = () => {
               element={
                 <RequireRole roles={["HR-Bér"]}>
                   <EmployeesPage />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/admin-master-data"
+              element={
+                <RequireRole roles={["Admin"]}>
+                  <MasterDataPage />
                 </RequireRole>
               }
             />
