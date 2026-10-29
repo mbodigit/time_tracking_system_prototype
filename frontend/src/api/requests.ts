@@ -20,6 +20,7 @@ export interface AbsenceRequest {
   decisionBy: string | null;
   createdAt: string;
   isUrgent: boolean;
+  isBackdated: boolean;
   isExpired: boolean;
 }
 

@@ -30,6 +30,11 @@ const statusLabel = (item: AbsenceRequest) => {
   if (item.isExpired) {
     return "Elbírálatlanul lejárt";
   }
+
+  if (item.isBackdated) {
+    return "Visszamenőleges";
+  }
+
   return item.status;
 };
 
