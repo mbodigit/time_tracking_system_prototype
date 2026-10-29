@@ -1,5 +1,4 @@
-import { ApiError, apiGet } from "./client";
-import { getToken } from "../utils/auth";
+import { apiGet, apiDownload } from "./client";
 import type { AllowanceType } from "./timeEntries";
 
 export interface ReportRow {
@@ -69,35 +68,16 @@ export const listMonthlyReport = (
     `/reports/monthly?${buildParams(year, month, employeeId, groupId)}`,
   );
 
-export const downloadPayroll = async (
+export const downloadPayroll = (
   year: number,
   month: number,
   employeeId?: number,
   groupId?: number,
-) => {
-  const response = await fetch(
-    `${import.meta.env.VITE_API_URL}/reports/payroll?${buildParams(year, month, employeeId, groupId)}`,
-    { headers: { Authorization: `Bearer ${getToken()}` } },
+) =>
+  apiDownload(
+    `/reports/payroll?${buildParams(year, month, employeeId, groupId)}`,
+    `berfeladas_${year}_${String(month).padStart(2, "0")}.csv`,
   );
-
-  if (!response.ok) {
-    throw new ApiError(
-      response.status,
-      "A bérfeladási fájl nem állítható elő.",
-    );
-  }
-
-  const blob = await response.blob();
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-
-  link.href = url;
-  link.download = `berfeladas_${year}_${String(month).padStart(2, "0")}.csv`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
-};
 
 export interface StatisticsRow {
   key: string;
