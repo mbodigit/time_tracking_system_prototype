@@ -1,0 +1,32 @@
+info:
+  name: torzsido hibas idoponttal
+  type: http
+  seq: 164
+
+http:
+  method: POST
+  url: "{{baseUrl}}/admin/master-data/core-hours"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Bruno hibas",
+        "start": "",
+        "end": "13:00"
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "400"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

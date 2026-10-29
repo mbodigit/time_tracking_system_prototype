@@ -1,0 +1,24 @@
+info:
+  name: munkarend torlese
+  type: http
+  seq: 159
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/admin/master-data/work-schedules/{{msScheduleId}}"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

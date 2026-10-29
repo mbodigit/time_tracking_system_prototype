@@ -1,0 +1,24 @@
+info:
+  name: hasznalatban levo jogcim torlese
+  type: http
+  seq: 179
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/admin/absences/1"
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "409"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

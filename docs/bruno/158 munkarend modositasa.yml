@@ -1,0 +1,31 @@
+info:
+  name: munkarend modositasa
+  type: http
+  seq: 158
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/admin/master-data/work-schedules/{{msScheduleId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Bruno munkarend modositva",
+        "isShift": true
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

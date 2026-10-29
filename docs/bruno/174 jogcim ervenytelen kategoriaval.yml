@@ -1,0 +1,38 @@
+info:
+  name: jogcim ervenytelen kategoriaval
+  type: http
+  seq: 174
+
+http:
+  method: POST
+  url: "{{baseUrl}}/admin/absences"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Bruno jogcim",
+        "payrollCode": "BRJ",
+        "category": "Nemletezo",
+        "isPaid": true,
+        "isOpenEnded": false,
+        "recType": 0,
+        "status": true,
+        "sort": 900,
+        "workScheduleIds": [{{absScheduleId}}]
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "400"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

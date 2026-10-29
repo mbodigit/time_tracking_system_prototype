@@ -1,0 +1,38 @@
+info:
+  name: jogcim modositasa
+  type: http
+  seq: 177
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/admin/absences/{{newAbsenceId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Bruno jogcim modositva",
+        "payrollCode": "BRJ2",
+        "category": "Szabadság",
+        "isPaid": false,
+        "isOpenEnded": true,
+        "recType": 1,
+        "status": false,
+        "sort": 910,
+        "workScheduleIds": [{{absScheduleId}}]
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

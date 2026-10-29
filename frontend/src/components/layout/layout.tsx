@@ -141,6 +141,12 @@ export const Layout: React.FC = () => {
           roles: [],
         },
         {
+          to: "/admin-master-data",
+          label: "Törzsadatok",
+          icon: IconKey,
+          roles: [],
+        },
+        {
           to: "/admin-calendar",
           label: "Központi naptár",
           icon: IconCalendar,
