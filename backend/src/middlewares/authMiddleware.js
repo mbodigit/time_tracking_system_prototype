@@ -5,23 +5,35 @@ const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
 
     if (!authHeader) {
-        return res.status(401).json({ message: 'Hozzáférés megtagadva. Hiányzik az Authorization fejléc.' });
+        return res.status(401).json({
+            message: 'Hozzáférés megtagadva. Hiányzik az Authorization fejléc.',
+            code: 'NO_TOKEN'
+        });
     }
 
     if (!authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ message: 'Hibás token formátum. Sablon: Bearer <token>' });
+        return res.status(401).json({
+            message: 'Hibás token formátum. Sablon: Bearer <token>',
+            code: 'NO_TOKEN'
+        });
     }
 
     const token = authHeader.split(' ')[1];
 
     if (!token) {
-        return res.status(401).json({ message: 'A fejléc megvan, de a token üres.' });
+        return res.status(401).json({
+            message: 'A fejléc megvan, de a token üres.',
+            code: 'NO_TOKEN'
+        });
     }
 
     try {
         req.user = jwt.verify(token, process.env.JWT_SECRET);
     } catch (error) {
-        return res.status(403).json({ message: 'Érvénytelen, módosított vagy lejárt token.' });
+        return res.status(403).json({
+            message: 'Érvénytelen, módosított vagy lejárt token.',
+            code: 'INVALID_TOKEN'
+        });
     }
 
     const PASSWORD_CHANGE_ALLOWED = [
