@@ -11,59 +11,62 @@ import { CalendarPage } from "./pages/calendar-page/calendar-page";
 import { RequireRole } from "./components/require-role/require-role";
 import { OrgPage } from "./pages/org-page/org-page";
 import { EmployeesPage } from "./pages/employees-page/employees-page";
+import { ConnectionGuard } from "./components/connection-guard/connection-guard";
 
 const App = () => {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<LoginPage />} />
-        <Route path="/change-password" element={<ChangePasswordPage />} />
+    <ConnectionGuard>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<LoginPage />} />
+          <Route path="/change-password" element={<ChangePasswordPage />} />
 
-        <Route
-          element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }
-        >
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/time-log" element={<TimeLogPage />} />
-          <Route path="/requests" element={<RequestsPage />} />
           <Route
-            path="/reports"
             element={
-              <RequireRole roles={["Vezető", "HR-Bér"]}>
-                <ReportsPage />
-              </RequireRole>
+              <ProtectedRoute>
+                <Layout />
+              </ProtectedRoute>
             }
-          />
-          <Route
-            path="/admin-calendar"
-            element={
-              <RequireRole roles={["HR-Bér"]}>
-                <CalendarPage />
-              </RequireRole>
-            }
-          />
-          <Route
-            path="/admin-org-structure"
-            element={
-              <RequireRole roles={["Admin"]}>
-                <OrgPage />
-              </RequireRole>
-            }
-          />
-          <Route
-            path="/admin-employees"
-            element={
-              <RequireRole roles={["HR-Bér"]}>
-                <EmployeesPage />
-              </RequireRole>
-            }
-          />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+          >
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/time-log" element={<TimeLogPage />} />
+            <Route path="/requests" element={<RequestsPage />} />
+            <Route
+              path="/reports"
+              element={
+                <RequireRole roles={["Vezető", "HR-Bér"]}>
+                  <ReportsPage />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/admin-calendar"
+              element={
+                <RequireRole roles={["HR-Bér"]}>
+                  <CalendarPage />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/admin-org-structure"
+              element={
+                <RequireRole roles={["Admin"]}>
+                  <OrgPage />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/admin-employees"
+              element={
+                <RequireRole roles={["HR-Bér"]}>
+                  <EmployeesPage />
+                </RequireRole>
+              }
+            />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </ConnectionGuard>
   );
 };
 

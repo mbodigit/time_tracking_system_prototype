@@ -123,3 +123,69 @@ export const apiPut = <T>(path: string, body: unknown) =>
 
 export const apiDelete = <T>(path: string) =>
   request<T>(path, { method: "DELETE" });
+
+
+export const apiDownload = async (
+  path: string,
+  fileName: string,
+): Promise<void> => {
+  const headers: Record<string, string> = {};
+  const token = getToken();
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+  let response: Response;
+
+  try {
+    response = await fetch(`${BASE_URL}${path}`, {
+      headers,
+      signal: controller.signal,
+    });
+  } catch (error) {
+    setConnection(false);
+
+    const timedOut = error instanceof DOMException && error.name === "AbortError";
+
+    throw new ApiError(
+      0,
+      timedOut
+        ? "A szerver nem válaszolt időben."
+        : "Nem érhető el a szerver.",
+      true,
+    );
+  } finally {
+    window.clearTimeout(timer);
+  }
+
+  setConnection(true);
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    const code = (data as { code?: string }).code;
+
+    if (response.status === 401 || code === "INVALID_TOKEN") {
+      expireSession();
+    }
+
+    throw new ApiError(
+      response.status,
+      (data as { message?: string }).message ?? "A fájl nem állítható elő.",
+    );
+  }
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+};
