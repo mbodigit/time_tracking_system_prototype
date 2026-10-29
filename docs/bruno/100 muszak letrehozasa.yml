@@ -12,7 +12,7 @@ http:
       {
         "name": "Bruno teszt muszak",
         "parentId": {{newDepartmentId}},
-        "managerId": {{managerUserId}}
+        "managerId": null
       }
   auth:
     type: bearer

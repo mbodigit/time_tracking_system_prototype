@@ -1,7 +1,7 @@
 info:
-  name: csoport letrehozasa nem vezetoi szerepkorrel
+  name: csoport vezeto nelkuli csomoponthoz
   type: http
-  seq: 142
+  seq: 150
 
 http:
   method: POST
@@ -10,10 +10,9 @@ http:
     type: json
     data: |-
       {
-        "name": "Bruno hibas vezeto",
-        "areaId": {{areaId}},
-        "costCenterId": {{costCenterId}},
-        "managerId": {{adminUserId}}
+        "name": "Bruno vezeto nelkuli csoport",
+        "areaId": {{freeAreaId}},
+        "costCenterId": {{costCenterId}}
       }
   auth:
     type: bearer

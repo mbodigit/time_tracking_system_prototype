@@ -1,0 +1,31 @@
+info:
+  name: szervezeti egyseg nem vezetoi vezetovel
+  type: http
+  seq: 151
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/org/areas/{{freeAreaId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Bruno vezeto nelkuli terulet",
+        "managerId": {{adminUserId}}
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "400"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
