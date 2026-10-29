@@ -6,6 +6,7 @@ import {
   type CalendarYear,
 } from "../../api/calendar";
 import { ApiError } from "../../api/client";
+import { Field } from "../../components/form-field/form-field";
 import { getWeekdayName, isWeekend } from "../../utils/datetime";
 
 const MONTH_NAMES = [
@@ -133,22 +134,16 @@ export const CalendarPage = () => {
           </h2>
 
           <div className="flex gap-3 flex-wrap items-end">
-            <label className="form-control">
-              <div className="label py-1">
-                <span className="label-text">Dátum</span>
-              </div>
+            <Field label="Dátum" grow>
               <input
                 type="date"
                 className="input input-sm input-bordered"
                 value={date}
                 onChange={(event) => setDate(event.target.value)}
               />
-            </label>
+            </Field>
 
-            <label className="form-control">
-              <div className="label py-1">
-                <span className="label-text">Naptípus</span>
-              </div>
+            <Field label="Naptípus" grow>
               <select
                 className="select select-sm select-bordered"
                 value={dayType}
@@ -160,19 +155,16 @@ export const CalendarPage = () => {
                   </option>
                 ))}
               </select>
-            </label>
+            </Field>
 
-            <label className="form-control flex-1 min-w-48">
-              <div className="label py-1">
-                <span className="label-text">Megjegyzés (elhagyható)</span>
-              </div>
+            <Field label="Megjegyzés (elhagyható)" grow>
               <input
                 type="text"
                 className="input input-sm input-bordered"
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
               />
-            </label>
+            </Field>
 
             <button
               className="btn btn-sm btn-primary"

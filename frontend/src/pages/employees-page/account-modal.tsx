@@ -8,6 +8,7 @@ import {
   type AdminOption,
 } from "../../api/employeeAdmin";
 import { ApiError } from "../../api/client";
+import { Field } from "../../components/form-field/form-field";
 
 export interface Credentials {
   username: string;
@@ -156,10 +157,7 @@ export const AccountModal = ({
           )}
 
           {isNew && candidates.length > 0 && (
-            <label className="form-control">
-              <div className="label py-1">
-                <span className="label-text">Dolgozó</span>
-              </div>
+            <Field label="Dolgozó">
               <select
                 className="select select-sm select-bordered"
                 value={employeeId ?? ""}
@@ -176,7 +174,7 @@ export const AccountModal = ({
                   </option>
                 ))}
               </select>
-            </label>
+            </Field>
           )}
 
           {!isNew && employee && (
@@ -192,10 +190,7 @@ export const AccountModal = ({
             </div>
           )}
 
-          <label className="form-control">
-            <div className="label py-1">
-              <span className="label-text">Szerepkör</span>
-            </div>
+          <Field label="Szerepkör">
             <select
               className="select select-sm select-bordered"
               value={roleId ?? ""}
@@ -211,7 +206,7 @@ export const AccountModal = ({
                 </option>
               ))}
             </select>
-          </label>
+          </Field>
 
           {isNew ? (
             <p className="text-sm opacity-70">

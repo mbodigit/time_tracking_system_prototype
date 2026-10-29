@@ -5,6 +5,7 @@ import {
   type TimeEntryDay,
 } from "../../api/timeEntries";
 import { ApiError } from "../../api/client";
+import { Field } from "../../components/form-field/form-field";
 import { formatTime } from "../../utils/datetime";
 
 interface Props {
@@ -112,29 +113,23 @@ export const TimeEntryForm = ({ day, employeeId, onClose, onSaved }: Props) => {
         )}
 
         <div className="flex gap-3">
-          <label className="form-control flex-1">
-            <div className="label py-1">
-              <span className="label-text">Munkavégzés kezdete</span>
-            </div>
+          <Field label="Munkavégzés kezdete" grow>
             <input
               type="time"
               className="input input-bordered"
               value={workStart}
               onChange={(event) => setWorkStart(event.target.value)}
             />
-          </label>
+          </Field>
 
-          <label className="form-control flex-1">
-            <div className="label py-1">
-              <span className="label-text">Munkavégzés vége</span>
-            </div>
+          <Field label="Munkavégzés vége" grow>
             <input
               type="time"
               className="input input-bordered"
               value={workEnd}
               onChange={(event) => setWorkEnd(event.target.value)}
             />
-          </label>
+          </Field>
         </div>
 
         {workStart && workEnd && workEnd <= workStart && (
@@ -144,45 +139,37 @@ export const TimeEntryForm = ({ day, employeeId, onClose, onSaved }: Props) => {
         )}
 
         <div className="flex gap-3">
-          <label className="form-control flex-1">
-            <div className="label py-1">
-              <span className="label-text">Szünet kezdete (elhagyható)</span>
-            </div>
+          <Field label="Szünet kezdete (elhagyható)" grow>
             <input
               type="time"
               className="input input-bordered"
               value={breakStart}
               onChange={(event) => setBreakStart(event.target.value)}
             />
-          </label>
+          </Field>
 
-          <label className="form-control flex-1">
-            <div className="label py-1">
-              <span className="label-text">Szünet vége</span>
-            </div>
+          <Field label="Szünet vége" grow>
             <input
               type="time"
               className="input input-bordered"
               value={breakEnd}
               onChange={(event) => setBreakEnd(event.target.value)}
             />
-          </label>
+          </Field>
         </div>
 
-        <label className="form-control">
-          <div className="label py-1">
-            <span className="label-text">
-              Indoklás
-              {noteRequired ? " (visszamenőleges rögzítésnél kötelező)" : ""}
-            </span>
-          </div>
+        <Field
+          label={`Indoklás${
+            noteRequired ? " (visszamenőleges rögzítésnél kötelező)" : ""
+          }`}
+        >
           <textarea
             className="textarea textarea-bordered"
             rows={2}
             value={note}
             onChange={(event) => setNote(event.target.value)}
           />
-        </label>
+        </Field>
 
         <div className="modal-action">
           <button

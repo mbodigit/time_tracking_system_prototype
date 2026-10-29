@@ -10,11 +10,22 @@ interface FieldProps {
   label: string;
   hint?: ReactNode;
   span?: 1 | 2 | 3;
+  grow?: boolean;
   children: ReactNode;
 }
 
-export const Field = ({ label, hint, span = 1, children }: FieldProps) => (
-  <div className={`flex flex-col gap-1.5 ${SPAN_CLASS[span]}`}>
+export const Field = ({
+  label,
+  hint,
+  span = 1,
+  grow,
+  children,
+}: FieldProps) => (
+  <div
+    className={`flex flex-col gap-1.5 ${SPAN_CLASS[span]} ${
+      grow ? "min-w-48 flex-1" : ""
+    }`}
+  >
     <span className="text-sm font-medium opacity-80">{label}</span>
     <div className="[&>input]:w-full [&>select]:w-full [&>textarea]:w-full">
       {children}

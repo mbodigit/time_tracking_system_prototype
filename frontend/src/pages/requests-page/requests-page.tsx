@@ -9,6 +9,7 @@ import {
 } from "../../api/requests";
 import { listEmployees, type ScopeEmployee } from "../../api/lookups";
 import { ApiError } from "../../api/client";
+import { Field } from "../../components/form-field/form-field";
 import { RequestForm } from "./request-form";
 import {
   useDataTable,
@@ -500,10 +501,7 @@ export const RequestsPage = () => {
               adható. Jóváhagyott távolléti jogcímmel fedett napra nem.
             </p>
 
-            <label className="form-control">
-              <div className="label py-1">
-                <span className="label-text">Dolgozó</span>
-              </div>
+            <Field label="Dolgozó">
               <select
                 className="select select-bordered"
                 value={orderEmployeeId}
@@ -519,19 +517,16 @@ export const RequestsPage = () => {
                     </option>
                   ))}
               </select>
-            </label>
+            </Field>
 
-            <label className="form-control">
-              <div className="label py-1">
-                <span className="label-text">Nap</span>
-              </div>
+            <Field label="Nap">
               <input
                 type="date"
                 className="input input-bordered"
                 value={orderDate}
                 onChange={(event) => setOrderDate(event.target.value)}
               />
-            </label>
+            </Field>
 
             <div className="flex gap-2">
               <button
