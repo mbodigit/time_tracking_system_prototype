@@ -1,23 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
-import {
-  listMasterData,
-  type MasterEntity,
-  type MasterItem,
-} from "../../api/masterData";
-import { ApiError } from "../../api/client";
-import {
-  MasterDataModal,
-  toFormValue,
-  type MasterField,
-} from "./master-data-modal";
-
-interface EntityDef {
-  key: MasterEntity;
-  tab: string;
-  title: string;
-  description: string;
-  fields: MasterField[];
-}
+import { useState } from "react";
+import { MasterDataSection, type EntityDef } from "./master-data-section";
+import { AbsencesSection } from "./absences-section";
 
 const ENTITIES: EntityDef[] = [
   {
@@ -25,10 +8,10 @@ const ENTITIES: EntityDef[] = [
     tab: "Munkarendek",
     title: "Munkarend",
     description:
-      "A munkarend dönti el, hogy a dolgozóra a műszakpótlék szabályai vonatkoznak-e, és hogy mely távolléti jogcímeket veheti igénybe.",
+      "A munkarend dönti el, hogy a dolgozóra a műszakpótlék szabályai vonatkoznak-e, és mely távolléti jogcímeket veheti igénybe.",
     fields: [
       { key: "name", label: "Megnevezés", type: "text", required: true },
-      { key: "isShift", label: "Műszakos munkarend", type: "boolean" },
+      { key: "isShift", label: "Műszakos", type: "boolean" },
     ],
   },
   {
@@ -67,147 +50,34 @@ const ENTITIES: EntityDef[] = [
   },
 ];
 
+const ABSENCES_TAB = "Távolléti jogcímek";
+
 export const MasterDataPage = () => {
-  const [entity, setEntity] = useState<EntityDef>(ENTITIES[0]);
-  const [items, setItems] = useState<MasterItem[]>([]);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [infoMessage, setInfoMessage] = useState("");
-  const [modal, setModal] = useState<{ item: MasterItem | null } | null>(null);
+  const [tab, setTab] = useState<string>(ENTITIES[0].tab);
 
-  const load = useCallback(async () => {
-    setErrorMessage("");
-    try {
-      const data = await listMasterData(entity.key);
-      setItems(data.items);
-    } catch (error) {
-      setItems([]);
-      setErrorMessage(
-        error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
-      );
-    }
-  }, [entity]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  const handleSaved = async (message: string) => {
-    setErrorMessage("");
-    setInfoMessage(message);
-    setModal(null);
-    await load();
-  };
-
-  const cell = (item: MasterItem, field: MasterField) => {
-    if (field.type === "boolean") {
-      return item[field.key] ? "igen" : "nem";
-    }
-
-    const value = toFormValue(item[field.key], field.type);
-    return value === "" ? "-" : value;
-  };
+  const entity = ENTITIES.find((item) => item.tab === tab) ?? null;
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-2xl font-bold">Törzsadatok</h1>
-
-        <button
-          className="btn btn-sm btn-primary ml-auto"
-          onClick={() => {
-            setInfoMessage("");
-            setModal({ item: null });
-          }}
-        >
-          Új {entity.title.toLowerCase()}
-        </button>
-      </div>
+      <h1 className="text-2xl font-bold">Törzsadatok</h1>
 
       <div role="tablist" className="tabs tabs-bordered">
-        {ENTITIES.map((item) => (
+        {[...ENTITIES.map((item) => item.tab), ABSENCES_TAB].map((name) => (
           <button
-            key={item.key}
+            key={name}
             role="tab"
-            className={`tab ${item.key === entity.key ? "tab-active" : ""}`}
-            onClick={() => {
-              setEntity(item);
-              setInfoMessage("");
-            }}
+            className={`tab ${name === tab ? "tab-active" : ""}`}
+            onClick={() => setTab(name)}
           >
-            {item.tab}
+            {name}
           </button>
         ))}
       </div>
 
-      {errorMessage && (
-        <div className="alert alert-error py-2 text-sm">
-          <span>{errorMessage}</span>
-        </div>
-      )}
-
-      {infoMessage && (
-        <div className="alert alert-success py-2 text-sm">
-          <span>{infoMessage}</span>
-        </div>
-      )}
-
-      <p className="text-sm opacity-70">{entity.description}</p>
-
-      <div className="overflow-x-auto">
-        <table className="table table-sm">
-          <thead>
-            <tr>
-              {entity.fields.map((field) => (
-                <th key={field.key}>{field.label}</th>
-              ))}
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item) => (
-              <tr key={item.id} className="hover">
-                {entity.fields.map((field) => (
-                  <td key={field.key} className="whitespace-nowrap">
-                    {cell(item, field)}
-                  </td>
-                ))}
-                <td className="whitespace-nowrap text-right">
-                  <button
-                    className="btn btn-xs"
-                    onClick={() => {
-                      setInfoMessage("");
-                      setModal({ item });
-                    }}
-                  >
-                    Szerkesztés
-                  </button>
-                </td>
-              </tr>
-            ))}
-
-            {items.length === 0 && (
-              <tr>
-                <td
-                  colSpan={entity.fields.length + 1}
-                  className="text-center opacity-60"
-                >
-                  Még nincs felvett adat.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {modal && (
-        <MasterDataModal
-          entity={entity.key}
-          title={entity.title}
-          fields={entity.fields}
-          item={modal.item}
-          onClose={() => setModal(null)}
-          onSaved={handleSaved}
-        />
+      {entity ? (
+        <MasterDataSection key={entity.key} entity={entity} />
+      ) : (
+        <AbsencesSection />
       )}
     </div>
   );
