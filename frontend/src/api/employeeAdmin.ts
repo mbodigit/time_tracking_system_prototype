@@ -108,3 +108,7 @@ export const deleteEmployee = (id: number) =>
 
 export const setUserRole = (userId: number, roleId: number) =>
   apiPatch<{ message: string }>(`/admin/users/${userId}`, { roleId });
+
+
+export const deleteUserAccount = (userId: number) =>
+  apiDelete<{ message: string }>(`/admin/users/${userId}`);

@@ -45,4 +45,10 @@ router.patch('/admin/users/:id',
     employeeAdminController.updateUser
 );
 
+router.delete('/admin/users/:id',
+    authenticateToken,
+    authorizePermission('admin.users'),
+    employeeAdminController.removeUser
+);
+
 module.exports = router;

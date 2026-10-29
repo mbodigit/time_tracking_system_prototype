@@ -545,4 +545,106 @@ const updateUser = async (req, res) => {
     }
 };
 
-module.exports = { list, options, create, update, remove, createUser, updateUser };
+const removeUser = async (req, res) => {
+    const userId = Number(req.params.id);
+
+    if (!userId) {
+        return res.status(400).json({ message: 'Érvénytelen felhasználói azonosító.' });
+    }
+
+    try {
+        const [users] = await pool.execute(
+            `SELECT u.user_username, r.user_role_name
+             FROM Users u
+             JOIN UserRoles r ON r.user_role_id = u.user_role_id
+             WHERE u.user_id = ?`,
+            [userId]
+        );
+
+        if (users.length === 0) {
+            return res.status(404).json({ message: 'A felhasználói fiók nem található.' });
+        }
+
+        if (userId === Number(req.user?.userId)) {
+            return res.status(409).json({ message: 'A saját fiók nem törölhető.' });
+        }
+
+        if (users[0].user_role_name === ADMIN_ROLE) {
+            const [admins] = await pool.execute(
+                `SELECT COUNT(*) AS aktiv_admin
+                 FROM Users u
+                 JOIN UserRoles r ON r.user_role_id = u.user_role_id
+                 WHERE r.user_role_name = ? AND u.user_status = 1`,
+                [ADMIN_ROLE]
+            );
+
+            if (admins[0].aktiv_admin <= 1) {
+                return res.status(409).json({
+                    message: 'Az utolsó aktív Admin fiók nem törölhető.'
+                });
+            }
+        }
+
+        const [blockers] = await pool.execute(
+            `SELECT
+                (SELECT COUNT(*) FROM UserGroups
+                  WHERE user_group_manager_id = ?)  AS csoport,
+                (SELECT COUNT(*) FROM Areas
+                  WHERE area_manager_id = ?)        AS terulet,
+                (SELECT COUNT(*) FROM Departments
+                  WHERE department_manager_id = ?)  AS reszleg,
+                (SELECT COUNT(*) FROM Shifts
+                  WHERE shift_manager_id = ?)       AS muszak,
+                (SELECT COUNT(*) FROM Requests
+                  WHERE request_decision_by = ?)    AS dontes,
+                (SELECT COUNT(*) FROM WorkingTimeTracking
+                  WHERE wtt_ordered_by = ?)         AS elrendeles`,
+            [userId, userId, userId, userId, userId, userId]
+        );
+
+        const reasons = [];
+
+        if (blockers[0].csoport > 0) {
+            reasons.push('csoportot vezet');
+        }
+
+        if (blockers[0].terulet > 0) {
+            reasons.push('területet vezet');
+        }
+
+        if (blockers[0].reszleg > 0) {
+            reasons.push('részleget vezet');
+        }
+
+        if (blockers[0].muszak > 0) {
+            reasons.push('műszakot vezet');
+        }
+
+        if (blockers[0].dontes > 0) {
+            reasons.push('kérelmeket bírált el');
+        }
+
+        if (blockers[0].elrendeles > 0) {
+            reasons.push('munkavégzést rendelt el');
+        }
+
+        if (reasons.length > 0) {
+            return res.status(409).json({
+                message: `A fiók nem törölhető, mert ${reasons.join(', ')}. `
+                    + 'Ilyen esetben a letiltás a helyes megoldás, mert így a '
+                    + 'korábbi döntések és beosztások visszakövethetők maradnak.'
+            });
+        }
+
+        await pool.execute(`DELETE FROM Users WHERE user_id = ?`, [userId]);
+
+        return res.status(200).json({ message: 'A felhasználói fiók törlésre került.' });
+    } catch (error) {
+        console.error('Fiók törlési hiba:', error);
+        return res.status(500).json({ message: 'Szerver hiba.' });
+    }
+};
+
+module.exports = {
+    list, options, create, update, remove, createUser, updateUser, removeUser
+};

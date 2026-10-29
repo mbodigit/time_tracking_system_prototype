@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   createUserAccount,
+  deleteUserAccount,
   resetUserPassword,
   setUserActive,
   setUserRole,
@@ -40,6 +41,7 @@ export const AccountModal = ({
   const [errorMessage, setErrorMessage] = useState("");
   const [isBusy, setIsBusy] = useState(false);
   const [askDisable, setAskDisable] = useState(false);
+  const [askDelete, setAskDelete] = useState(false);
 
   const run = async <T,>(action: () => Promise<T>): Promise<T | null> => {
     setErrorMessage("");
@@ -109,6 +111,19 @@ export const AccountModal = ({
 
     const userId = employee.userId;
     const response = await run(() => setUserActive(userId, isActive));
+
+    if (response) {
+      onSaved(response.message);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!employee?.userId) {
+      return;
+    }
+
+    const userId = employee.userId;
+    const response = await run(() => deleteUserAccount(userId));
 
     if (response) {
       onSaved(response.message);
@@ -284,30 +299,77 @@ export const AccountModal = ({
                 A letiltás a hozzáférést vonja meg, nem a munkaviszonyt zárja le
                 - akkor is indokolt, ha a dolgozónak az új területén már nincs
                 szüksége fiókra. A saját fiók és az utolsó aktív Admin fiók nem
-                tiltható le. A fiók fizikai törlésére nincs lehetőség, mert a
-                rögzített munkaidő-adatok és a jóváhagyások hozzá kapcsolódnak.
+                tiltható le és nem törölhető. A fiók akkor törölhető véglegesen,
+                ha nem vezet szervezeti egységet vagy csoportot, és nem bírált
+                el kérelmet, illetve nem rendelt el munkavégzést; egyébként a
+                letiltás a helyes megoldás, mert így a korábbi döntések
+                visszakövethetők maradnak.
               </p>
+
+              {askDelete && (
+                <div className="alert alert-error text-sm">
+                  <div>
+                    <p className="font-semibold">Biztosan törlöd a fiókot?</p>
+                    <p>
+                      A dolgozó adatai és a rögzített munkaideje megmaradnak,
+                      csak a belépési lehetősége szűnik meg véglegesen. Ha a
+                      fiókhoz már tartozik elbírált kérelem vagy vezetői szerep,
+                      a rendszer elutasítja a törlést.
+                    </p>
+                    <div className="mt-2 flex gap-2">
+                      <button
+                        className="btn btn-sm btn-error"
+                        onClick={handleDelete}
+                        disabled={isBusy}
+                      >
+                        Igen, törlöm
+                      </button>
+                      <button
+                        className="btn btn-sm btn-ghost"
+                        onClick={() => setAskDelete(false)}
+                        disabled={isBusy}
+                      >
+                        Vissza
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-base-300 px-6 pb-5 pt-3">
-          <button
-            className="btn btn-sm btn-ghost"
-            onClick={onClose}
-            disabled={isBusy}
-          >
-            Bezárás
-          </button>
-          {isNew && (
+        <div className="flex items-center justify-between gap-2 border-t border-base-300 px-6 pb-5 pt-3">
+          {isNew ? (
+            <span />
+          ) : (
             <button
-              className="btn btn-sm btn-primary"
-              onClick={handleCreate}
-              disabled={isBusy || candidates.length === 0}
+              className="btn btn-sm btn-outline btn-error"
+              onClick={() => setAskDelete(true)}
+              disabled={isBusy || askDelete}
             >
-              {isBusy ? "Létrehozás..." : "Fiók létrehozása"}
+              Fiók törlése
             </button>
           )}
+
+          <div className="flex gap-2">
+            <button
+              className="btn btn-sm btn-ghost"
+              onClick={onClose}
+              disabled={isBusy}
+            >
+              Bezárás
+            </button>
+            {isNew && (
+              <button
+                className="btn btn-sm btn-primary"
+                onClick={handleCreate}
+                disabled={isBusy || candidates.length === 0}
+              >
+                {isBusy ? "Létrehozás..." : "Fiók létrehozása"}
+              </button>
+            )}
+          </div>
         </div>
       </div>
       <div className="modal-backdrop" onClick={isBusy ? undefined : onClose} />

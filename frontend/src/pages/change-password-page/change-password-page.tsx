@@ -1,7 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { clearSession } from "../../utils/auth";
 import { changePassword } from "../../api/auth";
 import { ApiError } from "../../api/client";
 
@@ -10,7 +9,6 @@ export const ChangePasswordPage = () => {
   const [newPassword, setNewPassword] = useState("");
   const [newPasswordAgain, setNewPasswordAgain] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (event: FormEvent) => {
@@ -25,9 +23,9 @@ export const ChangePasswordPage = () => {
     try {
       const data = await changePassword(currentPassword, newPassword);
 
-      setSuccessMessage(data.message);
-      clearSession();
-      setTimeout(() => navigate("/"), 2000);
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      navigate("/dashboard", { replace: true });
     } catch (error) {
       setErrorMessage(
         error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
@@ -48,12 +46,6 @@ export const ChangePasswordPage = () => {
           {errorMessage && (
             <div className="alert alert-error text-sm py-2">
               <span>{errorMessage}</span>
-            </div>
-          )}
-
-          {successMessage && (
-            <div className="alert alert-success text-sm py-2">
-              <span>{successMessage}</span>
             </div>
           )}
 
