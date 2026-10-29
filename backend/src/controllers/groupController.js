@@ -151,27 +151,90 @@ const options = async (req, res) => {
     }
 };
 
-const validate = async (body) => {
-    const name = String(body.name || '').trim();
+const NODE_MANAGER_QUERY = {
+    shift: 'SELECT shift_manager_id AS manager_id FROM Shifts WHERE shift_id = ?',
+    department:
+        'SELECT department_manager_id AS manager_id FROM Departments WHERE department_id = ?',
+    area: 'SELECT area_manager_id AS manager_id FROM Areas WHERE area_id = ?'
+};
 
-    if (!name) {
-        return 'A csoport megnevezése kötelező.';
+const NODE_LABEL = {
+    shift: 'műszak',
+    department: 'részleg',
+    area: 'terület'
+};
+
+const resolveNode = (body) => {
+    if (Number(body.shiftId)) {
+        return { type: 'shift', id: Number(body.shiftId) };
+    }
+
+    if (Number(body.departmentId)) {
+        return { type: 'department', id: Number(body.departmentId) };
+    }
+
+    if (Number(body.areaId)) {
+        return { type: 'area', id: Number(body.areaId) };
+    }
+
+    return null;
+};
+
+const findGroupOnNode = async (body, groupId) => {
+    const [rows] = await pool.execute(
+        `SELECT user_group_name
+         FROM UserGroups
+         WHERE user_group_area_id       <=> ?
+           AND user_group_department_id <=> ?
+           AND user_group_shift_id      <=> ?
+           AND user_group_id            <>  ?
+         LIMIT 1`,
+        [
+            Number(body.areaId) || null,
+            Number(body.departmentId) || null,
+            Number(body.shiftId) || null,
+            groupId || 0
+        ]
+    );
+
+    return rows[0] || null;
+};
+
+const prepare = async (body, groupId) => {
+    if (!String(body.name || '').trim()) {
+        return { error: 'A csoport megnevezése kötelező.' };
     }
 
     if (!Number(body.areaId)) {
-        return 'A terület megadása kötelező.';
+        return { error: 'A terület megadása kötelező.' };
     }
 
     if (!Number(body.costCenterId)) {
-        return 'A költséghely megadása kötelező.';
-    }
-
-    if (!Number(body.managerId)) {
-        return 'A csoporthoz kötelezően tartozik vezető.';
+        return { error: 'A költséghely megadása kötelező.' };
     }
 
     if (Number(body.shiftId) && !Number(body.departmentId)) {
-        return 'Műszak csak részleg megadása mellett vehető fel.';
+        return { error: 'Műszak csak részleg megadása mellett vehető fel.' };
+    }
+
+    const node = resolveNode(body);
+
+    const [nodes] = await pool.execute(
+        NODE_MANAGER_QUERY[node.type], [node.id]
+    );
+
+    if (nodes.length === 0) {
+        return { error: `A kiválasztott ${NODE_LABEL[node.type]} nem található.` };
+    }
+
+    const managerId = nodes[0].manager_id;
+
+    if (!managerId) {
+        return {
+            error: `A kiválasztott ${NODE_LABEL[node.type]} nem rendelkezik `
+                + 'vezetővel. A csoport vezetője a szervezeti egység vezetője, '
+                + 'ezért előbb ott kell vezetőt megadni.'
+        };
     }
 
     const [managers] = await pool.execute(
@@ -179,21 +242,35 @@ const validate = async (body) => {
          FROM Users u
          JOIN UserRoles r ON r.user_role_id = u.user_role_id
          WHERE u.user_id = ?`,
-        [Number(body.managerId)]
+        [managerId]
     );
 
     if (managers.length === 0 || !managers[0].user_status) {
-        return 'A csoport vezetőjének aktív rendszerfelhasználónak kell lennie.';
+        return {
+            error: 'A szervezeti egység vezetőjének aktív rendszerfelhasználónak kell lennie.'
+        };
     }
 
     if (managers[0].user_role_name !== 'Vezető') {
-        return 'A csoport vezetőjének vezetői szerepkörrel kell rendelkeznie.';
+        return {
+            error: 'A szervezeti egység vezetőjének vezetői szerepkörrel kell rendelkeznie.'
+        };
     }
 
-    return null;
+    const existing = await findGroupOnNode(body, groupId);
+
+    if (existing) {
+        return {
+            error: 'Ehhez a szervezeti egységhez már tartozik csoport: '
+                + `${existing.user_group_name}. Egy szervezeti egységhez `
+                + 'egy csoport tartozhat.'
+        };
+    }
+
+    return { managerId };
 };
 
-const toValues = (body) => ([
+const toValues = (body, managerId) => ([
     String(body.name).trim(),
     body.status || 'Aktív',
     body.description || null,
@@ -204,15 +281,15 @@ const toValues = (body) => ([
     Number(body.workScheduleId) || null,
     Number(body.workingHourId) || null,
     Number(body.coreHourId) || null,
-    Number(body.managerId)
+    managerId
 ]);
 
 const create = async (req, res) => {
     const body = req.body || {};
-    const validationError = await validate(body);
+    const prepared = await prepare(body, 0);
 
-    if (validationError) {
-        return res.status(400).json({ message: validationError });
+    if (prepared.error) {
+        return res.status(400).json({ message: prepared.error });
     }
 
     try {
@@ -224,7 +301,7 @@ const create = async (req, res) => {
                 user_group_working_hour_id, user_group_core_hour_id,
                 user_group_manager_id
              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            toValues(body)
+            toValues(body, prepared.managerId)
         );
 
         return res.status(201).json({
@@ -251,10 +328,10 @@ const update = async (req, res) => {
         return res.status(400).json({ message: 'Érvénytelen csoportazonosító.' });
     }
 
-    const validationError = await validate(body);
+    const prepared = await prepare(body, groupId);
 
-    if (validationError) {
-        return res.status(400).json({ message: validationError });
+    if (prepared.error) {
+        return res.status(400).json({ message: prepared.error });
     }
 
     try {
@@ -266,7 +343,7 @@ const update = async (req, res) => {
                 user_group_working_hour_id = ?, user_group_core_hour_id = ?,
                 user_group_manager_id = ?
              WHERE user_group_id = ?`,
-            [...toValues(body), groupId]
+            [...toValues(body, prepared.managerId), groupId]
         );
 
         if (result.affectedRows === 0) {

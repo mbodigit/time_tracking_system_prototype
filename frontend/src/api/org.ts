@@ -5,6 +5,14 @@ export type OrgEntity = "areas" | "departments" | "shifts";
 export interface OrgManager {
   id: number;
   name: string;
+  assignedUnit: string | null;
+}
+
+export interface OrgGroup {
+  id: number;
+  name: string;
+  status: string;
+  activeEmployees: number;
 }
 
 export interface OrgShift {
@@ -13,6 +21,7 @@ export interface OrgShift {
   departmentId: number;
   managerId: number | null;
   managerName: string | null;
+  group: OrgGroup | null;
 }
 
 export interface OrgDepartment {
@@ -21,14 +30,17 @@ export interface OrgDepartment {
   areaId: number;
   managerId: number | null;
   managerName: string | null;
+  group: OrgGroup | null;
   shifts: OrgShift[];
 }
 
 export interface OrgArea {
   id: number;
   name: string;
+  parentId: number | null;
   managerId: number | null;
   managerName: string | null;
+  group: OrgGroup | null;
   departments: OrgDepartment[];
 }
 
@@ -41,13 +53,21 @@ export const listOrg = () => apiGet<OrgTree>("/org");
 
 export const createUnit = (
   entity: OrgEntity,
-  payload: { name: string; parentId?: number; managerId: number | null },
+  payload: {
+    name: string;
+    parentId?: number | null;
+    managerId: number | null;
+  },
 ) => apiPost<{ message: string; id: number }>(`/org/${entity}`, payload);
 
 export const updateUnit = (
   entity: OrgEntity,
   id: number,
-  payload: { name: string; managerId: number | null },
+  payload: {
+    name: string;
+    parentId?: number | null;
+    managerId: number | null;
+  },
 ) => apiPatch<{ message: string }>(`/org/${entity}/${id}`, payload);
 
 export const deleteUnit = (entity: OrgEntity, id: number) =>

@@ -5,7 +5,6 @@ import {
   IconDashboard,
   IconClock,
   IconInbox,
-  IconUsers,
   IconChart,
   IconUserCog,
   IconOrgChart,
@@ -136,14 +135,8 @@ export const Layout: React.FC = () => {
           roles: ["HR-Bér"],
         },
         {
-          to: "/admin-groups",
-          label: "Csoportok",
-          icon: IconUsers,
-          roles: [],
-        },
-        {
           to: "/admin-org-structure",
-          label: "Szervezet",
+          label: "Szervezet és csoportok",
           icon: IconOrgChart,
           roles: [],
         },

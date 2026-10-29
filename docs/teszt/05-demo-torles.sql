@@ -25,6 +25,7 @@ SET user_group_manager_id = NULL
 WHERE user_group_name LIKE 'DEMO %';
 
 UPDATE Areas       SET area_manager_id       = NULL WHERE area_name       LIKE 'DEMO %';
+UPDATE Areas       SET area_parent_id        = NULL WHERE area_name       LIKE 'DEMO %';
 UPDATE Departments SET department_manager_id = NULL WHERE department_name LIKE 'DEMO %';
 UPDATE Shifts      SET shift_manager_id      = NULL WHERE shift_name      LIKE 'DEMO %';
 

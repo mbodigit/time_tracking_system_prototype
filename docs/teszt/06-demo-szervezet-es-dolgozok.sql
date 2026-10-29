@@ -21,10 +21,17 @@ SET @iroda  := (SELECT core_hour_id FROM CoreHours WHERE core_hour_name = '07:00
 
 INSERT INTO Areas (area_name)
 SELECT v.nev FROM (
-            SELECT 'DEMO Gyártás' AS nev
+            SELECT 'DEMO Ügyvezetés' AS nev
+  UNION ALL SELECT 'DEMO Gyártás'
   UNION ALL SELECT 'DEMO Kiszolgálás'
 ) v
 WHERE NOT EXISTS (SELECT 1 FROM Areas a WHERE a.area_name = v.nev);
+
+UPDATE Areas
+SET area_parent_id = (SELECT area_id FROM (
+  SELECT area_id FROM Areas WHERE area_name = 'DEMO Ügyvezetés'
+) AS gyoker)
+WHERE area_name IN ('DEMO Gyártás', 'DEMO Kiszolgálás');
 
 INSERT INTO Departments (department_name, department_area_id)
 SELECT v.nev, a.area_id FROM (
@@ -32,6 +39,7 @@ SELECT v.nev, a.area_id FROM (
   UNION ALL SELECT 'DEMO Festés',               'DEMO Gyártás'
   UNION ALL SELECT 'DEMO Logisztika',           'DEMO Kiszolgálás'
   UNION ALL SELECT 'DEMO Iroda',                'DEMO Kiszolgálás'
+  UNION ALL SELECT 'DEMO Fejlesztés',           'DEMO Kiszolgálás'
 ) v
 JOIN Areas a ON a.area_name = v.terulet
 WHERE NOT EXISTS (
@@ -71,10 +79,10 @@ FROM (
                    'DEMO Raktár nappali', @muszakos, @reggel
   UNION ALL SELECT 'DEMO Iroda', 'DEMO Kiszolgálás', 'DEMO Iroda',
                    NULL, @nem_muszakos, @iroda
-  UNION ALL SELECT 'DEMO Vezetőség', 'DEMO Kiszolgálás', 'DEMO Iroda',
-                   NULL, @nem_muszakos, @iroda
-  UNION ALL SELECT 'DEMO Fejlesztés', 'DEMO Kiszolgálás', 'DEMO Iroda',
+  UNION ALL SELECT 'DEMO Fejlesztés', 'DEMO Kiszolgálás', 'DEMO Fejlesztés',
                    NULL, @kotetlen, NULL
+  UNION ALL SELECT 'DEMO Vezetőség', 'DEMO Ügyvezetés', NULL,
+                   NULL, @nem_muszakos, @iroda
 ) v
 JOIN Areas a ON a.area_name = v.terulet
 LEFT JOIN Departments d ON d.department_name = v.reszleg
@@ -102,26 +110,26 @@ FROM (
   UNION ALL SELECT 'DEMO-002','Szabó','Réka','Nő','1999-08-03',NULL,@muszakos,@reggel,'10:00:00','10:30:00',@fizikai,'DEMO Összeszerelés A'
   UNION ALL SELECT 'DEMO-003','Tóth','Gábor','Férfi','1991-02-19',NULL,@muszakos,@reggel,'10:00:00','10:30:00',@fizikai,'DEMO Összeszerelés A'
   UNION ALL SELECT 'DEMO-004','Nagy','Katalin','Nő','1983-11-27',NULL,@muszakos,@reggel,'10:00:00','10:30:00',@fizikai,'DEMO Összeszerelés A'
-  UNION ALL SELECT 'DEMO-005','Varga','István','Férfi','1968-06-08',NULL,@muszakos,@reggel,'10:00:00','10:30:00',@fizikai,'DEMO Összeszerelés A'
+  UNION ALL SELECT 'DEMO-005','Varga','István','Férfi','1968-06-08','demo.varga@pelda.hu',@muszakos,@reggel,'10:00:00','10:30:00',@fizikai,'DEMO Összeszerelés A'
   UNION ALL SELECT 'DEMO-006','Kiss','Dániel','Férfi','2002-01-25',NULL,@muszakos,@delutan,'18:00:00','18:30:00',@fizikai,'DEMO Összeszerelés B'
   UNION ALL SELECT 'DEMO-007','Molnár','Eszter','Nő','1996-09-14',NULL,@muszakos,@delutan,'18:00:00','18:30:00',@fizikai,'DEMO Összeszerelés B'
   UNION ALL SELECT 'DEMO-008','Horváth','Zoltán','Férfi','1988-03-30',NULL,@muszakos,@delutan,'18:00:00','18:30:00',@fizikai,'DEMO Összeszerelés B'
   UNION ALL SELECT 'DEMO-009','Balogh','Mária','Nő','1979-12-05',NULL,@muszakos,@delutan,'18:00:00','18:30:00',@fizikai,'DEMO Összeszerelés B'
-  UNION ALL SELECT 'DEMO-010','Farkas','Péter','Férfi','1964-07-21',NULL,@muszakos,@delutan,'18:00:00','18:30:00',@fizikai,'DEMO Összeszerelés B'
+  UNION ALL SELECT 'DEMO-010','Farkas','Péter','Férfi','1964-07-21','demo.farkas@pelda.hu',@muszakos,@delutan,'18:00:00','18:30:00',@fizikai,'DEMO Összeszerelés B'
   UNION ALL SELECT 'DEMO-011','Papp','Tamás','Férfi','2001-05-09',NULL,@muszakos,@ejszaka,'02:00:00','02:30:00',@fizikai,'DEMO Összeszerelés C'
   UNION ALL SELECT 'DEMO-012','Lakatos','Nóra','Nő','1994-10-17',NULL,@muszakos,@ejszaka,'02:00:00','02:30:00',@fizikai,'DEMO Összeszerelés C'
   UNION ALL SELECT 'DEMO-013','Juhász','Ákos','Férfi','1986-01-11',NULL,@muszakos,@ejszaka,'02:00:00','02:30:00',@fizikai,'DEMO Összeszerelés C'
   UNION ALL SELECT 'DEMO-014','Mészáros','Ildikó','Nő','1977-04-02',NULL,@muszakos,@ejszaka,'02:00:00','02:30:00',@fizikai,'DEMO Összeszerelés C'
-  UNION ALL SELECT 'DEMO-015','Oláh','Sándor','Férfi','1966-09-23',NULL,@muszakos,@ejszaka,'02:00:00','02:30:00',@fizikai,'DEMO Összeszerelés C'
+  UNION ALL SELECT 'DEMO-015','Oláh','Sándor','Férfi','1966-09-23','demo.olah@pelda.hu',@muszakos,@ejszaka,'02:00:00','02:30:00',@fizikai,'DEMO Összeszerelés C'
   UNION ALL SELECT 'DEMO-016','Simon','Viktor','Férfi','2000-02-28',NULL,@muszakos,@reggel,'10:00:00','10:30:00',@fizikai,'DEMO Festés'
   UNION ALL SELECT 'DEMO-017','Rácz','Anna','Nő','1993-06-15',NULL,@muszakos,@reggel,'10:00:00','10:30:00',@fizikai,'DEMO Festés'
   UNION ALL SELECT 'DEMO-018','Fekete','László','Férfi','1985-08-07',NULL,@muszakos,@reggel,'10:00:00','10:30:00',@fizikai,'DEMO Festés'
   UNION ALL SELECT 'DEMO-019','Szűcs','Judit','Nő','1975-03-19',NULL,@muszakos,@reggel,'10:00:00','10:30:00',@fizikai,'DEMO Festés'
-  UNION ALL SELECT 'DEMO-020','Takács','Attila','Férfi','1969-11-30',NULL,@muszakos,@reggel,'10:00:00','10:30:00',@fizikai,'DEMO Festés'
+  UNION ALL SELECT 'DEMO-020','Takács','Attila','Férfi','1969-11-30','demo.takacs@pelda.hu',@muszakos,@reggel,'10:00:00','10:30:00',@fizikai,'DEMO Festés'
   UNION ALL SELECT 'DEMO-021','Fodor','Krisztián','Férfi','1997-07-04',NULL,@muszakos,@reggel,'10:00:00','10:30:00',@fizikai,'DEMO Logisztika'
   UNION ALL SELECT 'DEMO-022','Veres','Beáta','Nő','1990-12-22',NULL,@muszakos,@reggel,'10:00:00','10:30:00',@fizikai,'DEMO Logisztika'
   UNION ALL SELECT 'DEMO-023','Orsós','Milán','Férfi','1982-05-13',NULL,@muszakos,@reggel,'10:00:00','10:30:00',@fizikai,'DEMO Logisztika'
-  UNION ALL SELECT 'DEMO-024','Hegedűs','Zsuzsanna','Nő','1971-10-26',NULL,@muszakos,@reggel,'10:00:00','10:30:00',@fizikai,'DEMO Logisztika'
+  UNION ALL SELECT 'DEMO-024','Hegedűs','Zsuzsanna','Nő','1971-10-26','demo.hegedus@pelda.hu',@muszakos,@reggel,'10:00:00','10:30:00',@fizikai,'DEMO Logisztika'
   UNION ALL SELECT 'DEMO-025','Barna','Gergő','Férfi','1998-03-08','demo.barna@pelda.hu',@nem_muszakos,@iroda,'12:00:00','12:30:00',@szellemi,'DEMO Iroda'
   UNION ALL SELECT 'DEMO-026','Deák','Lilla','Nő','1992-09-01','demo.deak@pelda.hu',@nem_muszakos,@iroda,'12:00:00','12:30:00',@szellemi,'DEMO Iroda'
   UNION ALL SELECT 'DEMO-027','Pintér','Ádám','Férfi','1987-04-16','demo.pinter@pelda.hu',@nem_muszakos,@iroda,'12:00:00','12:30:00',@szellemi,'DEMO Iroda'
@@ -146,7 +154,12 @@ INSERT INTO Users (
 )
 SELECT v.nev, @hash, e.employee_id, r.user_role_id, 1, 0
 FROM (
-            SELECT 'demo.barna'    AS nev, 'DEMO-025' AS kod, 'Dolgozó' AS szerepkor
+            SELECT 'demo.varga'    AS nev, 'DEMO-005' AS kod, 'Vezető' AS szerepkor
+  UNION ALL SELECT 'demo.farkas',  'DEMO-010', 'Vezető'
+  UNION ALL SELECT 'demo.olah',    'DEMO-015', 'Vezető'
+  UNION ALL SELECT 'demo.takacs',  'DEMO-020', 'Vezető'
+  UNION ALL SELECT 'demo.hegedus', 'DEMO-024', 'Vezető'
+  UNION ALL SELECT 'demo.barna',   'DEMO-025', 'Vezető'
   UNION ALL SELECT 'demo.deak',    'DEMO-026', 'Dolgozó'
   UNION ALL SELECT 'demo.pinter',  'DEMO-027', 'Dolgozó'
   UNION ALL SELECT 'demo.bogdan',  'DEMO-028', 'HR-Bér'
@@ -154,7 +167,7 @@ FROM (
   UNION ALL SELECT 'demo.kiraly',  'DEMO-030', 'Vezető'
   UNION ALL SELECT 'demo.antal',   'DEMO-031', 'Vezető'
   UNION ALL SELECT 'demo.vass',    'DEMO-032', 'Vezető'
-  UNION ALL SELECT 'demo.lengyel', 'DEMO-033', 'Dolgozó'
+  UNION ALL SELECT 'demo.lengyel', 'DEMO-033', 'Vezető'
   UNION ALL SELECT 'demo.gulyas',  'DEMO-034', 'Dolgozó'
   UNION ALL SELECT 'demo.balla',   'DEMO-035', 'Dolgozó'
   UNION ALL SELECT 'demo.bakos',   'DEMO-036', 'Dolgozó'
@@ -163,57 +176,94 @@ JOIN Employees e ON e.employee_code   = v.kod
 JOIN UserRoles r ON r.user_role_name  = v.szerepkor
 WHERE NOT EXISTS (SELECT 1 FROM Users u WHERE u.user_username = v.nev);
 
-UPDATE Areas
-SET area_manager_id = (SELECT user_id FROM Users WHERE user_username = 'demo.kiraly')
-WHERE area_name = 'DEMO Gyártás';
+UPDATE Areas a
+JOIN (
+            SELECT 'DEMO Ügyvezetés' AS terulet, 'demo.kiraly' AS fiok
+  UNION ALL SELECT 'DEMO Gyártás',               'demo.antal'
+) v ON v.terulet = a.area_name
+JOIN Users u ON u.user_username = v.fiok
+SET a.area_manager_id = u.user_id;
 
-UPDATE Areas
-SET area_manager_id = (SELECT user_id FROM Users WHERE user_username = 'demo.antal')
-WHERE area_name = 'DEMO Kiszolgálás';
+UPDATE Departments d
+JOIN (
+            SELECT 'DEMO Összeszerelés' AS reszleg, 'demo.vass' AS fiok
+  UNION ALL SELECT 'DEMO Iroda',                    'demo.barna'
+  UNION ALL SELECT 'DEMO Fejlesztés',               'demo.lengyel'
+) v ON v.reszleg = d.department_name
+JOIN Users u ON u.user_username = v.fiok
+SET d.department_manager_id = u.user_id;
 
-UPDATE Departments
-SET department_manager_id = (SELECT user_id FROM Users WHERE user_username = 'demo.vass')
-WHERE department_name = 'DEMO Összeszerelés';
+UPDATE Shifts s
+JOIN (
+            SELECT 'DEMO A műszak' AS muszak, 'demo.varga' AS fiok
+  UNION ALL SELECT 'DEMO B műszak',           'demo.farkas'
+  UNION ALL SELECT 'DEMO C műszak',           'demo.olah'
+  UNION ALL SELECT 'DEMO Festés nappali',     'demo.takacs'
+  UNION ALL SELECT 'DEMO Raktár nappali',     'demo.hegedus'
+) v ON v.muszak = s.shift_name
+JOIN Users u ON u.user_username = v.fiok
+SET s.shift_manager_id = u.user_id;
 
-UPDATE UserGroups
-SET user_group_manager_id = (SELECT user_id FROM Users WHERE user_username = 'demo.kiraly')
-WHERE user_group_name IN (
-  'DEMO Összeszerelés A', 'DEMO Összeszerelés B', 'DEMO Összeszerelés C', 'DEMO Festés'
-);
+UPDATE UserGroups g
+LEFT JOIN Shifts      s ON s.shift_id      = g.user_group_shift_id
+LEFT JOIN Departments d ON d.department_id = g.user_group_department_id
+LEFT JOIN Areas       a ON a.area_id       = g.user_group_area_id
+SET g.user_group_manager_id = COALESCE(
+  s.shift_manager_id, d.department_manager_id, a.area_manager_id
+)
+WHERE g.user_group_name LIKE 'DEMO %';
 
-UPDATE UserGroups
-SET user_group_manager_id = (SELECT user_id FROM Users WHERE user_username = 'demo.antal')
-WHERE user_group_name IN (
-  'DEMO Logisztika', 'DEMO Iroda', 'DEMO Vezetőség', 'DEMO Fejlesztés'
-);
+UPDATE Employees e
+JOIN (
+            SELECT 'DEMO-001' AS tol, 'DEMO-004' AS ig, 'DEMO-005' AS vezeto
+  UNION ALL SELECT 'DEMO-006', 'DEMO-009', 'DEMO-010'
+  UNION ALL SELECT 'DEMO-011', 'DEMO-014', 'DEMO-015'
+  UNION ALL SELECT 'DEMO-016', 'DEMO-019', 'DEMO-020'
+  UNION ALL SELECT 'DEMO-021', 'DEMO-023', 'DEMO-024'
+  UNION ALL SELECT 'DEMO-026', 'DEMO-029', 'DEMO-025'
+  UNION ALL SELECT 'DEMO-034', 'DEMO-036', 'DEMO-033'
+) v ON e.employee_code BETWEEN v.tol AND v.ig
+JOIN Employees m ON m.employee_code = v.vezeto
+SET e.employee_manager_id = m.employee_id;
 
-SET @vezeto_muszak := (SELECT employee_id FROM Employees WHERE employee_code = 'DEMO-032');
-SET @vezeto_uzem   := (SELECT employee_id FROM Employees WHERE employee_code = 'DEMO-030');
-SET @vezeto_iroda  := (SELECT employee_id FROM Employees WHERE employee_code = 'DEMO-031');
+UPDATE Employees e
+JOIN Employees m ON m.employee_code = 'DEMO-030'
+SET e.employee_manager_id = m.employee_id
+WHERE e.employee_code IN ('DEMO-031', 'DEMO-032');
 
-UPDATE Employees
-SET employee_manager_id = @vezeto_muszak
-WHERE employee_code BETWEEN 'DEMO-001' AND 'DEMO-015';
+UPDATE Employees e
+JOIN Employees m ON m.employee_code = 'DEMO-031'
+SET e.employee_manager_id = m.employee_id
+WHERE e.employee_code IN ('DEMO-005', 'DEMO-010', 'DEMO-015', 'DEMO-020');
 
-UPDATE Employees
-SET employee_manager_id = @vezeto_uzem
-WHERE employee_code BETWEEN 'DEMO-016' AND 'DEMO-024';
-
-UPDATE Employees
-SET employee_manager_id = @vezeto_iroda
-WHERE employee_code BETWEEN 'DEMO-025' AND 'DEMO-029'
-   OR employee_code BETWEEN 'DEMO-033' AND 'DEMO-036';
+UPDATE Employees e
+JOIN Employees m ON m.employee_code = 'DEMO-030'
+SET e.employee_manager_id = m.employee_id
+WHERE e.employee_code IN ('DEMO-024', 'DEMO-025', 'DEMO-033');
 
 SET SQL_SAFE_UPDATES = @elozo_safe_updates;
 
+SELECT a.area_name AS terulet,
+       p.area_name AS szulo_terulet,
+       u.user_username AS terulet_vezeto
+FROM Areas a
+LEFT JOIN Areas p ON p.area_id = a.area_parent_id
+LEFT JOIN Users u ON u.user_id = a.area_manager_id
+WHERE a.area_name LIKE 'DEMO %'
+ORDER BY COALESCE(p.area_name, ''), a.area_name;
+
 SELECT g.user_group_name AS csoport,
+       COALESCE(s.shift_name, d.department_name, a.area_name) AS csomopont,
+       u.user_username AS vezeto,
        w.work_schedule_name AS munkarend,
-       COUNT(e.employee_id) AS letszam,
-       SUM(CASE WHEN u.user_id IS NULL THEN 0 ELSE 1 END) AS fiokkal
+       COUNT(e.employee_id) AS letszam
 FROM UserGroups g
+LEFT JOIN Shifts        s ON s.shift_id            = g.user_group_shift_id
+LEFT JOIN Departments   d ON d.department_id       = g.user_group_department_id
+LEFT JOIN Areas         a ON a.area_id             = g.user_group_area_id
+LEFT JOIN Users         u ON u.user_id             = g.user_group_manager_id
+LEFT JOIN WorkSchedules w ON w.work_schedule_id    = g.user_group_work_schedule_id
 LEFT JOIN Employees     e ON e.employee_user_group_id = g.user_group_id
-LEFT JOIN WorkSchedules w ON w.work_schedule_id       = g.user_group_work_schedule_id
-LEFT JOIN Users         u ON u.user_employee_id       = e.employee_id
 WHERE g.user_group_name LIKE 'DEMO %'
-GROUP BY g.user_group_name, w.work_schedule_name
+GROUP BY g.user_group_name, csomopont, u.user_username, w.work_schedule_name
 ORDER BY g.user_group_name;

@@ -1,178 +1,60 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import {
   listOrg,
-  createUnit,
-  updateUnit,
-  deleteUnit,
+  type OrgArea,
+  type OrgDepartment,
   type OrgEntity,
-  type OrgManager,
+  type OrgGroup,
+  type OrgShift,
   type OrgTree,
 } from "../../api/org";
+import {
+  listGroups,
+  listGroupOptions,
+  type Group,
+  type GroupOptions,
+} from "../../api/groups";
 import { ApiError } from "../../api/client";
+import { GroupModal, type GroupNode } from "./group-modal";
+import { UnitModal, type DerivedGroup, type UnitDraft } from "./unit-modal";
 
-interface UnitRowProps {
+interface UnitModalState {
   entity: OrgEntity;
-  id: number;
-  name: string;
-  managerId: number | null;
-  managers: OrgManager[];
-  onSaved: (message: string) => void;
-  onFailed: (message: string) => void;
-}
-
-const UnitRow = ({
-  entity,
-  id,
-  name,
-  managerId,
-  managers,
-  onSaved,
-  onFailed,
-}: UnitRowProps) => {
-  const [unitName, setUnitName] = useState(name);
-  const [unitManagerId, setUnitManagerId] = useState<number | null>(managerId);
-
-  useEffect(() => {
-    setUnitName(name);
-    setUnitManagerId(managerId);
-  }, [name, managerId]);
-
-  const run = async (action: () => Promise<{ message: string }>) => {
-    try {
-      const response = await action();
-      onSaved(response.message);
-    } catch (error) {
-      onFailed(
-        error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
-      );
-    }
-  };
-
-  return (
-    <div className="flex gap-2 items-center flex-wrap">
-      <input
-        type="text"
-        className="input input-sm input-bordered w-56"
-        value={unitName}
-        onChange={(event) => setUnitName(event.target.value)}
-      />
-      <select
-        className="select select-sm select-bordered w-56"
-        value={unitManagerId ?? ""}
-        onChange={(event) =>
-          setUnitManagerId(
-            event.target.value ? Number(event.target.value) : null,
-          )
-        }
-      >
-        <option value="">Nincs vezető</option>
-        {managers.map((manager) => (
-          <option key={manager.id} value={manager.id}>
-            {manager.name}
-          </option>
-        ))}
-      </select>
-      <button
-        className="btn btn-xs"
-        onClick={() =>
-          run(() =>
-            updateUnit(entity, id, {
-              name: unitName,
-              managerId: unitManagerId,
-            }),
-          )
-        }
-      >
-        Mentés
-      </button>
-      <button
-        className="btn btn-xs btn-ghost"
-        onClick={() => run(() => deleteUnit(entity, id))}
-      >
-        Törlés
-      </button>
-    </div>
-  );
-};
-
-interface NewUnitProps {
-  entity: OrgEntity;
-  parentId?: number;
   label: string;
-  managers: OrgManager[];
-  onSaved: (message: string) => void;
-  onFailed: (message: string) => void;
+  unit: UnitDraft | null;
+  parentId: number | null;
+  parentLabel: string;
+  parentOptions: { id: number; name: string }[];
+  parentRequired: boolean;
+  derivedGroups: DerivedGroup[];
 }
 
-const NewUnit = ({
-  entity,
-  parentId,
-  label,
-  managers,
-  onSaved,
-  onFailed,
-}: NewUnitProps) => {
-  const [unitName, setUnitName] = useState("");
-  const [unitManagerId, setUnitManagerId] = useState<number | null>(null);
+interface GroupModalState {
+  group: Group | null;
+  node: GroupNode;
+}
 
-  const handleCreate = async () => {
-    try {
-      const response = await createUnit(entity, {
-        name: unitName,
-        parentId,
-        managerId: unitManagerId,
-      });
-      setUnitName("");
-      setUnitManagerId(null);
-      onSaved(response.message);
-    } catch (error) {
-      onFailed(
-        error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
-      );
-    }
-  };
-
-  return (
-    <div className="flex gap-2 items-center flex-wrap">
-      <input
-        type="text"
-        className="input input-sm input-bordered w-56"
-        placeholder={label}
-        value={unitName}
-        onChange={(event) => setUnitName(event.target.value)}
-      />
-      <select
-        className="select select-sm select-bordered w-56"
-        value={unitManagerId ?? ""}
-        onChange={(event) =>
-          setUnitManagerId(
-            event.target.value ? Number(event.target.value) : null,
-          )
-        }
-      >
-        <option value="">Nincs vezető</option>
-        {managers.map((manager) => (
-          <option key={manager.id} value={manager.id}>
-            {manager.name}
-          </option>
-        ))}
-      </select>
-      <button className="btn btn-xs btn-primary" onClick={handleCreate}>
-        Hozzáadás
-      </button>
-    </div>
-  );
-};
+const toDerived = (group: OrgGroup | null): DerivedGroup[] =>
+  group ? [{ name: group.name, activeEmployees: group.activeEmployees }] : [];
 
 export const OrgPage = () => {
   const [tree, setTree] = useState<OrgTree | null>(null);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [groupOptions, setGroupOptions] = useState<GroupOptions | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [infoMessage, setInfoMessage] = useState("");
+  const [unitModal, setUnitModal] = useState<UnitModalState | null>(null);
+  const [groupModal, setGroupModal] = useState<GroupModalState | null>(null);
 
   const load = useCallback(async () => {
+    setErrorMessage("");
     try {
-      const data = await listOrg();
-      setTree(data);
+      const [orgData, groupData] = await Promise.all([
+        listOrg(),
+        listGroups(),
+      ]);
+      setTree(orgData);
+      setGroups(groupData.groups);
     } catch (error) {
       setTree(null);
       setErrorMessage(
@@ -183,128 +65,447 @@ export const OrgPage = () => {
 
   useEffect(() => {
     load();
+    listGroupOptions()
+      .then(setGroupOptions)
+      .catch(() => setGroupOptions(null));
   }, [load]);
 
-  const handleSaved = (message: string) => {
+  const areas = tree?.areas ?? [];
+  const managers = tree?.managers ?? [];
+
+  const childAreasOf = (parentId: number | null) =>
+    areas.filter((item) => item.parentId === parentId);
+
+  const departmentsOf = (area: OrgArea): OrgDepartment[] => area.departments;
+
+  const derivedOfDepartment = (department: OrgDepartment): DerivedGroup[] => [
+    ...toDerived(department.group),
+    ...department.shifts.flatMap((shift) => toDerived(shift.group)),
+  ];
+
+  const derivedOfArea = (area: OrgArea): DerivedGroup[] => [
+    ...toDerived(area.group),
+    ...departmentsOf(area).flatMap(derivedOfDepartment),
+    ...childAreasOf(area.id).flatMap(derivedOfArea),
+  ];
+
+  const descendantAreaIds = (areaId: number): number[] => {
+    const children = childAreasOf(areaId);
+    return [
+      areaId,
+      ...children.flatMap((child) => descendantAreaIds(child.id)),
+    ];
+  };
+
+  const handleSaved = async (message: string) => {
     setErrorMessage("");
     setInfoMessage(message);
-    load();
+    setUnitModal(null);
+    setGroupModal(null);
+    await load();
   };
 
-  const handleFailed = (message: string) => {
+  const openGroup = (group: OrgGroup | null, node: GroupNode) => {
+    setErrorMessage("");
     setInfoMessage("");
-    setErrorMessage(message);
+
+    if (!group) {
+      setGroupModal({ group: null, node });
+      return;
+    }
+
+    const full = groups.find((item) => item.id === group.id) ?? null;
+
+    if (!full) {
+      setErrorMessage("A csoport adatai nem érhetők el.");
+      return;
+    }
+
+    setGroupModal({ group: full, node });
   };
 
-  const managers = tree?.managers ?? [];
+  const groupCell = (group: OrgGroup | null, node: GroupNode) => {
+    if (!group) {
+      return (
+        <button
+          className="btn btn-xs btn-ghost"
+          onClick={() => openGroup(null, node)}
+          disabled={!groupOptions || !node.managerName}
+          title={
+            node.managerName
+              ? undefined
+              : "Előbb vezetőt kell rendelni a szervezeti egységhez"
+          }
+        >
+          + Csoport létrehozása
+        </button>
+      );
+    }
+
+    return (
+      <button
+        className="btn btn-xs"
+        onClick={() => openGroup(group, node)}
+        disabled={!groupOptions}
+      >
+        {group.name}
+        <span className="badge badge-sm ml-2">{group.activeEmployees} fő</span>
+        {group.status !== "Aktív" && (
+          <span className="badge badge-sm badge-ghost ml-1">
+            {group.status}
+          </span>
+        )}
+      </button>
+    );
+  };
+
+  const unitRow = (
+    key: string,
+    depth: number,
+    icon: string,
+    name: string,
+    managerName: string | null,
+    derived: DerivedGroup[],
+    group: OrgGroup | null,
+    node: GroupNode,
+    onEdit: () => void,
+    extra?: ReactNode,
+  ) => (
+    <tr key={key} className="hover">
+      <td>
+        <div
+          className="flex items-center gap-2"
+          style={{ paddingLeft: `${depth * 1.5}rem` }}
+        >
+          <span className="opacity-50">{icon}</span>
+          <span className={depth === 0 ? "font-semibold" : ""}>{name}</span>
+        </div>
+      </td>
+      <td className="whitespace-nowrap">
+        {managerName ? (
+          <div className="flex flex-col">
+            <span>{managerName}</span>
+            <span className="text-xs opacity-60">
+              {derived.length} csoport ·{" "}
+              {derived.reduce((sum, item) => sum + item.activeEmployees, 0)} fő
+              a hatókörében
+            </span>
+          </div>
+        ) : (
+          <span className="opacity-50">nincs vezető</span>
+        )}
+      </td>
+      <td>{groupCell(group, node)}</td>
+      <td className="whitespace-nowrap text-right">
+        {extra}
+        <button className="btn btn-xs ml-1" onClick={onEdit}>
+          Szerkesztés
+        </button>
+      </td>
+    </tr>
+  );
+
+  const renderShift = (
+    shift: OrgShift,
+    area: OrgArea,
+    department: OrgDepartment,
+    depth: number,
+    path: string,
+  ): ReactNode =>
+    unitRow(
+      `shift-${shift.id}`,
+      depth,
+      "└",
+      shift.name,
+      shift.managerName,
+      toDerived(shift.group),
+      shift.group,
+      {
+        areaId: area.id,
+        departmentId: department.id,
+        shiftId: shift.id,
+        label: shift.name,
+        path: `${path} › ${shift.name}`,
+        managerName: shift.managerName,
+      },
+      () =>
+        setUnitModal({
+          entity: "shifts",
+          label: "Műszak",
+          unit: {
+            id: shift.id,
+            name: shift.name,
+            parentId: department.id,
+            managerId: shift.managerId,
+          },
+          parentId: department.id,
+          parentLabel: "részleg",
+          parentOptions: areas.flatMap((item) =>
+            item.departments.map((dep) => ({ id: dep.id, name: dep.name })),
+          ),
+          parentRequired: true,
+          derivedGroups: toDerived(shift.group),
+        }),
+    );
+
+  const renderDepartment = (
+    department: OrgDepartment,
+    area: OrgArea,
+    depth: number,
+    path: string,
+  ): ReactNode[] => {
+    const own = `${path} › ${department.name}`;
+
+    return [
+      unitRow(
+        `department-${department.id}`,
+        depth,
+        "├",
+        department.name,
+        department.managerName,
+        derivedOfDepartment(department),
+        department.group,
+        {
+          areaId: area.id,
+          departmentId: department.id,
+          shiftId: null,
+          label: department.name,
+          path: own,
+          managerName: department.managerName,
+        },
+        () =>
+          setUnitModal({
+            entity: "departments",
+            label: "Részleg",
+            unit: {
+              id: department.id,
+              name: department.name,
+              parentId: area.id,
+              managerId: department.managerId,
+            },
+            parentId: area.id,
+            parentLabel: "terület",
+            parentOptions: areas.map((item) => ({
+              id: item.id,
+              name: item.name,
+            })),
+            parentRequired: true,
+            derivedGroups: derivedOfDepartment(department),
+          }),
+        <button
+          className="btn btn-xs btn-ghost"
+          onClick={() =>
+            setUnitModal({
+              entity: "shifts",
+              label: "Műszak",
+              unit: null,
+              parentId: department.id,
+              parentLabel: "részleg",
+              parentOptions: areas.flatMap((item) =>
+                item.departments.map((dep) => ({
+                  id: dep.id,
+                  name: dep.name,
+                })),
+              ),
+              parentRequired: true,
+              derivedGroups: [],
+            })
+          }
+        >
+          + Műszak
+        </button>,
+      ),
+      ...department.shifts.map((shift) =>
+        renderShift(shift, area, department, depth + 1, own),
+      ),
+    ];
+  };
+
+  const renderArea = (area: OrgArea, depth: number, path: string): ReactNode[] => {
+    const own = path ? `${path} › ${area.name}` : area.name;
+
+    return [
+      unitRow(
+        `area-${area.id}`,
+        depth,
+        depth === 0 ? "■" : "├",
+        area.name,
+        area.managerName,
+        derivedOfArea(area),
+        area.group,
+        {
+          areaId: area.id,
+          departmentId: null,
+          shiftId: null,
+          label: area.name,
+          path: own,
+          managerName: area.managerName,
+        },
+        () =>
+          setUnitModal({
+            entity: "areas",
+            label: "Terület",
+            unit: {
+              id: area.id,
+              name: area.name,
+              parentId: area.parentId,
+              managerId: area.managerId,
+            },
+            parentId: area.parentId,
+            parentLabel: "terület",
+            parentOptions: areas
+              .filter((item) => !descendantAreaIds(area.id).includes(item.id))
+              .map((item) => ({ id: item.id, name: item.name })),
+            parentRequired: false,
+            derivedGroups: derivedOfArea(area),
+          }),
+        <>
+          <button
+            className="btn btn-xs btn-ghost"
+            onClick={() =>
+              setUnitModal({
+                entity: "areas",
+                label: "Terület",
+                unit: null,
+                parentId: area.id,
+                parentLabel: "terület",
+                parentOptions: areas.map((item) => ({
+                  id: item.id,
+                  name: item.name,
+                })),
+                parentRequired: false,
+                derivedGroups: [],
+              })
+            }
+          >
+            + Terület
+          </button>
+          <button
+            className="btn btn-xs btn-ghost ml-1"
+            onClick={() =>
+              setUnitModal({
+                entity: "departments",
+                label: "Részleg",
+                unit: null,
+                parentId: area.id,
+                parentLabel: "terület",
+                parentOptions: areas.map((item) => ({
+                  id: item.id,
+                  name: item.name,
+                })),
+                parentRequired: true,
+                derivedGroups: [],
+              })
+            }
+          >
+            + Részleg
+          </button>
+        </>,
+      ),
+      ...departmentsOf(area).flatMap((department) =>
+        renderDepartment(department, area, depth + 1, own),
+      ),
+      ...childAreasOf(area.id).flatMap((child) =>
+        renderArea(child, depth + 1, own),
+      ),
+    ];
+  };
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Szervezeti egységek</h1>
+      <div className="flex flex-wrap items-center gap-3">
+        <h1 className="text-2xl font-bold">Szervezet és csoportok</h1>
 
-      <p className="text-sm opacity-70 max-w-3xl">
-        A szintekhez rendelt vezető a saját egysége alá tartozó valamennyi
-        dolgozó adatát eléri: a területi vezető az összes részleget és műszakot,
-        a részlegvezető a saját részlegének műszakjait. A vezető mező üresen is
-        hagyható, ilyenkor az adott szint nem ad hozzáférést.
-      </p>
+        <button
+          className="btn btn-sm btn-primary ml-auto"
+          onClick={() =>
+            setUnitModal({
+              entity: "areas",
+              label: "Terület",
+              unit: null,
+              parentId: null,
+              parentLabel: "terület",
+              parentOptions: areas.map((item) => ({
+                id: item.id,
+                name: item.name,
+              })),
+              parentRequired: false,
+              derivedGroups: [],
+            })
+          }
+        >
+          Új terület
+        </button>
+      </div>
 
       {errorMessage && (
-        <div className="alert alert-error text-sm py-2">
+        <div className="alert alert-error py-2 text-sm">
           <span>{errorMessage}</span>
         </div>
       )}
 
       {infoMessage && (
-        <div className="alert alert-success text-sm py-2">
+        <div className="alert alert-success py-2 text-sm">
           <span>{infoMessage}</span>
         </div>
       )}
 
-      <div className="card bg-base-200">
-        <div className="card-body">
-          <h2 className="card-title text-base">Új terület</h2>
-          <NewUnit
-            entity="areas"
-            label="Terület megnevezése"
-            managers={managers}
-            onSaved={handleSaved}
-            onFailed={handleFailed}
-          />
-        </div>
+      <p className="text-sm opacity-70">
+        A szervezeti felépítés adja a hierarchiát: a vezető minden alatta lévő
+        szintet lát. A csoport az a halmaz, ahová a dolgozók tartoznak, és egy
+        szervezeti egységhez egy csoport tartozhat. A csoport vezetője mindig a
+        szervezeti egység vezetője.
+      </p>
+
+      <div className="overflow-x-auto">
+        <table className="table table-sm">
+          <thead>
+            <tr>
+              <th>Szervezeti egység</th>
+              <th>Vezető</th>
+              <th>Csoport</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {childAreasOf(null).flatMap((area) => renderArea(area, 0, ""))}
+
+            {areas.length === 0 && (
+              <tr>
+                <td colSpan={4} className="text-center opacity-60">
+                  Még nincs szervezeti egység.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
 
-      {tree?.areas.map((area) => (
-        <div key={area.id} className="card bg-base-200">
-          <div className="card-body space-y-3">
-            <h2 className="card-title text-base">{area.name}</h2>
+      {unitModal && (
+        <UnitModal
+          entity={unitModal.entity}
+          label={unitModal.label}
+          unit={unitModal.unit}
+          parentId={unitModal.parentId}
+          parentLabel={unitModal.parentLabel}
+          parentOptions={unitModal.parentOptions}
+          parentRequired={unitModal.parentRequired}
+          managers={managers}
+          derivedGroups={unitModal.derivedGroups}
+          onClose={() => setUnitModal(null)}
+          onSaved={handleSaved}
+        />
+      )}
 
-            <UnitRow
-              entity="areas"
-              id={area.id}
-              name={area.name}
-              managerId={area.managerId}
-              managers={managers}
-              onSaved={handleSaved}
-              onFailed={handleFailed}
-            />
-
-            <div className="pl-6 space-y-3 border-l border-base-300">
-              {area.departments.map((department) => (
-                <div key={department.id} className="space-y-2">
-                  <UnitRow
-                    entity="departments"
-                    id={department.id}
-                    name={department.name}
-                    managerId={department.managerId}
-                    managers={managers}
-                    onSaved={handleSaved}
-                    onFailed={handleFailed}
-                  />
-
-                  <div className="pl-6 space-y-2 border-l border-base-300">
-                    {department.shifts.map((shift) => (
-                      <UnitRow
-                        key={shift.id}
-                        entity="shifts"
-                        id={shift.id}
-                        name={shift.name}
-                        managerId={shift.managerId}
-                        managers={managers}
-                        onSaved={handleSaved}
-                        onFailed={handleFailed}
-                      />
-                    ))}
-
-                    <NewUnit
-                      entity="shifts"
-                      parentId={department.id}
-                      label="Új műszak"
-                      managers={managers}
-                      onSaved={handleSaved}
-                      onFailed={handleFailed}
-                    />
-                  </div>
-                </div>
-              ))}
-
-              <NewUnit
-                entity="departments"
-                parentId={area.id}
-                label="Új részleg"
-                managers={managers}
-                onSaved={handleSaved}
-                onFailed={handleFailed}
-              />
-            </div>
-          </div>
-        </div>
-      ))}
-
-      {tree && tree.areas.length === 0 && (
-        <div className="alert text-sm py-2">
-          <span>Még nincs felvett terület.</span>
-        </div>
+      {groupModal && groupOptions && (
+        <GroupModal
+          group={groupModal.group}
+          node={groupModal.node}
+          options={groupOptions}
+          onClose={() => setGroupModal(null)}
+          onSaved={handleSaved}
+          onChanged={load}
+        />
       )}
     </div>
   );
