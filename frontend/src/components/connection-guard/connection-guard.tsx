@@ -10,8 +10,18 @@ interface ConnectionGuardProps {
 export const ConnectionGuard = ({ children }: ConnectionGuardProps) => {
   const [isOffline, setIsOffline] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
+  const [wasOffline, setWasOffline] = useState(false);
 
-  useEffect(() => subscribeConnection((online) => setIsOffline(!online)), []);
+  useEffect(
+    () =>
+      subscribeConnection((online) => {
+        setIsOffline(!online);
+        if (!online) {
+          setWasOffline(true);
+        }
+      }),
+    [],
+  );
 
   useEffect(() => {
     if (!isOffline) {
@@ -51,7 +61,33 @@ export const ConnectionGuard = ({ children }: ConnectionGuardProps) => {
   };
 
   if (!isOffline) {
-    return <>{children}</>;
+    return (
+      <>
+        {wasOffline && (
+          <div className="alert alert-warning sticky top-0 z-50 rounded-none py-2 text-sm">
+            <span>
+              A kapcsolat megszakadt, majd helyreállt. A képernyőn látható
+              adatok elavultak lehetnek.
+            </span>
+            <div className="flex gap-2">
+              <button
+                className="btn btn-xs btn-primary"
+                onClick={() => window.location.reload()}
+              >
+                Frissítés
+              </button>
+              <button
+                className="btn btn-xs btn-ghost"
+                onClick={() => setWasOffline(false)}
+              >
+                Bezárás
+              </button>
+            </div>
+          </div>
+        )}
+        {children}
+      </>
+    );
   }
 
   return (
