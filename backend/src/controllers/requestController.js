@@ -58,7 +58,8 @@ const toOutput = (row) => {
         decisionBy: row.decision_by_username,
         createdAt: row.request_created_at,
         isUrgent: isPending && hoursBetween(createdAt, startDay) < URGENT_HOURS,
-        isExpired: isPending && startDay < today
+        isBackdated: isPending && createdAt > startDay,
+        isExpired: isPending && startDay < today && createdAt <= startDay
     };
 };
 
@@ -257,7 +258,8 @@ const decide = async (req, res) => {
 
     try {
         const [existing] = await pool.execute(
-            `SELECT request_employee_id, request_start_date, request_status
+            `SELECT request_employee_id, request_start_date, request_status,
+                    request_created_at
              FROM Requests WHERE request_id = ?`,
             [requestId]
         );
@@ -291,9 +293,16 @@ const decide = async (req, res) => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        if (toDate(request.request_start_date) < today && req.user.role !== 'HR-Bér') {
+        const startDay = toDate(request.request_start_date);
+        const createdAt = new Date(
+            String(request.request_created_at).replace(' ', 'T')
+        );
+        const isBackdated = createdAt > startDay;
+
+        if (startDay < today && !isBackdated && req.user.role !== 'HR-Bér') {
             return res.status(409).json({
-                message: 'A távollét kezdőnapja után a kérelmet már csak a HR rendezheti.'
+                message: 'A távollét kezdőnapja után a kérelmet már csak a HR '
+                    + 'rendezheti, mert a döntési határidő eltelt.'
             });
         }
 
