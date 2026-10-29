@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const getMe = (req, res) => {
     return res.status(200).json({ user: req.user });
@@ -46,7 +47,22 @@ const changePassword = async (req, res) => {
             `, [newPasswordHash, req.user.userId]
         );
 
-        return res.status(200).json({message: 'A jelszó megváltozott. Kérem jelentkezzen be újra..'});
+        const payload = {
+            userId: req.user.userId,
+            username: req.user.username,
+            role: req.user.role,
+            employeeId: req.user.employeeId,
+            fullName: req.user.fullName,
+            mustChangePassword: false
+        };
+
+        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '8h' });
+
+        return res.status(200).json({
+            message: 'A jelszó megváltozott.',
+            token,
+            user: payload
+        });
     }
     catch (error){
         console.error('Jelszócsere hiba:' ,error);

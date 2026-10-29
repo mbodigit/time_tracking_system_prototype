@@ -97,7 +97,7 @@ const request = async <T>(path: string, options: RequestInit = {}): Promise<T> =
   if (!response.ok) {
     const code = (data as { code?: string }).code;
 
-    if (response.status === 401 || code === "INVALID_TOKEN") {
+    if (code === "NO_TOKEN" || code === "INVALID_TOKEN") {
       expireSession();
     }
 
@@ -168,7 +168,7 @@ export const apiDownload = async (
     const data = await response.json().catch(() => ({}));
     const code = (data as { code?: string }).code;
 
-    if (response.status === 401 || code === "INVALID_TOKEN") {
+    if (code === "NO_TOKEN" || code === "INVALID_TOKEN") {
       expireSession();
     }
 
