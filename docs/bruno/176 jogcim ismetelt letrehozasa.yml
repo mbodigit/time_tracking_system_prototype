@@ -1,0 +1,38 @@
+info:
+  name: jogcim ismetelt letrehozasa
+  type: http
+  seq: 176
+
+http:
+  method: POST
+  url: "{{baseUrl}}/admin/absences"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Bruno jogcim",
+        "payrollCode": "BRJ",
+        "category": "Egyéb",
+        "isPaid": true,
+        "isOpenEnded": false,
+        "recType": 0,
+        "status": true,
+        "sort": 901,
+        "workScheduleIds": [{{absScheduleId}}]
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "409"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

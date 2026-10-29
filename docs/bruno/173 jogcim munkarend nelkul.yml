@@ -1,0 +1,38 @@
+info:
+  name: jogcim munkarend nelkul
+  type: http
+  seq: 173
+
+http:
+  method: POST
+  url: "{{baseUrl}}/admin/absences"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Bruno jogcim",
+        "payrollCode": "BRJ",
+        "category": "Egyéb",
+        "isPaid": true,
+        "isOpenEnded": false,
+        "recType": 0,
+        "status": true,
+        "sort": 900,
+        "workScheduleIds": []
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "400"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
