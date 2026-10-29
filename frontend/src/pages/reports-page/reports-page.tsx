@@ -20,6 +20,7 @@ import {
 } from "../../api/reports";
 import { listEmployees, type ScopeEmployee } from "../../api/lookups";
 import { ApiError } from "../../api/client";
+import { Field } from "../../components/form-field/form-field";
 import { getCurrentUser } from "../../utils/auth";
 import {
   formatMinutes,
@@ -456,10 +457,7 @@ export const ReportsPage = () => {
       {tab === "statistics" && statistics && (
         <>
           <div className="flex items-center gap-3 flex-wrap">
-            <label className="form-control">
-              <div className="label py-1">
-                <span className="label-text">Bontás</span>
-              </div>
+            <Field label="Bontás">
               <select
                 className="select select-sm select-bordered"
                 value={dimension}
@@ -471,12 +469,9 @@ export const ReportsPage = () => {
                   </option>
                 ))}
               </select>
-            </label>
+            </Field>
 
-            <label className="form-control">
-              <div className="label py-1">
-                <span className="label-text">Mérőszám</span>
-              </div>
+            <Field label="Mérőszám">
               <select
                 className="select select-sm select-bordered"
                 value={measure}
@@ -490,7 +485,7 @@ export const ReportsPage = () => {
                   </option>
                 ))}
               </select>
-            </label>
+            </Field>
           </div>
 
           {statistics.rows.length === 0 ? (

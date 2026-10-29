@@ -7,6 +7,7 @@ import {
   type ScopeEmployee,
 } from "../../api/lookups";
 import { ApiError } from "../../api/client";
+import { Field } from "../../components/form-field/form-field";
 import { getCurrentUser } from "../../utils/auth";
 
 interface Props {
@@ -89,10 +90,7 @@ export const RequestForm = ({ onClose, onSaved }: Props) => {
         )}
 
         {employees.length > 1 && (
-          <label className="form-control">
-            <div className="label py-1">
-              <span className="label-text">Dolgozó</span>
-            </div>
+          <Field label="Dolgozó">
             <select
               className="select select-bordered"
               value={employeeId}
@@ -104,13 +102,10 @@ export const RequestForm = ({ onClose, onSaved }: Props) => {
                 </option>
               ))}
             </select>
-          </label>
+          </Field>
         )}
 
-        <label className="form-control">
-          <div className="label py-1">
-            <span className="label-text">Távolléti jogcím</span>
-          </div>
+        <Field label="Távolléti jogcím">
           <select
             className="select select-bordered"
             value={absenceId}
@@ -124,34 +119,29 @@ export const RequestForm = ({ onClose, onSaved }: Props) => {
               </option>
             ))}
           </select>
-        </label>
+        </Field>
 
         <div className="flex gap-3">
-          <label className="form-control flex-1">
-            <div className="label py-1">
-              <span className="label-text">Kezdő nap</span>
-            </div>
+          <Field label="Kezdő nap" grow>
             <input
               type="date"
               className="input input-bordered"
               value={startDate}
               onChange={(event) => setStartDate(event.target.value)}
             />
-          </label>
+          </Field>
 
-          <label className="form-control flex-1">
-            <div className="label py-1">
-              <span className="label-text">
-                Záró nap{needsEndDate ? "" : " (elhagyható)"}
-              </span>
-            </div>
+          <Field
+            grow
+            label={`Záró nap${needsEndDate ? "" : " (elhagyható)"}`}
+          >
             <input
               type="date"
               className="input input-bordered"
               value={endDate}
               onChange={(event) => setEndDate(event.target.value)}
             />
-          </label>
+          </Field>
         </div>
 
         {selected?.isOpenEnded && (
@@ -163,17 +153,14 @@ export const RequestForm = ({ onClose, onSaved }: Props) => {
           </div>
         )}
 
-        <label className="form-control">
-          <div className="label py-1">
-            <span className="label-text">Megjegyzés</span>
-          </div>
+        <Field label="Megjegyzés">
           <textarea
             className="textarea textarea-bordered"
             rows={2}
             value={message}
             onChange={(event) => setMessage(event.target.value)}
           />
-        </label>
+        </Field>
 
         <div className="modal-action">
           <button

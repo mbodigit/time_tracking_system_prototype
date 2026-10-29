@@ -9,6 +9,7 @@ import {
   type EmployeePayload,
 } from "../../api/employeeAdmin";
 import { ApiError } from "../../api/client";
+import { Field, FormGrid } from "../../components/form-field/form-field";
 
 const EMPTY_FORM: EmployeePayload = {
   lastName: "",
@@ -53,23 +54,6 @@ const toForm = (employee: AdminEmployee): EmployeePayload => ({
   annualLeaveDays: employee.annualLeaveDays,
   managerId: employee.managerId,
 });
-
-const Field = ({
-  label,
-  wide,
-  children,
-}: {
-  label: string;
-  wide?: boolean;
-  children: React.ReactNode;
-}) => (
-  <label className={`form-control ${wide ? "md:col-span-2" : ""}`}>
-    <div className="label py-1">
-      <span className="label-text">{label}</span>
-    </div>
-    {children}
-  </label>
-);
 
 const SelectField = ({
   label,
@@ -210,7 +194,7 @@ export const EmployeeModal = ({
             </div>
           )}
 
-          <div className="grid gap-3 md:grid-cols-4">
+          <FormGrid columns={3}>
             <Field label="Vezetéknév">
               <input
                 type="text"
@@ -229,7 +213,7 @@ export const EmployeeModal = ({
               />
             </Field>
 
-            <Field label="Vállalati e-mail cím" wide>
+            <Field label="Vállalati e-mail cím" span={2}>
               <input
                 type="email"
                 className="input input-sm input-bordered"
@@ -346,16 +330,16 @@ export const EmployeeModal = ({
               />
             </Field>
 
-            <label className="label mt-7 cursor-pointer justify-start gap-3">
+            <label className="mt-7 flex cursor-pointer items-center gap-3">
               <input
                 type="checkbox"
                 className="checkbox checkbox-sm"
                 checked={form.breakPaid}
                 onChange={(event) => patch({ breakPaid: event.target.checked })}
               />
-              <span className="label-text">A szünet munkaidőnek számít</span>
+              <span className="text-sm">A szünet munkaidőnek számít</span>
             </label>
-          </div>
+          </FormGrid>
 
           {isNew && (
             <p className="text-sm opacity-70">
