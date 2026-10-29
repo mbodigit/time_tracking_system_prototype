@@ -3,6 +3,12 @@ const { canAccessEmployee, getAccessibleEmployeeIds } = require('../services/emp
 
 const URGENT_HOURS = 24;
 
+const BACKDATE_LIMIT_DAYS = {
+    'Dolgozó': 0,
+    'Vezető': 3,
+    'Admin': 3
+};
+
 const isValidDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value);
 
 const toDate = (value) => new Date(`${String(value).slice(0, 10)}T00:00:00`);
@@ -68,6 +74,27 @@ const create = async (req, res) => {
     if (!isValidDate(startDate) || (endDate && !isValidDate(endDate))) {
         return res.status(400).json({ message: 'A dátum formátuma érvénytelen.' });
     }
+
+    const limitDays = BACKDATE_LIMIT_DAYS[req.user.role];
+
+    if (limitDays !== undefined) {
+        const ma = new Date();
+        ma.setHours(0, 0, 0, 0);
+
+        const eltelt = Math.round(
+            (ma.getTime() - toDate(startDate).getTime()) / (1000 * 60 * 60 * 24)
+        );
+
+        if (eltelt > limitDays) {
+            return res.status(400).json({
+                message: limitDays === 0
+                    ? 'A kérelem kezdő napja nem lehet korábbi a mai napnál. '
+                        + 'Visszamenőleges rögzítést a felettes vagy a HR végezhet.'
+                    : `A kérelem kezdő napja legfeljebb ${limitDays} nappal `
+                        + 'lehet korábbi a mai napnál.'
+            });
+        }
+    }    
 
     const targetEmployeeId = Number(employeeId) || req.user.employeeId;
     const isSelf = targetEmployeeId === req.user.employeeId;

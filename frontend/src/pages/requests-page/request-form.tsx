@@ -7,15 +7,16 @@ import {
   type ScopeEmployee,
 } from "../../api/lookups";
 import { ApiError } from "../../api/client";
-import { Field } from "../../components/form-field/form-field";
+import { Field, FormGrid } from "../../components/form-field/form-field";
 import { getCurrentUser } from "../../utils/auth";
 
 interface Props {
+  defaultDate?: string;
   onClose: () => void;
   onSaved: () => void;
 }
 
-export const RequestForm = ({ onClose, onSaved }: Props) => {
+export const RequestForm = ({ defaultDate, onClose, onSaved }: Props) => {
   const currentUser = getCurrentUser();
 
   const [employees, setEmployees] = useState<ScopeEmployee[]>([]);
@@ -24,7 +25,7 @@ export const RequestForm = ({ onClose, onSaved }: Props) => {
     currentUser?.employeeId ?? 0,
   );
   const [absenceId, setAbsenceId] = useState<number>(0);
-  const [startDate, setStartDate] = useState("");
+  const [startDate, setStartDate] = useState(defaultDate ?? "");
   const [endDate, setEndDate] = useState("");
   const [message, setMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -80,98 +81,110 @@ export const RequestForm = ({ onClose, onSaved }: Props) => {
 
   return (
     <div className="modal modal-open">
-      <div className="modal-box space-y-3">
-        <h3 className="font-bold text-lg">Új távolléti kérelem</h3>
-
-        {errorMessage && (
-          <div className="alert alert-error text-sm py-2">
-            <span>{errorMessage}</span>
-          </div>
-        )}
-
-        {employees.length > 1 && (
-          <Field label="Dolgozó">
-            <select
-              className="select select-bordered"
-              value={employeeId}
-              onChange={(event) => setEmployeeId(Number(event.target.value))}
-            >
-              {employees.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name} {item.isSelf ? "(saját)" : `— ${item.code}`}
-                </option>
-              ))}
-            </select>
-          </Field>
-        )}
-
-        <Field label="Távolléti jogcím">
-          <select
-            className="select select-bordered"
-            value={absenceId}
-            onChange={(event) => setAbsenceId(Number(event.target.value))}
+      <div className="modal-box max-w-2xl p-0">
+        <div className="flex items-start justify-between gap-3 border-b border-base-300 px-6 pb-3 pt-5">
+          <h3 className="text-xl font-bold text-primary">
+            Új távolléti kérelem
+          </h3>
+          <button
+            type="button"
+            className="btn btn-sm btn-ghost btn-circle"
+            onClick={onClose}
+            disabled={isSaving}
+            aria-label="Bezárás"
           >
-            <option value={0}>Válassz jogcímet</option>
-            {absences.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name}
-                {item.isPaid ? "" : " (nem fizetett)"}
-              </option>
-            ))}
-          </select>
-        </Field>
-
-        <div className="flex gap-3">
-          <Field label="Kezdő nap" grow>
-            <input
-              type="date"
-              className="input input-bordered"
-              value={startDate}
-              onChange={(event) => setStartDate(event.target.value)}
-            />
-          </Field>
-
-          <Field
-            grow
-            label={`Záró nap${needsEndDate ? "" : " (elhagyható)"}`}
-          >
-            <input
-              type="date"
-              className="input input-bordered"
-              value={endDate}
-              onChange={(event) => setEndDate(event.target.value)}
-            />
-          </Field>
+            ✕
+          </button>
         </div>
 
-        {selected?.isOpenEnded && (
-          <div className="alert alert-info text-sm py-2">
-            <span>
-              Nyitott végű jogcím. Ha a záró nap még nem ismert, hagyd üresen —
-              a kezdő nap kerül rögzítésre, és később pontosítható.
-            </span>
-          </div>
-        )}
+        <div className="space-y-5 px-6 py-5">
+          {errorMessage && (
+            <div className="alert alert-error py-2 text-sm">
+              <span>{errorMessage}</span>
+            </div>
+          )}
 
-        <Field label="Megjegyzés">
-          <textarea
-            className="textarea textarea-bordered"
-            rows={2}
-            value={message}
-            onChange={(event) => setMessage(event.target.value)}
-          />
-        </Field>
+          <FormGrid columns={2}>
+            {employees.length > 1 && (
+              <Field label="Dolgozó" span={2}>
+                <select
+                  className="select select-sm select-bordered"
+                  value={employeeId}
+                  onChange={(event) =>
+                    setEmployeeId(Number(event.target.value))
+                  }
+                >
+                  {employees.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name} {item.isSelf ? "(saját)" : `— ${item.code}`}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            )}
 
-        <div className="modal-action">
+            <Field label="Távolléti jogcím" span={2}>
+              <select
+                className="select select-sm select-bordered"
+                value={absenceId}
+                onChange={(event) => setAbsenceId(Number(event.target.value))}
+              >
+                <option value={0}>Válassz jogcímet</option>
+                {absences.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                    {item.isPaid ? "" : " (nem fizetett)"}
+                  </option>
+                ))}
+              </select>
+            </Field>
+
+            <Field label="Kezdő nap">
+              <input
+                type="date"
+                className="input input-sm input-bordered"
+                value={startDate}
+                onChange={(event) => setStartDate(event.target.value)}
+              />
+            </Field>
+
+            <Field
+              label={`Záró nap${needsEndDate ? "" : " (elhagyható)"}`}
+              hint={
+                selected?.isOpenEnded
+                  ? "Nyitott végű jogcím: ha a záró nap még nem ismert, hagyd üresen, és később pontosítható."
+                  : undefined
+              }
+            >
+              <input
+                type="date"
+                className="input input-sm input-bordered"
+                value={endDate}
+                onChange={(event) => setEndDate(event.target.value)}
+              />
+            </Field>
+
+            <Field label="Megjegyzés" span={2}>
+              <textarea
+                className="textarea textarea-sm textarea-bordered"
+                rows={2}
+                value={message}
+                onChange={(event) => setMessage(event.target.value)}
+              />
+            </Field>
+          </FormGrid>
+        </div>
+
+        <div className="flex justify-end gap-2 border-t border-base-300 px-6 pb-5 pt-3">
           <button
-            className="btn btn-ghost"
+            className="btn btn-sm btn-ghost"
             onClick={onClose}
             disabled={isSaving}
           >
             Mégse
           </button>
           <button
-            className="btn btn-primary"
+            className="btn btn-sm btn-primary"
             onClick={handleSubmit}
             disabled={isSaving}
           >
@@ -179,6 +192,10 @@ export const RequestForm = ({ onClose, onSaved }: Props) => {
           </button>
         </div>
       </div>
+      <div
+        className="modal-backdrop"
+        onClick={isSaving ? undefined : onClose}
+      />
     </div>
   );
 };

@@ -18,6 +18,7 @@ import {
 } from "../../utils/datetime";
 import { listEmployees, type ScopeEmployee } from "../../api/lookups";
 import { TimeEntryForm } from "./time-entry-form";
+import { RequestForm } from "../requests-page/request-form";
 
 const getDayLabel = (day: TimeEntryDay): string => {
   if (day.dayType === "holiday") return "Munkaszüneti nap";
@@ -44,6 +45,7 @@ export const MonthlyLogTab = () => {
   const [editedDay, setEditedDay] = useState<TimeEntryDay | null>(null);
   const [employees, setEmployees] = useState<ScopeEmployee[]>([]);
   const [employeeId, setEmployeeId] = useState<number | null>(null);
+  const [isRequestOpen, setIsRequestOpen] = useState(false);
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -125,6 +127,12 @@ export const MonthlyLogTab = () => {
           onClick={() => setPeriod(getCurrentMonth())}
         >
           Aktuális hónap
+        </button>
+        <button
+          className="btn btn-sm btn-primary"
+          onClick={() => setIsRequestOpen(true)}
+        >
+          Kérelem leadása
         </button>
       </div>
 
@@ -318,6 +326,16 @@ export const MonthlyLogTab = () => {
           onClose={() => setEditedDay(null)}
           onSaved={() => {
             setEditedDay(null);
+            load();
+          }}
+        />
+      )}
+
+      {isRequestOpen && (
+        <RequestForm
+          onClose={() => setIsRequestOpen(false)}
+          onSaved={() => {
+            setIsRequestOpen(false);
             load();
           }}
         />
