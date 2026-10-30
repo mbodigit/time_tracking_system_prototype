@@ -127,8 +127,13 @@ const options = async (req, res) => {
              FROM CoreHours ORDER BY core_hour_start`
         );
         const [managers] = await pool.execute(
-            `SELECT employee_id, employee_last_name, employee_first_name
-             FROM Employees ORDER BY employee_last_name, employee_first_name`
+            `SELECT e.employee_id, e.employee_last_name, e.employee_first_name
+             FROM Employees e
+             JOIN Users     u ON u.user_employee_id = e.employee_id
+                             AND u.user_status = 1
+             JOIN UserRoles r ON r.user_role_id = u.user_role_id
+             WHERE r.user_role_name = 'Vezető'
+             ORDER BY e.employee_last_name, e.employee_first_name`
         );
         const [roles] = await pool.execute(
             `SELECT user_role_id, user_role_name FROM UserRoles ORDER BY user_role_id`
@@ -178,20 +183,55 @@ const options = async (req, res) => {
 };
 
 const validateEmployee = (body) => {
-    if (!String(body.lastName || '').trim() || !String(body.firstName || '').trim()) {
-        return 'A vezetéknév és a keresztnév megadása kötelező.';
+    const missing = [];
+
+    if (!String(body.lastName || '').trim()) {
+        missing.push('vezetéknév');
+    }
+
+    if (!String(body.firstName || '').trim()) {
+        missing.push('keresztnév');
     }
 
     if (!Number(body.costCenterId)) {
-        return 'A költséghely megadása kötelező.';
+        missing.push('költséghely');
     }
 
     if (!Number(body.categoryId)) {
-        return 'Az állománycsoport megadása kötelező.';
+        missing.push('állománycsoport');
     }
 
     if (!Number(body.statusId)) {
-        return 'A státusz megadása kötelező.';
+        missing.push('státusz');
+    }
+
+    if (!Number(body.workScheduleId)) {
+        missing.push('munkarend');
+    }
+
+    if (!Number(body.workingHourId)) {
+        missing.push('napi munkaidő');
+    }
+
+    const leaveRaw = body.annualLeaveDays;
+
+    if (leaveRaw === null || leaveRaw === undefined || String(leaveRaw).trim() === '') {
+        missing.push('éves szabadságkeret');
+    }
+
+    if (missing.length > 0) {
+        return `Hiányzó kötelező adatok: ${missing.join(', ')}.`;
+    }
+
+    const leaveDays = Number(leaveRaw);
+
+    if (!Number.isInteger(leaveDays) || leaveDays < 0) {
+        return 'Az éves szabadságkeretet nemnegatív egész számként kell megadni.';
+    }
+
+    if (!Number(body.groupId) && !Number(body.managerId)) {
+        return 'Csoportot vagy közvetlen felettest meg kell adni, különben a '
+            + 'dolgozó egyetlen vezető hatókörébe sem tartozna.';
     }
 
     return null;

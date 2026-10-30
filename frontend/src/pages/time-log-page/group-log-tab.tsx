@@ -11,7 +11,9 @@ import {
   useDataTable,
   TableSearch,
   SortableHeader,
+  TablePager,
 } from "../../components/data-table/data-table";
+import { ALL_ROWS } from "../../components/data-table/data-table-config";
 
 const today = () => {
   const now = new Date();
@@ -49,6 +51,7 @@ export const GroupLogTab = () => {
     searchText: dailySearchText,
     sortValue: dailySortValue,
     initialSortKey: "name",
+    initialPageSize: ALL_ROWS,
   });
   const [errorMessage, setErrorMessage] = useState("");
   const [infoMessage, setInfoMessage] = useState("");
@@ -369,6 +372,8 @@ export const GroupLogTab = () => {
             )}
           </tbody>
         </table>
+
+        <TablePager table={dailyTable} unit="dolgozó" />
       </div>
     </div>
   );

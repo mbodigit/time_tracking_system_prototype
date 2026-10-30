@@ -9,6 +9,7 @@ import {
   useDataTable,
   TableSearch,
   SortableHeader,
+  TablePager,
 } from "../../components/data-table/data-table";
 import { AbsenceModal } from "./absence-modal";
 
@@ -188,6 +189,8 @@ export const AbsencesSection = () => {
             )}
           </tbody>
         </table>
+
+        <TablePager table={table} unit="jogcím" />
       </div>
 
       {modal && data && (

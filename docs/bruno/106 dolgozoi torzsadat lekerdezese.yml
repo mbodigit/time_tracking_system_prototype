@@ -19,6 +19,12 @@ runtime:
       operator: isNotEmpty
     - expression: res.body.roles
       operator: isNotEmpty
+    - expression: res.body.workSchedules
+      operator: isNotEmpty
+    - expression: res.body.workingHours
+      operator: isNotEmpty
+    - expression: res.body.managers
+      operator: isNotEmpty
 
   actions:
     - type: set-variable
@@ -60,6 +66,30 @@ runtime:
         method: jsonq
       variable:
         name: empRoleId2
+        scope: runtime
+    - type: set-variable
+      phase: after-response
+      selector:
+        expression: res.body.workSchedules[0].id
+        method: jsonq
+      variable:
+        name: empWorkScheduleId
+        scope: runtime
+    - type: set-variable
+      phase: after-response
+      selector:
+        expression: res.body.workingHours[0].id
+        method: jsonq
+      variable:
+        name: empWorkingHourId
+        scope: runtime
+    - type: set-variable
+      phase: after-response
+      selector:
+        expression: res.body.managers[0].id
+        method: jsonq
+      variable:
+        name: empManagerId
         scope: runtime
 
 settings:

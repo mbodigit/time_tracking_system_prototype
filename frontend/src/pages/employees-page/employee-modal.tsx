@@ -194,152 +194,169 @@ export const EmployeeModal = ({
             </div>
           )}
 
-          <FormGrid columns={3}>
-            <Field label="Vezetéknév">
-              <input
-                type="text"
-                className="input input-sm input-bordered"
-                value={form.lastName}
-                onChange={(event) => patch({ lastName: event.target.value })}
+          <div className="space-y-2">
+            <h4 className="text-sm font-semibold">Kötelező adatok</h4>
+
+            <FormGrid columns={3}>
+              <Field label="Vezetéknév">
+                <input
+                  type="text"
+                  className="input input-sm input-bordered"
+                  value={form.lastName}
+                  onChange={(event) => patch({ lastName: event.target.value })}
+                />
+              </Field>
+
+              <Field label="Keresztnév">
+                <input
+                  type="text"
+                  className="input input-sm input-bordered"
+                  value={form.firstName}
+                  onChange={(event) => patch({ firstName: event.target.value })}
+                />
+              </Field>
+
+              <Field label="Éves szabadságkeret (nap)">
+                <input
+                  type="number"
+                  className="input input-sm input-bordered"
+                  value={form.annualLeaveDays ?? ""}
+                  onChange={(event) =>
+                    patch({ annualLeaveDays: toNumber(event.target.value) })
+                  }
+                />
+              </Field>
+
+              <SelectField
+                label="Költséghely"
+                value={form.costCenterId}
+                items={options.costCenters}
+                placeholder="Válassz"
+                onChange={(costCenterId) => patch({ costCenterId })}
               />
-            </Field>
 
-            <Field label="Keresztnév">
-              <input
-                type="text"
-                className="input input-sm input-bordered"
-                value={form.firstName}
-                onChange={(event) => patch({ firstName: event.target.value })}
+              <SelectField
+                label="Állománycsoport"
+                value={form.categoryId}
+                items={options.categories}
+                placeholder="Válassz"
+                onChange={(categoryId) => patch({ categoryId })}
               />
-            </Field>
 
-            <Field label="Vállalati e-mail cím" span={2}>
-              <input
-                type="email"
-                className="input input-sm input-bordered"
-                value={form.workEmail}
-                onChange={(event) => patch({ workEmail: event.target.value })}
+              <SelectField
+                label="Státusz"
+                value={form.statusId}
+                items={options.statuses}
+                placeholder="Válassz"
+                onChange={(statusId) => patch({ statusId })}
               />
-            </Field>
 
-            <SelectField
-              label="Költséghely"
-              value={form.costCenterId}
-              items={options.costCenters}
-              placeholder="Válassz"
-              onChange={(costCenterId) => patch({ costCenterId })}
-            />
-
-            <SelectField
-              label="Állománycsoport"
-              value={form.categoryId}
-              items={options.categories}
-              placeholder="Válassz"
-              onChange={(categoryId) => patch({ categoryId })}
-            />
-
-            <SelectField
-              label="Státusz"
-              value={form.statusId}
-              items={options.statuses}
-              placeholder="Válassz"
-              onChange={(statusId) => patch({ statusId })}
-            />
-
-            <SelectField
-              label="Csoport"
-              value={form.groupId}
-              items={options.groups}
-              placeholder="Nincs"
-              onChange={(groupId) => patch({ groupId })}
-            />
-
-            <SelectField
-              label="Munkarend"
-              value={form.workScheduleId}
-              items={options.workSchedules}
-              placeholder="Nincs"
-              onChange={(workScheduleId) => patch({ workScheduleId })}
-            />
-
-            <SelectField
-              label="Napi munkaidő"
-              value={form.workingHourId}
-              items={options.workingHours}
-              placeholder="Nincs"
-              onChange={(workingHourId) =>
-                patch({ workingHourId, coreHourId: null })
-              }
-            />
-
-            <SelectField
-              label="Törzsidő"
-              value={form.coreHourId}
-              items={coreHours}
-              placeholder="Nincs"
-              onChange={(coreHourId) => patch({ coreHourId })}
-            />
-
-            <SelectField
-              label="Közvetlen felettes"
-              value={form.managerId}
-              items={options.managers.filter(
-                (item) => item.id !== employee?.id,
-              )}
-              placeholder="Nincs"
-              onChange={(managerId) => patch({ managerId })}
-            />
-
-            <Field label="Szünet kezdete">
-              <input
-                type="time"
-                className="input input-sm input-bordered"
-                value={form.breakStart}
-                onChange={(event) => patch({ breakStart: event.target.value })}
+              <SelectField
+                label="Munkarend"
+                value={form.workScheduleId}
+                items={options.workSchedules}
+                placeholder="Válassz"
+                onChange={(workScheduleId) => patch({ workScheduleId })}
               />
-            </Field>
 
-            <Field label="Szünet vége">
-              <input
-                type="time"
-                className="input input-sm input-bordered"
-                value={form.breakEnd}
-                onChange={(event) => patch({ breakEnd: event.target.value })}
-              />
-            </Field>
-
-            <Field label="Szünet hossza (perc)">
-              <input
-                type="number"
-                className="input input-sm input-bordered"
-                value={form.breakMinutes ?? ""}
-                onChange={(event) =>
-                  patch({ breakMinutes: toNumber(event.target.value) })
+              <SelectField
+                label="Napi munkaidő"
+                value={form.workingHourId}
+                items={options.workingHours}
+                placeholder="Válassz"
+                onChange={(workingHourId) =>
+                  patch({ workingHourId, coreHourId: null })
                 }
               />
-            </Field>
 
-            <Field label="Éves szabadságkeret (nap)">
-              <input
-                type="number"
-                className="input input-sm input-bordered"
-                value={form.annualLeaveDays ?? ""}
-                onChange={(event) =>
-                  patch({ annualLeaveDays: toNumber(event.target.value) })
-                }
-              />
-            </Field>
+              <span />
 
-            <label className="mt-7 flex cursor-pointer items-center gap-3">
-              <input
-                type="checkbox"
-                className="checkbox checkbox-sm"
-                checked={form.breakPaid}
-                onChange={(event) => patch({ breakPaid: event.target.checked })}
+              <SelectField
+                label="Csoport"
+                value={form.groupId}
+                items={options.groups}
+                placeholder="Nincs"
+                onChange={(groupId) => patch({ groupId })}
               />
-              <span className="text-sm">A szünet munkaidőnek számít</span>
-            </label>
-          </FormGrid>
+
+              <SelectField
+                label="Közvetlen felettes"
+                value={form.managerId}
+                items={options.managers.filter(
+                  (item) => item.id !== employee?.id,
+                )}
+                placeholder="Nincs"
+                onChange={(managerId) => patch({ managerId })}
+              />
+            </FormGrid>
+
+            <p className="text-xs opacity-60">
+              Csoportot vagy közvetlen felettest meg kell adni - ezek
+              valamelyikén keresztül látja a vezető a dolgozó adatait.
+            </p>
+          </div>
+
+          <div className="space-y-2 border-t border-base-300 pt-4">
+            <h4 className="text-sm font-semibold">Elhagyható adatok</h4>
+
+            <FormGrid columns={3}>
+              <Field label="Vállalati e-mail cím" span={2}>
+                <input
+                  type="email"
+                  className="input input-sm input-bordered"
+                  value={form.workEmail}
+                  onChange={(event) => patch({ workEmail: event.target.value })}
+                />
+              </Field>
+
+              <SelectField
+                label="Törzsidő"
+                value={form.coreHourId}
+                items={coreHours}
+                placeholder="Nincs"
+                onChange={(coreHourId) => patch({ coreHourId })}
+              />
+
+              <Field label="Szünet kezdete">
+                <input
+                  type="time"
+                  className="input input-sm input-bordered"
+                  value={form.breakStart}
+                  onChange={(event) => patch({ breakStart: event.target.value })}
+                />
+              </Field>
+
+              <Field label="Szünet vége">
+                <input
+                  type="time"
+                  className="input input-sm input-bordered"
+                  value={form.breakEnd}
+                  onChange={(event) => patch({ breakEnd: event.target.value })}
+                />
+              </Field>
+
+              <Field label="Szünet hossza (perc)">
+                <input
+                  type="number"
+                  className="input input-sm input-bordered"
+                  value={form.breakMinutes ?? ""}
+                  onChange={(event) =>
+                    patch({ breakMinutes: toNumber(event.target.value) })
+                  }
+                />
+              </Field>
+
+              <label className="mt-7 flex cursor-pointer items-center gap-3 md:col-span-3">
+                <input
+                  type="checkbox"
+                  className="checkbox checkbox-sm"
+                  checked={form.breakPaid}
+                  onChange={(event) => patch({ breakPaid: event.target.checked })}
+                />
+                <span className="text-sm">A szünet munkaidőnek számít</span>
+              </label>
+            </FormGrid>
+          </div>
 
           {isNew && (
             <p className="text-sm opacity-70">

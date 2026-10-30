@@ -34,6 +34,7 @@ import {
   useDataTable,
   TableSearch,
   SortableHeader,
+  TablePager,
 } from "../../components/data-table/data-table";
 
 const EXPORT_ROLES = ["Vezető", "HR-Bér", "Admin"];
@@ -205,7 +206,7 @@ export const ReportsPage = () => {
       allowances: {} as Record<string, number>,
     };
 
-    for (const row of reportTable.rows) {
+    for (const row of reportTable.allRows) {
       totals.workedMinutes += row.workedMinutes;
       totals.presenceMinutes += row.presenceMinutes;
       totals.breakMinutes += row.breakMinutes;
@@ -219,7 +220,7 @@ export const ReportsPage = () => {
     }
 
     return totals;
-  }, [reportTable.rows]);
+  }, [reportTable.allRows]);
 
   const activeMeasure =
     MEASURES.find((item) => item.key === measure) ?? MEASURES[1];
@@ -429,10 +430,10 @@ export const ReportsPage = () => {
                 )}
               </tbody>
 
-              {reportTable.rows.length > 0 && (
+              {reportTable.filtered > 0 && (
                 <tfoot>
                   <tr className="font-bold">
-                    <td>Összesen ({reportTable.rows.length} fő)</td>
+                    <td>Összesen ({reportTable.filtered} fő)</td>
                     <td />
                     <td />
                     <td>{formatMinutes(visibleTotals.workedMinutes)}</td>
@@ -450,6 +451,8 @@ export const ReportsPage = () => {
                 </tfoot>
               )}
             </table>
+
+            <TablePager table={reportTable} unit="fő" />
           </div>
         </>
       )}
