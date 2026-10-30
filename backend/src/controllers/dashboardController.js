@@ -113,7 +113,10 @@ const buildLeaveBalance = async (employeeId, yearNumber) => {
             const weekday = new Date(`${cursor}T00:00:00`).getDay();
             const dayType = calendar[cursor] || 'workday';
 
-            if (dayType === 'workday' && weekday !== 0 && weekday !== 6) {
+            const isWorkingDay = dayType === 'transferred'
+                || (dayType === 'workday' && weekday !== 0 && weekday !== 6);
+
+            if (isWorkingDay) {
                 usedDates.add(cursor);
             }
 
