@@ -16,7 +16,10 @@ http:
         "costCenterId": {{empCostCenterId}},
         "categoryId": {{empCategoryId}},
         "statusId": {{empStatusId}},
-        "annualLeaveDays": 25
+        "workScheduleId": {{empWorkScheduleId}},
+        "workingHourId": {{empWorkingHourId}},
+        "annualLeaveDays": 25,
+        "managerId": {{empManagerId}}
       }
   auth:
     type: bearer

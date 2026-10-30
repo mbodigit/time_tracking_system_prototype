@@ -14,7 +14,11 @@ http:
         "firstName": "Teszt",
         "costCenterId": {{empCostCenterId}},
         "categoryId": {{empCategoryId}},
-        "statusId": {{empStatusId}}
+        "statusId": {{empStatusId}},
+        "workScheduleId": {{empWorkScheduleId}},
+        "workingHourId": {{empWorkingHourId}},
+        "annualLeaveDays": 25,
+        "managerId": {{empManagerId}}
       }
   auth:
     type: bearer

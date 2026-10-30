@@ -14,7 +14,7 @@ INSERT INTO Employees (
   employee_break_start, employee_break_end,
   employee_cost_center_id, employee_category_id, employee_status_id
 )
-SELECT v.kod, v.vnev, 'Teszt',
+SELECT v.kod, v.knev, v.vnev,
        (SELECT work_schedule_id FROM WorkSchedules WHERE work_schedule_name = v.munkarend),
        (SELECT working_hour_id  FROM WorkingHours  WHERE working_hour_num = 8),
        (SELECT core_hour_id     FROM CoreHours     WHERE core_hour_name = v.torzsido),
@@ -25,18 +25,18 @@ SELECT v.kod, v.vnev, 'Teszt',
        (SELECT employee_status_id FROM EmployeeStatus
          WHERE employee_status_name = 'Aktív')
 FROM (
-            SELECT 'TESZT-VM1' AS kod, 'VezetoM' AS vnev, 'Műszakos' AS munkarend,
-                   '22:00-06:00' AS torzsido,
+            SELECT 'TESZT-VM1' AS kod, 'Gergő' AS knev, 'Szalai' AS vnev,
+                   'Műszakos' AS munkarend, '22:00-06:00' AS torzsido,
                    '02:00:00' AS szunet_kezd, '02:30:00' AS szunet_veg
-  UNION ALL SELECT 'TESZT-VN1', 'VezetoNM',  'Nem műszakos',
+  UNION ALL SELECT 'TESZT-VN1', 'Krisztina', 'Hajdu',   'Nem műszakos',
                    '07:00-15:00', '12:00:00', '12:30:00'
-  UNION ALL SELECT 'TESZT-DM1', 'DolgozoM',  'Műszakos',
+  UNION ALL SELECT 'TESZT-DM1', 'Levente',   'Pataki',  'Műszakos',
                    '22:00-06:00', '02:00:00', '02:30:00'
-  UNION ALL SELECT 'TESZT-DN1', 'DolgozoNM', 'Nem műszakos',
+  UNION ALL SELECT 'TESZT-DN1', 'Zsófia',    'Márton',  'Nem műszakos',
                    '07:00-15:00', '12:00:00', '12:30:00'
-  UNION ALL SELECT 'TESZT-HR1', 'HR',        'Nem műszakos',
+  UNION ALL SELECT 'TESZT-HR1', 'Andrea',    'Erdei',   'Nem műszakos',
                    '07:00-15:00', '12:00:00', '12:30:00'
-  UNION ALL SELECT 'TESZT-A1',  'Admin',     'Nem műszakos',
+  UNION ALL SELECT 'TESZT-A1',  'Tamás',     'Siklósi', 'Nem műszakos',
                    '07:00-15:00', '12:00:00', '12:30:00'
 ) v
 WHERE NOT EXISTS (SELECT 1 FROM Employees e WHERE e.employee_code = v.kod);
@@ -46,7 +46,7 @@ INSERT INTO Employees (
   employee_work_schedule_id, employee_break_paid,
   employee_cost_center_id, employee_category_id, employee_status_id
 )
-SELECT 'TESZT-K1', 'Kötetlen', 'Teszt',
+SELECT 'TESZT-K1', 'Bence', 'Virág',
        (SELECT work_schedule_id FROM WorkSchedules WHERE work_schedule_name = 'Kötetlen'),
        0,
        (SELECT cost_center_id FROM CostCenters WHERE cost_center_code = 'KP'),
@@ -63,7 +63,7 @@ UPDATE Employees SET employee_manager_id = @vezeto_m_id
 WHERE employee_code IN ('TESZT-DM1', 'TESZT-K1');
 
 UPDATE Employees SET employee_manager_id = @vezeto_nm_id
-WHERE employee_code = 'TESZT-DN1';
+WHERE employee_code IN ('TESZT-DN1', 'TESZT-HR1', 'TESZT-A1');
 
 UPDATE Employees
 SET employee_core_hour_id =

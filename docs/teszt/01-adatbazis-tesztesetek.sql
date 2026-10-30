@@ -26,11 +26,16 @@ WHERE NOT EXISTS (SELECT 1 FROM UserGroups g WHERE g.user_group_name = v.nev);
 
 -- A vezető dolgozói rekordja és fiókja
 INSERT INTO Employees (employee_code, employee_first_name, employee_last_name,
-                       employee_cost_center_id, employee_category_id, employee_status_id)
-SELECT 'TESZT-V1', 'Vezető', 'Teszt',
+                       employee_cost_center_id, employee_category_id, employee_status_id,
+                       employee_work_schedule_id, employee_working_hour_id,
+                       employee_annual_leave_days)
+SELECT 'TESZT-V1', 'Ildikó', 'Bognár',
        (SELECT cost_center_id FROM CostCenters WHERE cost_center_code = 'KP'),
        (SELECT employee_category_id FROM EmployeeCategories WHERE employee_category_name = 'Szellemi'),
-       (SELECT employee_status_id FROM EmployeeStatus WHERE employee_status_name = 'Aktív')
+       (SELECT employee_status_id FROM EmployeeStatus WHERE employee_status_name = 'Aktív'),
+       (SELECT work_schedule_id FROM WorkSchedules WHERE work_schedule_name = 'Nem műszakos'),
+       (SELECT working_hour_id FROM WorkingHours WHERE working_hour_num = 8),
+       25
 WHERE NOT EXISTS (SELECT 1 FROM Employees WHERE employee_code = 'TESZT-V1');
 
 INSERT INTO Users (user_username, user_password_hash, user_employee_id, user_role_id,
@@ -52,23 +57,31 @@ WHERE user_group_name IN ('TESZT A műszak', 'TESZT B műszak');
 --   D5      kontroll: se csoport, se felettes, nem szabad megjelennie
 INSERT INTO Employees (employee_code, employee_first_name, employee_last_name,
                        employee_cost_center_id, employee_category_id, employee_status_id,
-                       employee_user_group_id, employee_manager_id)
-SELECT v.kod, v.vnev, 'Teszt',
+                       employee_user_group_id, employee_manager_id,
+                       employee_work_schedule_id, employee_working_hour_id,
+                       employee_annual_leave_days)
+SELECT v.kod, v.knev, v.vnev,
        (SELECT cost_center_id FROM CostCenters WHERE cost_center_code = 'KP'),
        (SELECT employee_category_id FROM EmployeeCategories WHERE employee_category_name = 'Szellemi'),
        (SELECT employee_status_id FROM EmployeeStatus WHERE employee_status_name = 'Aktív'),
-       v.csoport, v.felettes
+       v.csoport, v.felettes,
+       (SELECT work_schedule_id FROM WorkSchedules WHERE work_schedule_name = v.munkarend),
+       (SELECT working_hour_id FROM WorkingHours WHERE working_hour_num = 8),
+       25
 FROM (
-            SELECT 'TESZT-D1' AS kod, 'Dolgozó1' AS vnev,
+            SELECT 'TESZT-D1' AS kod, 'Máté' AS knev, 'Barta' AS vnev,
                    (SELECT user_group_id FROM UserGroups WHERE user_group_name = 'TESZT A műszak') AS csoport,
-                   NULL AS felettes
-  UNION ALL SELECT 'TESZT-D2', 'Dolgozó2',
-                   (SELECT user_group_id FROM UserGroups WHERE user_group_name = 'TESZT A műszak'), NULL
-  UNION ALL SELECT 'TESZT-D3', 'Dolgozó3',
-                   (SELECT user_group_id FROM UserGroups WHERE user_group_name = 'TESZT B műszak'), NULL
-  UNION ALL SELECT 'TESZT-D4', 'Dolgozó4', NULL,
-                   (SELECT employee_id FROM Employees WHERE employee_code = 'TESZT-V1')
-  UNION ALL SELECT 'TESZT-D5', 'Dolgozó5', NULL, NULL
+                   NULL AS felettes, 'Műszakos' AS munkarend
+  UNION ALL SELECT 'TESZT-D2', 'Rita', 'Csonka',
+                   (SELECT user_group_id FROM UserGroups WHERE user_group_name = 'TESZT A műszak'),
+                   NULL, 'Műszakos'
+  UNION ALL SELECT 'TESZT-D3', 'Áron', 'Domonkos',
+                   (SELECT user_group_id FROM UserGroups WHERE user_group_name = 'TESZT B műszak'),
+                   NULL, 'Műszakos'
+  UNION ALL SELECT 'TESZT-D4', 'Dávid', 'Kelemen', NULL,
+                   (SELECT employee_id FROM Employees WHERE employee_code = 'TESZT-V1'),
+                   'Nem műszakos'
+  UNION ALL SELECT 'TESZT-D5', 'Tímea', 'Nagy', NULL, NULL, 'Nem műszakos'
 ) v
 WHERE NOT EXISTS (SELECT 1 FROM Employees e WHERE e.employee_code = v.kod);
 
