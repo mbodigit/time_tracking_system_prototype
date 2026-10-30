@@ -14,7 +14,7 @@ runtime:
   assertions:
     - expression: res.status
       operator: eq
-      value: "403"
+      value: "200"
 
 settings:
   encodeUrl: true

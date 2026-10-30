@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const orgController = require('../controllers/orgController');
-const { authenticateToken, authorizePermission } = require('../middlewares/authMiddleware');
+const { authenticateToken, authorizePermission, authorizeAnyPermission } = require('../middlewares/authMiddleware');
 
 router.get('/org',
     authenticateToken,
-    authorizePermission('admin.org_structure'),
+    authorizeAnyPermission('admin.org_structure', 'admin.structure.view'),
     orgController.tree
 );
 
