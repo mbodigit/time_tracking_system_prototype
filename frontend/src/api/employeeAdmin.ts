@@ -43,6 +43,11 @@ export interface AdminOption {
   hours?: number;
 }
 
+export interface ManagerOption extends AdminOption {
+  managedGroupId: number | null;
+  managedGroupName: string | null;
+}
+
 export interface EmployeeOptions {
   groups: AdminOption[];
   categories: AdminOption[];
@@ -51,7 +56,7 @@ export interface EmployeeOptions {
   workSchedules: AdminOption[];
   workingHours: AdminOption[];
   coreHours: AdminOption[];
-  managers: AdminOption[];
+  managers: ManagerOption[];
   roles: AdminOption[];
 }
 

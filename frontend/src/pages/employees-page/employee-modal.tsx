@@ -6,6 +6,7 @@ import {
   type AdminEmployee,
   type AdminOption,
   type EmployeeOptions,
+  type ManagerOption,
   type EmployeePayload,
 } from "../../api/employeeAdmin";
 import { ApiError } from "../../api/client";
@@ -105,6 +106,9 @@ export const EmployeeModal = ({
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [askDelete, setAskDelete] = useState(false);
+  const [groupSuggestion, setGroupSuggestion] = useState<ManagerOption | null>(
+    null,
+  );
 
   const isBusy = isSaving || isDeleting;
 
@@ -118,6 +122,32 @@ export const EmployeeModal = ({
 
   const patch = (changes: Partial<EmployeePayload>) =>
     setForm((current) => ({ ...current, ...changes }));
+
+  const currentGroupName =
+    options.groups.find((item) => item.id === form.groupId)?.name ?? null;
+
+  const handleManagerChange = (managerId: number | null) => {
+    patch({ managerId });
+
+    const manager = managerId
+      ? options.managers.find((item) => item.id === managerId)
+      : undefined;
+
+    setGroupSuggestion(
+      manager &&
+        manager.managedGroupId &&
+        manager.managedGroupId !== form.groupId
+        ? manager
+        : null,
+    );
+  };
+
+  const acceptGroupSuggestion = () => {
+    if (groupSuggestion?.managedGroupId) {
+      patch({ groupId: groupSuggestion.managedGroupId });
+    }
+    setGroupSuggestion(null);
+  };
 
   const fail = (error: unknown) =>
     setErrorMessage(
@@ -276,7 +306,10 @@ export const EmployeeModal = ({
                 value={form.groupId}
                 items={options.groups}
                 placeholder="Nincs"
-                onChange={(groupId) => patch({ groupId })}
+                onChange={(groupId) => {
+                  patch({ groupId });
+                  setGroupSuggestion(null);
+                }}
               />
 
               <SelectField
@@ -286,9 +319,38 @@ export const EmployeeModal = ({
                   (item) => item.id !== employee?.id,
                 )}
                 placeholder="Nincs"
-                onChange={(managerId) => patch({ managerId })}
+                onChange={handleManagerChange}
               />
             </FormGrid>
+
+            {groupSuggestion && (
+              <div className="alert alert-info py-2 text-sm">
+                <div className="flex w-full flex-wrap items-center gap-3">
+                  <span className="flex-1">
+                    {groupSuggestion.name} a(z){" "}
+                    <strong>{groupSuggestion.managedGroupName}</strong> csoportot
+                    vezeti. Bekerüljön a dolgozó ebbe a csoportba?
+                    {currentGroupName && (
+                      <> A jelenlegi {currentGroupName} csoport lecserélődne.</>
+                    )}
+                  </span>
+                  <button
+                    type="button"
+                    className="btn btn-xs btn-primary"
+                    onClick={acceptGroupSuggestion}
+                  >
+                    Igen, kerüljön be
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-xs btn-ghost"
+                    onClick={() => setGroupSuggestion(null)}
+                  >
+                    Most nem
+                  </button>
+                </div>
+              </div>
+            )}
 
             <p className="text-xs opacity-60">
               Csoportot vagy közvetlen felettest meg kell adni - ezek

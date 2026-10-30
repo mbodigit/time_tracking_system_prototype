@@ -127,11 +127,20 @@ const options = async (req, res) => {
              FROM CoreHours ORDER BY core_hour_start`
         );
         const [managers] = await pool.execute(
-            `SELECT e.employee_id, e.employee_last_name, e.employee_first_name
+            `SELECT e.employee_id, e.employee_last_name, e.employee_first_name,
+                    g.user_group_id, g.user_group_name
              FROM Employees e
              JOIN Users     u ON u.user_employee_id = e.employee_id
                              AND u.user_status = 1
              JOIN UserRoles r ON r.user_role_id = u.user_role_id
+             LEFT JOIN (
+                 SELECT user_group_manager_id, MIN(user_group_id) AS user_group_id
+                 FROM UserGroups
+                 WHERE user_group_status = 'Aktív'
+                   AND user_group_manager_id IS NOT NULL
+                 GROUP BY user_group_manager_id
+             ) led ON led.user_group_manager_id = u.user_id
+             LEFT JOIN UserGroups g ON g.user_group_id = led.user_group_id
              WHERE r.user_role_name = 'Vezető'
              ORDER BY e.employee_last_name, e.employee_first_name`
         );
@@ -170,7 +179,9 @@ const options = async (req, res) => {
             })),
             managers: managers.map((row) => ({
                 id: row.employee_id,
-                name: `${row.employee_last_name} ${row.employee_first_name}`
+                name: `${row.employee_last_name} ${row.employee_first_name}`,
+                managedGroupId: row.user_group_id,
+                managedGroupName: row.user_group_name
             })),
             roles: roles.map((row) => ({
                 id: row.user_role_id, name: row.user_role_name
