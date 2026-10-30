@@ -95,6 +95,25 @@ const create = async (req, res) => {
             });
         }
 
+        const [covered] = await pool.execute(
+            `SELECT a.absence_name
+             FROM Requests r
+             JOIN Absences a ON a.absence_id = r.request_absence_id
+             WHERE r.request_employee_id = ?
+               AND r.request_status = 'Jóváhagyva'
+               AND a.absence_rec_type = 0
+               AND ? BETWEEN r.request_start_date AND r.request_end_date
+             LIMIT 1`,
+            [targetEmployeeId, workingDate]
+        );
+
+        if (covered.length > 0) {
+            return res.status(409).json({
+                message: 'A napot jóváhagyott távolléti jogcím fedi '
+                    + `(${covered[0].absence_name}), ezért munkaidő nem rögzíthető.`
+            });
+        }
+
         const [existing] = await pool.execute(
             `SELECT
                 wtt_id 
@@ -625,6 +644,26 @@ const createBulk = async (req, res) => {
                 });
                 continue;
             }
+
+            const [covered] = await pool.execute(
+                `SELECT a.absence_name
+                 FROM Requests r
+                 JOIN Absences a ON a.absence_id = r.request_absence_id
+                 WHERE r.request_employee_id = ?
+                   AND r.request_status = 'Jóváhagyva'
+                   AND a.absence_rec_type = 0
+                   AND ? BETWEEN r.request_start_date AND r.request_end_date
+                 LIMIT 1`,
+                [employeeId, workingDate]
+            );
+
+            if (covered.length > 0) {
+                results.push({
+                    employeeId, status: 'error',
+                    message: `Jogcímmel fedett nap (${covered[0].absence_name}).`
+                });
+                continue;
+            }            
 
             const [existing] = await pool.execute(
                 `SELECT wtt_id, wtt_brk_start FROM WorkingTimeTracking

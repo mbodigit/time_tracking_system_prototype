@@ -99,6 +99,8 @@ export const RequestsPage = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [infoMessage, setInfoMessage] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [rejected, setRejected] = useState<AbsenceRequest | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
 
   const [orderEmployeeId, setOrderEmployeeId] = useState(0);
   const [orderDate, setOrderDate] = useState("");
@@ -190,11 +192,21 @@ export const RequestsPage = () => {
       runAction(() => decideRequest(item.id, "Jóváhagyva"));
       return;
     }
-    const reason = window.prompt("Az elutasítás indoklása:");
-    if (!reason) {
+
+    setRejectReason("");
+    setRejected(item);
+  };
+
+  const handleReject = async () => {
+    const item = rejected;
+    const reason = rejectReason.trim();
+
+    if (!item || !reason) {
       return;
     }
-    runAction(() => decideRequest(item.id, "Elutasítva", reason));
+
+    setRejected(null);
+    await runAction(() => decideRequest(item.id, "Elutasítva", reason));
   };
 
   return (
@@ -566,6 +578,68 @@ export const RequestsPage = () => {
             load();
           }}
         />
+      )}
+
+      {rejected && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-lg p-0">
+            <div className="flex items-start justify-between gap-3 border-b border-base-300 px-6 pb-3 pt-5">
+              <div>
+                <h3 className="text-xl font-bold text-primary">
+                  Kérelem elutasítása
+                </h3>
+                <p className="mt-0.5 text-xs opacity-60">
+                  {rejected.employeeName} — {rejected.absenceName},{" "}
+                  {rejected.startDate}
+                  {rejected.endDate !== rejected.startDate &&
+                    ` – ${rejected.endDate}`}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="btn btn-sm btn-ghost btn-circle"
+                onClick={() => setRejected(null)}
+                aria-label="Bezárás"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-2 px-6 py-5">
+              <span className="text-sm font-medium opacity-80">
+                Az elutasítás indoklása
+              </span>
+              <textarea
+                className="textarea textarea-sm textarea-bordered w-full"
+                rows={3}
+                autoFocus
+                value={rejectReason}
+                onChange={(event) => setRejectReason(event.target.value)}
+              />
+              <p className="text-xs opacity-60">
+                Az indoklás megadása kötelező, és a dolgozó számára is látható
+                lesz a kérelme mellett.
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-2 border-t border-base-300 px-6 pb-5 pt-3">
+              <button
+                className="btn btn-sm btn-ghost"
+                onClick={() => setRejected(null)}
+              >
+                Mégse
+              </button>
+              <button
+                className="btn btn-sm btn-error"
+                onClick={handleReject}
+                disabled={!rejectReason.trim()}
+              >
+                Elutasítás
+              </button>
+            </div>
+          </div>
+          <div className="modal-backdrop" onClick={() => setRejected(null)} />
+        </div>
       )}
     </div>
   );
