@@ -210,12 +210,6 @@ export const EmployeeModal = ({
         </div>
 
         <div className="space-y-3 overflow-y-auto px-6 py-4">
-          {errorMessage && (
-            <div className="alert alert-error py-2 text-sm">
-              <span>{errorMessage}</span>
-            </div>
-          )}
-
           <div className="space-y-2">
             <h4 className="text-sm font-semibold">Kötelező adatok</h4>
 
@@ -447,6 +441,14 @@ export const EmployeeModal = ({
             </div>
           )}
         </div>
+
+        {errorMessage && (
+          <div className="border-t border-base-300 px-6 pt-3">
+            <div className="alert alert-error py-2 text-sm">
+              <span>{errorMessage}</span>
+            </div>
+          </div>
+        )}
 
         <div className="flex items-center justify-between gap-2 border-t border-base-300 px-6 pb-5 pt-3">
           {employee ? (

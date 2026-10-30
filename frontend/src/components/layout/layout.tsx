@@ -1,6 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { getCurrentUser, getInitials, clearSession } from "../../utils/auth";
+import {
+  getCurrentUser,
+  getInitials,
+  clearSession,
+  saveCurrentUser,
+} from "../../utils/auth";
+import { getMe } from "../../api/auth";
 import {
   IconDashboard,
   IconClock,
@@ -95,7 +101,21 @@ export const Layout: React.FC = () => {
       ? "active bg-primary/10 text-primary font-bold"
       : "";
 
-  const currentUser = getCurrentUser();
+  const [currentUser, setCurrentUser] = useState(() => getCurrentUser());
+
+  useEffect(() => {
+    getMe()
+      .then((data) => {
+        setCurrentUser((previous) =>
+          previous && previous.fullName === data.user.fullName
+            ? previous
+            : data.user,
+        );
+        saveCurrentUser(data.user);
+      })
+      .catch(() => undefined);
+  }, [location.pathname]);
+
   const role = currentUser?.role ?? "";
   const initials = currentUser ? getInitials(currentUser.fullName) : "?";
 
