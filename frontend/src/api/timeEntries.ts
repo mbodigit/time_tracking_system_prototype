@@ -46,7 +46,25 @@ export interface MonthlyLog {
     entitlementDays: number;
     usedDays: number;
     remainingDays: number;
-  };  
+  };
+  employeeProfile?: {
+    code: string;
+    name: string;
+    workScheduleName: string | null;
+    workingHourNum: number | null;
+    coreStart: string | null;
+    coreEnd: string | null;
+    breakMinutes: number | null;
+    breakPaid: boolean;
+    breakStart: string | null;
+    breakEnd: string | null;
+    groupName: string | null;
+    areaName: string | null;
+    workLocationName: string | null;
+    username: string | null;
+    hasAccount: boolean;
+    accountActive: boolean | null;
+  };
   allowanceTypes: AllowanceType[];
   days: TimeEntryDay[];
   summary: {
