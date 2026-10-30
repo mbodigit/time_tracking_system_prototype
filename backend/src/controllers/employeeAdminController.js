@@ -37,6 +37,7 @@ const list = async (req, res) => {
                     m.employee_last_name  AS manager_last_name,
                     m.employee_first_name AS manager_first_name,
                     u.user_id, u.user_username, u.user_status,
+                    u.user_failed_attempts, u.user_locked_at,
                     u.user_role_id, r.user_role_name
              FROM Employees e
              LEFT JOIN UserGroups         g   ON g.user_group_id         = e.employee_user_group_id
@@ -85,6 +86,7 @@ const list = async (req, res) => {
             userId: row.user_id,
             username: row.user_username,
             userActive: row.user_id ? Boolean(row.user_status) : null,
+            userLocked: Boolean(row.user_locked_at),
             userRoleId: row.user_role_id,
             userRoleName: row.user_role_name
         }));
@@ -504,7 +506,7 @@ const createUser = async (req, res) => {
 
 const updateUser = async (req, res) => {
     const userId = Number(req.params.id);
-    const { isActive, resetPassword, roleId } = req.body || {};
+    const { isActive, resetPassword, roleId, unlock } = req.body || {};
 
     if (!userId) {
         return res.status(400).json({ message: 'Érvénytelen felhasználói azonosító.' });
@@ -548,19 +550,34 @@ const updateUser = async (req, res) => {
             }
         }
 
+        if (unlock) {
+            await pool.execute(
+                `UPDATE Users
+                 SET user_failed_attempts = 0, user_locked_at = NULL
+                 WHERE user_id = ?`,
+                [userId]
+            );
+
+            return res.status(200).json({
+                message: 'A fiók zárolása feloldásra került.'
+            });
+        }
+
         if (resetPassword) {
             const password = generatePassword();
             const passwordHash = await bcrypt.hash(password, 10);
 
             await pool.execute(
                 `UPDATE Users
-                 SET user_password_hash = ?, user_must_change_password = 1
+                 SET user_password_hash = ?, user_must_change_password = 1,
+                     user_failed_attempts = 0, user_locked_at = NULL
                  WHERE user_id = ?`,
                 [passwordHash, userId]
             );
 
             return res.status(200).json({
-                message: 'A jelszó új értékre került, a következő belépéskor cserélni kell.',
+                message: 'A jelszó új értékre került, a következő belépéskor cserélni kell. '
+                    + 'A fiók esetleges zárolása feloldásra került.',
                 password
             });
         }

@@ -1,0 +1,34 @@
+info:
+  name: zarolando fiok azonositoja
+  type: http
+  seq: 182
+
+http:
+  method: GET
+  url: "{{baseUrl}}/me"
+  auth:
+    type: bearer
+    token: "{{zarolasToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+  actions:
+    - type: set-variable
+      phase: after-response
+      selector:
+        expression: res.body.user.userId
+        method: jsonq
+      variable:
+        name: zarolasUserId
+        scope: runtime
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

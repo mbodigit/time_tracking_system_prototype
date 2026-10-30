@@ -2,7 +2,12 @@ const pool = require('../config/db');
 const bcrypt = require ("bcryptjs");
 const jwt = require ('jsonwebtoken');
 
-const login = async (req, res) => { 
+const MAX_FAILED_ATTEMPTS = 3;
+
+const LOCKED_MESSAGE = 'A fiók zárolva van három sikertelen bejelentkezési '
+    + 'kísérlet miatt. Kérem forduljon a HR osztályhoz új jelszóért.';
+
+const login = async (req, res) => {
     const {username, password} = req.body;
 
     if (!username || !password) {
@@ -13,6 +18,7 @@ const login = async (req, res) => {
         const [userQueryRows] = await pool.execute(
             `SELECT 
                 u.user_id, u.user_username, u.user_password_hash, u.user_status, u.user_must_change_password,
+                u.user_failed_attempts, u.user_locked_at,
                 r.user_role_name,
                 e.employee_id, e.employee_first_name, e.employee_last_name,
                 s.employee_status_is_active
@@ -28,9 +34,36 @@ const login = async (req, res) => {
 
         const user = userQueryRows[0];
 
+        if (user.user_locked_at) {
+            return res.status(423).json({message: LOCKED_MESSAGE});
+        }
+
         const isPasswordValid = await bcrypt.compare(password, user.user_password_hash);
         if (!isPasswordValid) {
-            return res.status(401).json({message: 'Hibás felhasználónév vagy jelszó!'});
+            const failedAttempts = user.user_failed_attempts + 1;
+            const isLocked = failedAttempts >= MAX_FAILED_ATTEMPTS;
+
+            await pool.execute(
+                `UPDATE Users
+                 SET user_failed_attempts = ?, user_locked_at = ?
+                 WHERE user_id = ?`,
+                [failedAttempts, isLocked ? new Date() : null, user.user_id]
+            );
+
+            return res.status(isLocked ? 423 : 401).json({
+                message: isLocked
+                    ? LOCKED_MESSAGE
+                    : 'Hibás felhasználónév vagy jelszó!'
+            });
+        }
+
+        if (user.user_failed_attempts > 0) {
+            await pool.execute(
+                `UPDATE Users
+                 SET user_failed_attempts = 0, user_locked_at = NULL
+                 WHERE user_id = ?`,
+                [user.user_id]
+            );
         }
 
         if (!user.employee_status_is_active){

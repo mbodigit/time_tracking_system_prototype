@@ -5,6 +5,7 @@ import {
   resetUserPassword,
   setUserActive,
   setUserRole,
+  unlockUser,
   type AdminEmployee,
   type AdminOption,
 } from "../../api/employeeAdmin";
@@ -101,6 +102,19 @@ export const AccountModal = ({
         username: employee.username ?? "",
         password: response.password,
       });
+    }
+  };
+
+  const handleUnlock = async () => {
+    if (!employee?.userId) {
+      return;
+    }
+
+    const userId = employee.userId;
+    const response = await run(() => unlockUser(userId));
+
+    if (response) {
+      onSaved(response.message);
     }
   };
 
@@ -202,6 +216,25 @@ export const AccountModal = ({
               >
                 {employee.userActive ? "aktív" : "letiltva"}
               </span>
+              {employee.userLocked && (
+                <span className="badge badge-sm badge-warning">zárolva</span>
+              )}
+            </div>
+          )}
+
+          {!isNew && employee?.userLocked && (
+            <div className="alert alert-warning text-sm">
+              <div>
+                <p className="font-semibold">
+                  A fiók három sikertelen bejelentkezési kísérlet után zárolásra
+                  került.
+                </p>
+                <p>
+                  A dolgozó addig nem tud belépni, amíg a zárolást fel nem
+                  oldod. Ha a jelszó is elveszett, az Új jelszó generálása
+                  egyben a zárolást is feloldja.
+                </p>
+              </div>
             </div>
           )}
 
@@ -246,6 +279,15 @@ export const AccountModal = ({
                 >
                   Új jelszó generálása
                 </button>
+                {employee?.userLocked && (
+                  <button
+                    className="btn btn-sm btn-warning"
+                    onClick={handleUnlock}
+                    disabled={isBusy}
+                  >
+                    Zárolás feloldása
+                  </button>
+                )}
                 {employee?.userActive ? (
                   <button
                     className="btn btn-sm btn-outline btn-error"
