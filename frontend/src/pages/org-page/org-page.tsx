@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
 import {
   listOrg,
   type OrgArea,
@@ -11,6 +17,8 @@ import {
 import {
   listGroups,
   listGroupOptions,
+  listAssignableEmployees,
+  type AssignableEmployee,
   type Group,
   type GroupOptions,
 } from "../../api/groups";
@@ -48,13 +56,20 @@ export const OrgPage = () => {
   const [infoMessage, setInfoMessage] = useState("");
   const [unitModal, setUnitModal] = useState<UnitModalState | null>(null);
   const [groupModal, setGroupModal] = useState<GroupModalState | null>(null);
+  const [staff, setStaff] = useState<AssignableEmployee[]>([]);
+  const [openGroupId, setOpenGroupId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     setErrorMessage("");
     try {
-      const [orgData, groupData] = await Promise.all([listOrg(), listGroups()]);
+      const [orgData, groupData, staffData] = await Promise.all([
+        listOrg(),
+        listGroups(),
+        listAssignableEmployees(),
+      ]);
       setTree(orgData);
       setGroups(groupData.groups);
+      setStaff(staffData.employees);
     } catch (error) {
       setTree(null);
       setErrorMessage(
@@ -130,13 +145,28 @@ export const OrgPage = () => {
   };
 
   const groupCell = (group: OrgGroup | null, node: GroupNode) => {
+    const toggle = group ? (
+      <button
+        className="btn btn-xs btn-ghost ml-1"
+        onClick={() =>
+          setOpenGroupId((current) =>
+            current === group.id ? null : group.id,
+          )
+        }
+        title="A csoport dolgozóinak megjelenítése"
+      >
+        {openGroupId === group.id ? "▲" : "▼"}
+      </button>
+    ) : null;
+
     if (!canEdit) {
       return group ? (
-        <span>
+        <span className="inline-flex items-center">
           {group.name}
           <span className="badge badge-sm ml-2">
             {group.activeEmployees} fő
           </span>
+          {toggle}
         </span>
       ) : (
         <span className="opacity-50">nincs csoport</span>
@@ -161,19 +191,24 @@ export const OrgPage = () => {
     }
 
     return (
-      <button
-        className="btn btn-xs"
-        onClick={() => openGroup(group, node)}
-        disabled={!groupOptions}
-      >
-        {group.name}
-        <span className="badge badge-sm ml-2">{group.activeEmployees} fő</span>
-        {group.status !== "Aktív" && (
-          <span className="badge badge-sm badge-ghost ml-1">
-            {group.status}
+      <span className="inline-flex items-center">
+        <button
+          className="btn btn-xs"
+          onClick={() => openGroup(group, node)}
+          disabled={!groupOptions}
+        >
+          {group.name}
+          <span className="badge badge-sm ml-2">
+            {group.activeEmployees} fő
           </span>
-        )}
-      </button>
+          {group.status !== "Aktív" && (
+            <span className="badge badge-sm badge-ghost ml-1">
+              {group.status}
+            </span>
+          )}
+        </button>
+        {toggle}
+      </span>
     );
   };
 
@@ -189,7 +224,8 @@ export const OrgPage = () => {
     onEdit: () => void,
     extra?: ReactNode,
   ) => (
-    <tr key={key} className="hover">
+    <Fragment key={key}>
+    <tr className="hover">
       <td>
         <div
           className="flex items-center gap-2"
@@ -225,6 +261,50 @@ export const OrgPage = () => {
         )}
       </td>
     </tr>
+
+    {group && openGroupId === group.id && (
+      <tr>
+        <td colSpan={4} className="bg-base-200/60">
+          <div style={{ paddingLeft: `${(depth + 1) * 1.5}rem` }}>
+            <p className="mb-1 text-xs font-semibold opacity-70">
+              {group.name} tagjai
+            </p>
+
+            {staff.filter((item) => item.groupId === group.id).length === 0 ? (
+              <p className="text-sm opacity-60">
+                Ehhez a csoporthoz nincs dolgozó rendelve.
+              </p>
+            ) : (
+              <table className="table table-xs w-auto">
+                <thead>
+                  <tr>
+                    <th>Név</th>
+                    <th>Kód</th>
+                    <th>Munkarend</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {staff
+                    .filter((item) => item.groupId === group.id)
+                    .map((item) => (
+                      <tr key={item.id}>
+                        <td className="whitespace-nowrap">{item.name}</td>
+                        <td className="whitespace-nowrap opacity-70">
+                          {item.code}
+                        </td>
+                        <td className="whitespace-nowrap opacity-70">
+                          {item.workScheduleName ?? "-"}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </td>
+      </tr>
+    )}
+    </Fragment>
   );
 
   const renderShift = (
