@@ -9,6 +9,7 @@ import {
 import { ApiError } from "../../api/client";
 import { Field, FormGrid } from "../../components/form-field/form-field";
 import { getCurrentUser } from "../../utils/auth";
+import { RequestCalendar } from "./request-calendar";
 
 interface Props {
   defaultDate?: string;
@@ -51,6 +52,21 @@ export const RequestForm = ({ defaultDate, onClose, onSaved }: Props) => {
 
   const selected = absences.find((item) => item.id === absenceId);
   const needsEndDate = Boolean(selected) && !selected!.isOpenEnded;
+
+  const handlePick = (date: string) => {
+    if (!startDate || (startDate && endDate)) {
+      setStartDate(date);
+      setEndDate("");
+      return;
+    }
+
+    if (date < startDate) {
+      setStartDate(date);
+      return;
+    }
+
+    setEndDate(date);
+  };
 
   const handleSubmit = async () => {
     setErrorMessage("");
@@ -173,6 +189,25 @@ export const RequestForm = ({ defaultDate, onClose, onSaved }: Props) => {
               />
             </Field>
           </FormGrid>
+
+          <div className="space-y-2">
+            <span className="text-sm font-medium opacity-80">
+              A dolgozó naptára
+            </span>
+
+            <RequestCalendar
+              employeeId={employeeId || null}
+              startDate={startDate}
+              endDate={endDate}
+              onPick={handlePick}
+            />
+
+            <p className="text-xs opacity-60">
+              Az első kattintás a kezdő napot állítja be, a második a zárót. Ha
+              újra a kezdő nap elé kattintasz, az lesz az új kezdet. A dátumok
+              kézzel is írhatók a mezőkbe.
+            </p>
+          </div>
         </div>
 
         <div className="flex justify-end gap-2 border-t border-base-300 px-6 pb-5 pt-3">
