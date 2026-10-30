@@ -1,6 +1,11 @@
 const pool = require('../config/db');
 
-const DAY_TYPES = ['Munkaszüneti nap', 'Pihenőnap', 'Munkanap'];
+const DAY_TYPES = [
+    'Munkaszüneti nap',
+    'Pihenőnap',
+    'Áthelyezett pihenőnap',
+    'Áthelyezett munkanap'
+];
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 const list = async (req, res) => {

@@ -11,7 +11,7 @@ http:
     data: |-
       {
         "date": "2030-06-15",
-        "dayType": "Munkanap",
+        "dayType": "Áthelyezett munkanap",
         "note": "Bruno teszt, athelyezett munkanap"
       }
   auth:

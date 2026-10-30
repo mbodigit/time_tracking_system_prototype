@@ -1,7 +1,8 @@
 const DAY_TYPE_MAP = {
     'Munkaszüneti nap': 'holiday',
     'Pihenőnap': 'restday',
-    'Munkanap': 'transferred'
+    'Áthelyezett pihenőnap': 'restday',
+    'Áthelyezett munkanap': 'transferred'
 };
 
 const toSqlDateTime = (value) => String(value).replace('T', ' ').slice(0, 19);

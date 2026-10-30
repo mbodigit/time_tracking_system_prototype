@@ -1,6 +1,6 @@
 import { apiGet, apiPost, apiPatch } from "./client";
 
-export type DayType = "workday" | "restday" | "holiday";
+export type DayType = "workday" | "restday" | "holiday" | "transferred";
 
 export interface TimeEntryDay {
   id: number | null;
