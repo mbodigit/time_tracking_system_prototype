@@ -23,6 +23,10 @@ export const getCurrentUser = (): CurrentUser | null => {
   }
 };
 
+export const saveCurrentUser = (user: CurrentUser): void => {
+  localStorage.setItem("user", JSON.stringify(user));
+};
+
 export const isLoggedIn = (): boolean => {
   return Boolean(getToken()) && getCurrentUser() !== null;
 };
