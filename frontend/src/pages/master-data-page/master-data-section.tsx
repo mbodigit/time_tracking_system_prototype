@@ -9,6 +9,7 @@ import {
   useDataTable,
   TableSearch,
   SortableHeader,
+  TablePager,
 } from "../../components/data-table/data-table";
 import {
   MasterDataModal,
@@ -187,6 +188,8 @@ export const MasterDataSection = ({ entity }: MasterDataSectionProps) => {
             )}
           </tbody>
         </table>
+
+        <TablePager table={table} unit="tétel" />
       </div>
 
       {modal && (

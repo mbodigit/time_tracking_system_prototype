@@ -16,6 +16,7 @@ import {
   useDataTable,
   TableSearch,
   SortableHeader,
+  TablePager,
 } from "../../components/data-table/data-table";
 
 type Tab = "own" | "pending" | "ordered";
@@ -380,6 +381,8 @@ export const RequestsPage = () => {
                 )}
               </tbody>
             </table>
+
+            <TablePager table={ownTable} unit="kérelem" />
           </div>
         </div>
       )}
@@ -513,6 +516,8 @@ export const RequestsPage = () => {
                 )}
               </tbody>
             </table>
+
+            <TablePager table={managedTable} unit="kérelem" />
           </div>
         </div>
       )}

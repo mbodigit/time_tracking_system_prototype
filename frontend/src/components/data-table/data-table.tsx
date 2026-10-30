@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react";
+import { PAGE_SIZES, ALL_ROWS, DEFAULT_PAGE_SIZE } from "./data-table-config";
 
 export type SortDirection = "asc" | "desc";
 
@@ -8,16 +9,26 @@ export interface DataTableOptions<T> {
   sortValue: (row: T, key: string) => number | string;
   initialSortKey: string;
   initialDirection?: SortDirection;
+  initialPageSize?: number;
 }
 
 export interface DataTableState<T> {
   rows: T[];
+  allRows: T[];
   total: number;
+  filtered: number;
   search: string;
   setSearch: (value: string) => void;
   sortKey: string;
   sortDirection: SortDirection;
   toggleSort: (key: string) => void;
+  page: number;
+  setPage: (value: number) => void;
+  pageCount: number;
+  pageSize: number;
+  setPageSize: (value: number) => void;
+  rangeFrom: number;
+  rangeTo: number;
 }
 
 export const useDataTable = <T,>({
@@ -26,13 +37,18 @@ export const useDataTable = <T,>({
   sortValue,
   initialSortKey,
   initialDirection = "asc",
+  initialPageSize = DEFAULT_PAGE_SIZE,
 }: DataTableOptions<T>): DataTableState<T> => {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState(initialSortKey);
   const [sortDirection, setSortDirection] =
     useState<SortDirection>(initialDirection);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(initialPageSize);
 
   const toggleSort = (key: string) => {
+    setPage(1);
+
     if (sortKey === key) {
       setSortDirection((direction) => (direction === "asc" ? "desc" : "asc"));
       return;
@@ -42,14 +58,24 @@ export const useDataTable = <T,>({
     setSortDirection("asc");
   };
 
-  const visibleRows = useMemo(() => {
+  const changeSearch = (value: string) => {
+    setSearch(value);
+    setPage(1);
+  };
+
+  const changePageSize = (value: number) => {
+    setPageSize(value);
+    setPage(1);
+  };
+
+  const sortedRows = useMemo(() => {
     const term = search.trim().toLowerCase();
 
-    const filtered = term
+    const filteredRows = term
       ? rows.filter((row) => searchText(row).toLowerCase().includes(term))
       : rows;
 
-    return [...filtered].sort((a, b) => {
+    return [...filteredRows].sort((a, b) => {
       const left = sortValue(a, sortKey);
       const right = sortValue(b, sortKey);
 
@@ -62,14 +88,38 @@ export const useDataTable = <T,>({
     });
   }, [rows, searchText, sortValue, search, sortKey, sortDirection]);
 
+  const filtered = sortedRows.length;
+
+  const pageCount =
+    pageSize === ALL_ROWS ? 1 : Math.max(1, Math.ceil(filtered / pageSize));
+
+  const safePage = Math.min(Math.max(1, page), pageCount);
+
+  const visibleRows =
+    pageSize === ALL_ROWS
+      ? sortedRows
+      : sortedRows.slice((safePage - 1) * pageSize, safePage * pageSize);
+
   return {
     rows: visibleRows,
+    allRows: sortedRows,
     total: rows.length,
+    filtered,
     search,
-    setSearch,
+    setSearch: changeSearch,
     sortKey,
     sortDirection,
     toggleSort,
+    page: safePage,
+    setPage,
+    pageCount,
+    pageSize,
+    setPageSize: changePageSize,
+    rangeFrom: filtered === 0 ? 0 : (safePage - 1) * (pageSize || filtered) + 1,
+    rangeTo:
+      pageSize === ALL_ROWS
+        ? filtered
+        : Math.min(safePage * pageSize, filtered),
   };
 };
 
@@ -126,4 +176,91 @@ export const SortableHeader = ({
       : ""}
     {sublabel && <div className="font-normal opacity-60">{sublabel}</div>}
   </th>
+);
+
+type PagerTable = Pick<
+  DataTableState<unknown>,
+  | "filtered"
+  | "page"
+  | "setPage"
+  | "pageCount"
+  | "pageSize"
+  | "setPageSize"
+  | "rangeFrom"
+  | "rangeTo"
+>;
+
+interface PagerProps {
+  table: PagerTable;
+  unit?: string;
+}
+
+export const TablePager = ({ table, unit = "sor" }: PagerProps) => (
+  <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm">
+    <div className="flex items-center gap-2">
+      <span className="opacity-70">Oldalanként</span>
+      <select
+        className="select select-xs select-bordered w-24"
+        value={table.pageSize}
+        onChange={(event) => table.setPageSize(Number(event.target.value))}
+        aria-label={`Megjelenített ${unit}ok száma`}
+      >
+        {PAGE_SIZES.map((size) => (
+          <option key={size} value={size}>
+            {size}
+          </option>
+        ))}
+        <option value={ALL_ROWS}>Mind</option>
+      </select>
+      <span className="opacity-70">
+        {table.filtered === 0
+          ? `Nincs megjeleníthető ${unit}`
+          : `${table.rangeFrom}-${table.rangeTo} / ${table.filtered} ${unit}`}
+      </span>
+    </div>
+
+    {table.pageCount > 1 && (
+      <div className="join">
+        <button
+          type="button"
+          className="btn btn-xs join-item"
+          onClick={() => table.setPage(1)}
+          disabled={table.page === 1}
+          aria-label="Első oldal"
+        >
+          «
+        </button>
+        <button
+          type="button"
+          className="btn btn-xs join-item"
+          onClick={() => table.setPage(table.page - 1)}
+          disabled={table.page === 1}
+          aria-label="Előző oldal"
+        >
+          ‹
+        </button>
+        <span className="btn btn-xs join-item pointer-events-none">
+          {table.page} / {table.pageCount}
+        </span>
+        <button
+          type="button"
+          className="btn btn-xs join-item"
+          onClick={() => table.setPage(table.page + 1)}
+          disabled={table.page === table.pageCount}
+          aria-label="Következő oldal"
+        >
+          ›
+        </button>
+        <button
+          type="button"
+          className="btn btn-xs join-item"
+          onClick={() => table.setPage(table.pageCount)}
+          disabled={table.page === table.pageCount}
+          aria-label="Utolsó oldal"
+        >
+          »
+        </button>
+      </div>
+    )}
+  </div>
 );

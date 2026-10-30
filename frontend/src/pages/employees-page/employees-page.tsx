@@ -10,6 +10,7 @@ import {
   useDataTable,
   TableSearch,
   SortableHeader,
+  TablePager,
 } from "../../components/data-table/data-table";
 import { EmployeeModal } from "./employee-modal";
 import { AccountModal, type Credentials } from "./account-modal";
@@ -26,6 +27,7 @@ const employeeSearchText = (employee: AdminEmployee) =>
     employee.firstName,
     employee.workEmail,
     employee.groupName,
+    employee.managerName,
     employee.categoryName,
     employee.statusName,
     employee.workScheduleName,
@@ -41,6 +43,7 @@ const employeeSortValue = (
   if (key === "code") return employee.code;
   if (key === "name") return fullName(employee);
   if (key === "group") return employee.groupName ?? "";
+  if (key === "manager") return employee.managerName ?? "";
   if (key === "category") return employee.categoryName ?? "";
   if (key === "status") return employee.statusName ?? "";
   if (key === "schedule") return employee.workScheduleName ?? "";
@@ -188,14 +191,14 @@ export const EmployeesPage = () => {
           className={`tab ${tab === "employees" ? "tab-active" : ""}`}
           onClick={() => setTab("employees")}
         >
-          Dolgozók ({employeeTable.rows.length})
+          Dolgozók ({employeeTable.filtered})
         </button>
         <button
           role="tab"
           className={`tab ${tab === "accounts" ? "tab-active" : ""}`}
           onClick={() => setTab("accounts")}
         >
-          Fiókok ({accountTable.rows.length})
+          Fiókok ({accountTable.filtered})
         </button>
       </div>
 
@@ -250,6 +253,11 @@ export const EmployeesPage = () => {
                 />
                 <SortableHeader
                   table={employeeTable}
+                  field="manager"
+                  label="Közvetlen felettes"
+                />
+                <SortableHeader
+                  table={employeeTable}
                   field="category"
                   label="Állománycsoport"
                 />
@@ -277,6 +285,9 @@ export const EmployeesPage = () => {
                   <td className="whitespace-nowrap">{employee.code}</td>
                   <td className="whitespace-nowrap">{fullName(employee)}</td>
                   <td>{employee.groupName ?? "-"}</td>
+                  <td className="whitespace-nowrap">
+                    {employee.managerName ?? "-"}
+                  </td>
                   <td>{employee.categoryName ?? "-"}</td>
                   <td>
                     <span
@@ -309,13 +320,15 @@ export const EmployeesPage = () => {
 
               {employeeTable.rows.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="text-center opacity-60">
+                  <td colSpan={9} className="text-center opacity-60">
                     Nincs a keresésnek megfelelő dolgozó.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
+
+          <TablePager table={employeeTable} unit="dolgozó" />
         </div>
       )}
 
@@ -391,6 +404,8 @@ export const EmployeesPage = () => {
               )}
             </tbody>
           </table>
+
+          <TablePager table={accountTable} unit="fiók" />
         </div>
       )}
 
