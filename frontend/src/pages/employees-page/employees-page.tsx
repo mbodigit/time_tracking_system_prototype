@@ -73,6 +73,7 @@ const accountSortValue = (
   if (key === "role") return employee.userRoleName ?? "";
   if (key === "status") return employee.statusName ?? "";
   if (key === "active") return employee.userActive ? 1 : 0;
+  if (key === "locked") return employee.userLocked ? 1 : 0;
   return "";
 };
 
@@ -382,6 +383,11 @@ export const EmployeesPage = () => {
                     >
                       {employee.userActive ? "aktív" : "letiltva"}
                     </span>
+                    {employee.userLocked && (
+                      <span className="badge badge-sm badge-warning ml-1">
+                        zárolva
+                      </span>
+                    )}
                   </td>
                   <td className="whitespace-nowrap text-right">
                     <button

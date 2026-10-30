@@ -31,6 +31,7 @@ export interface AdminEmployee {
   userId: number | null;
   username: string | null;
   userActive: boolean | null;
+  userLocked: boolean;
   userRoleId: number | null;
   userRoleName: string | null;
 }
@@ -102,6 +103,9 @@ export const createUserAccount = (employeeId: number, roleId: number) =>
 
 export const setUserActive = (userId: number, isActive: boolean) =>
   apiPatch<{ message: string }>(`/admin/users/${userId}`, { isActive });
+
+export const unlockUser = (userId: number) =>
+  apiPatch<{ message: string }>(`/admin/users/${userId}`, { unlock: true });
 
 export const resetUserPassword = (userId: number) =>
   apiPatch<{ message: string; password: string }>(`/admin/users/${userId}`, {

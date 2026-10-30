@@ -1,0 +1,29 @@
+info:
+  name: zarolas masodik hibas probalkozas
+  type: http
+  seq: 184
+
+http:
+  method: POST
+  url: "{{baseUrl}}/login"
+  body:
+    type: json
+    data: |-
+      {
+        "username": "teszt.dolgozo.nm",
+        "password": "RosszJelszo02"
+      }
+  auth: inherit
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "401"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
