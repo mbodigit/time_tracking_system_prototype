@@ -17,7 +17,7 @@ router.get('/groups/options',
 
 router.get('/groups/members',
     authenticateToken,
-    authorizePermission('admin.groups'),
+    authorizeAnyPermission('admin.groups', 'admin.structure.view'),
     groupController.listAssignable
 );
 
