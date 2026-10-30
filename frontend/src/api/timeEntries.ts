@@ -38,6 +38,15 @@ export interface MonthlyLog {
   year: number;
   month: number;
   isFlexible: boolean;
+  employeeName?: string;
+  employeeCode?: string;
+  employeeArea?: string | null;
+  employeeWorkLocation?: string | null;
+  leave?: {
+    entitlementDays: number;
+    usedDays: number;
+    remainingDays: number;
+  };  
   allowanceTypes: AllowanceType[];
   days: TimeEntryDay[];
   summary: {
@@ -49,6 +58,8 @@ export interface MonthlyLog {
     absenceMinutes: number;
     settledMinutes: number;
     frameMinutes?: number;
+    requiredMinutes?: number;
+    absences?: Record<string, { minutes: number; payrollCode: string | null }>;    
     allowances: Record<string, number>;
   };
 }

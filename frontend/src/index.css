@@ -1,2 +1,25 @@
 @import "tailwindcss";
 @plugin "daisyui";
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  #printout,
+  #printout * {
+    visibility: visible;
+  }
+
+  #printout {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 15mm;
+  }
+}
