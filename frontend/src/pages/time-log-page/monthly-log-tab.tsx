@@ -19,6 +19,7 @@ import {
 import { listEmployees, type ScopeEmployee } from "../../api/lookups";
 import { TimeEntryForm } from "./time-entry-form";
 import { RequestForm } from "../requests-page/request-form";
+import { MonthlyPrintout } from "./monthly-printout";
 
 const getDayLabel = (day: TimeEntryDay): string => {
   if (day.dayType === "holiday") return "Munkaszüneti nap";
@@ -46,6 +47,7 @@ export const MonthlyLogTab = () => {
   const [employees, setEmployees] = useState<ScopeEmployee[]>([]);
   const [employeeId, setEmployeeId] = useState<number | null>(null);
   const [isRequestOpen, setIsRequestOpen] = useState(false);
+  const [isPrintOpen, setIsPrintOpen] = useState(false);
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -133,6 +135,13 @@ export const MonthlyLogTab = () => {
           onClick={() => setIsRequestOpen(true)}
         >
           Kérelem leadása
+        </button>
+        <button
+          className="btn btn-sm"
+          onClick={() => setIsPrintOpen(true)}
+          disabled={!log}
+        >
+          Összesítő nyomtatása
         </button>
       </div>
 
@@ -339,6 +348,10 @@ export const MonthlyLogTab = () => {
             load();
           }}
         />
+      )}
+
+      {isPrintOpen && log && (
+        <MonthlyPrintout report={log} onClose={() => setIsPrintOpen(false)} />
       )}
     </div>
   );

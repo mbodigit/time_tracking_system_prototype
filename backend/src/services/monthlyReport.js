@@ -3,6 +3,7 @@ const { calculateAllowances } = require('./allowanceCalculator');
 const {
     DAY_TYPE_MAP, addDays, toDate, minutesBetween, overlapMinutes
 } = require('./dateHelpers');
+const { buildLeaveBalance } = require('./leaveBalance');
 
 const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
     const [employees] = await pool.execute(
@@ -14,12 +15,13 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
             c.core_hour_start, c.core_hour_end,
             w.work_schedule_is_shift, w.work_schedule_name,
             h.working_hour_num,
-            g.user_group_name, a.area_name
+            g.user_group_name, a.area_name, loc.work_location_name
             FROM Employees e
             LEFT JOIN CoreHours     c ON c.core_hour_id      = e.employee_core_hour_id
             LEFT JOIN WorkSchedules w ON w.work_schedule_id  = e.employee_work_schedule_id
             LEFT JOIN WorkingHours  h ON h.working_hour_id   = e.employee_working_hour_id
             LEFT JOIN UserGroups    g ON g.user_group_id     = e.employee_user_group_id
+            LEFT JOIN WorkLocations loc ON loc.work_location_id = e.employee_work_location_id            
             LEFT JOIN Areas         a ON a.area_id           = g.user_group_area_id
             WHERE e.employee_id = ?`,
         [employeeId]
@@ -205,6 +207,9 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
             employeeId,
             employeeCode: employee.employee_code,
             employeeName: `${employee.employee_last_name} ${employee.employee_first_name}`,
+            employeeArea: employee.area_name,
+            employeeWorkLocation: employee.work_location_name,
+            leave: await buildLeaveBalance(employeeId, yearNumber),            
             year: yearNumber,
             month: monthNumber,
             isFlexible: true,
@@ -219,6 +224,7 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
                 absenceMinutes: flexibleAbsenceMinutes,
                 settledMinutes: flexibleWorkedMinutes + flexibleAbsenceMinutes,
                 frameMinutes: contractedMinutes * workingDayCount,
+                requiredMinutes: contractedMinutes * workingDayCount,                
                 allowances: {},
                 absences: flexibleAbsences
             }
@@ -414,6 +420,8 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
         employeeGroupId: employee.employee_user_group_id,
         employeeGroup: employee.user_group_name,
         employeeArea: employee.area_name,
+        employeeWorkLocation: employee.work_location_name,
+        leave: await buildLeaveBalance(employeeId, yearNumber),        
         year: yearNumber,
         month: monthNumber,
         isFlexible: false,
@@ -428,6 +436,9 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
             absenceMinutes: summaryAbsenceMinutes,
             settledMinutes: summaryWorkedMinutes + summaryAbsenceMinutes,
             allowances: summaryAllowances,
+            requiredMinutes: days.reduce(
+                (sum, day) => sum + (day.scheduledMinutes || 0), 0
+            ),            
             absences: summaryAbsences
         }
     };
