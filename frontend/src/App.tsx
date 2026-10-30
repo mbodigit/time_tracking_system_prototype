@@ -51,7 +51,7 @@ const App = () => {
             <Route
               path="/admin-org-structure"
               element={
-                <RequireRole roles={["Admin"]}>
+                <RequireRole roles={["HR-Bér"]}>
                   <OrgPage />
                 </RequireRole>
               }

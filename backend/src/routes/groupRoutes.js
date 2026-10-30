@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const groupController = require('../controllers/groupController');
-const { authenticateToken, authorizePermission } = require('../middlewares/authMiddleware');
+const { authenticateToken, authorizePermission, authorizeAnyPermission } = require('../middlewares/authMiddleware');
 
 router.get('/groups',
     authenticateToken,
-    authorizePermission('admin.groups'),
+    authorizeAnyPermission('admin.groups', 'admin.structure.view'),
     groupController.list
 );
 

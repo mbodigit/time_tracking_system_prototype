@@ -17,6 +17,7 @@ import {
 import { ApiError } from "../../api/client";
 import { GroupModal, type GroupNode } from "./group-modal";
 import { UnitModal, type DerivedGroup, type UnitDraft } from "./unit-modal";
+import { getCurrentUser } from "../../utils/auth";
 
 interface UnitModalState {
   entity: OrgEntity;
@@ -38,6 +39,8 @@ const toDerived = (group: OrgGroup | null): DerivedGroup[] =>
   group ? [{ name: group.name, activeEmployees: group.activeEmployees }] : [];
 
 export const OrgPage = () => {
+  const canEdit = getCurrentUser()?.role === "Admin";
+
   const [tree, setTree] = useState<OrgTree | null>(null);
   const [groups, setGroups] = useState<Group[]>([]);
   const [groupOptions, setGroupOptions] = useState<GroupOptions | null>(null);
@@ -49,10 +52,7 @@ export const OrgPage = () => {
   const load = useCallback(async () => {
     setErrorMessage("");
     try {
-      const [orgData, groupData] = await Promise.all([
-        listOrg(),
-        listGroups(),
-      ]);
+      const [orgData, groupData] = await Promise.all([listOrg(), listGroups()]);
       setTree(orgData);
       setGroups(groupData.groups);
     } catch (error) {
@@ -65,10 +65,15 @@ export const OrgPage = () => {
 
   useEffect(() => {
     load();
+
+    if (!canEdit) {
+      return;
+    }
+
     listGroupOptions()
       .then(setGroupOptions)
       .catch(() => setGroupOptions(null));
-  }, [load]);
+  }, [load, canEdit]);
 
   const areas = tree?.areas ?? [];
   const managers = tree?.managers ?? [];
@@ -125,6 +130,19 @@ export const OrgPage = () => {
   };
 
   const groupCell = (group: OrgGroup | null, node: GroupNode) => {
+    if (!canEdit) {
+      return group ? (
+        <span>
+          {group.name}
+          <span className="badge badge-sm ml-2">
+            {group.activeEmployees} fő
+          </span>
+        </span>
+      ) : (
+        <span className="opacity-50">nincs csoport</span>
+      );
+    }
+
     if (!group) {
       return (
         <button
@@ -197,10 +215,14 @@ export const OrgPage = () => {
       </td>
       <td>{groupCell(group, node)}</td>
       <td className="whitespace-nowrap text-right">
-        {extra}
-        <button className="btn btn-xs ml-1" onClick={onEdit}>
-          Szerkesztés
-        </button>
+        {canEdit && (
+          <>
+            {extra}
+            <button className="btn btn-xs ml-1" onClick={onEdit}>
+              Szerkesztés
+            </button>
+          </>
+        )}
       </td>
     </tr>
   );
@@ -321,7 +343,11 @@ export const OrgPage = () => {
     ];
   };
 
-  const renderArea = (area: OrgArea, depth: number, path: string): ReactNode[] => {
+  const renderArea = (
+    area: OrgArea,
+    depth: number,
+    path: string,
+  ): ReactNode[] => {
     const own = path ? `${path} › ${area.name}` : area.name;
 
     return [
@@ -416,26 +442,28 @@ export const OrgPage = () => {
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-bold">Szervezet és csoportok</h1>
 
-        <button
-          className="btn btn-sm btn-primary ml-auto"
-          onClick={() =>
-            setUnitModal({
-              entity: "areas",
-              label: "Terület",
-              unit: null,
-              parentId: null,
-              parentLabel: "terület",
-              parentOptions: areas.map((item) => ({
-                id: item.id,
-                name: item.name,
-              })),
-              parentRequired: false,
-              derivedGroups: [],
-            })
-          }
-        >
-          Új terület
-        </button>
+        {canEdit && (
+          <button
+            className="btn btn-sm btn-primary ml-auto"
+            onClick={() =>
+              setUnitModal({
+                entity: "areas",
+                label: "Terület",
+                unit: null,
+                parentId: null,
+                parentLabel: "terület",
+                parentOptions: areas.map((item) => ({
+                  id: item.id,
+                  name: item.name,
+                })),
+                parentRequired: false,
+                derivedGroups: [],
+              })
+            }
+          >
+            Új terület
+          </button>
+        )}
       </div>
 
       {errorMessage && (

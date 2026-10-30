@@ -138,7 +138,7 @@ export const Layout: React.FC = () => {
           to: "/admin-org-structure",
           label: "Szervezet és csoportok",
           icon: IconOrgChart,
-          roles: [],
+          roles: ["HR-Bér"],
         },
         {
           to: "/admin-master-data",
