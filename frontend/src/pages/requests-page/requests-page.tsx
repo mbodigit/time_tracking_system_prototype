@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   listOwnRequests,
   listManagedRequests,
@@ -92,7 +93,14 @@ const managedSortValue = (
 };
 
 export const RequestsPage = () => {
-  const [tab, setTab] = useState<Tab>("own");
+  const [searchParams] = useSearchParams();
+
+  const [tab, setTab] = useState<Tab>(() => {
+    const requested = searchParams.get("tab");
+    return requested === "pending" || requested === "ordered"
+      ? requested
+      : "own";
+  });
   const [own, setOwn] = useState<AbsenceRequest[]>([]);
   const [managed, setManaged] = useState<AbsenceRequest[]>([]);
   const [employees, setEmployees] = useState<ScopeEmployee[]>([]);
