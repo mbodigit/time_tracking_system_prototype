@@ -84,6 +84,12 @@ export const MonthlyLogTab = () => {
   const summary = log?.summary;
   const allowanceTypes = log?.allowanceTypes ?? [];
   const isFlexible = log?.isFlexible ?? false;
+  const profile = log?.employeeProfile;
+  const leave = log?.leave;
+  const isOtherEmployee = employeeId !== null;
+
+  const timeRange = (start: string | null, end: string | null) =>
+    start && end ? `${start.slice(0, 5)} - ${end.slice(0, 5)}` : "-";
 
   return (
     <div className="space-y-4">
@@ -148,6 +154,90 @@ export const MonthlyLogTab = () => {
       {errorMessage && (
         <div className="alert alert-error text-sm py-2">
           <span>{errorMessage}</span>
+        </div>
+      )}
+
+      {isOtherEmployee && profile && (
+        <div className="card bg-base-200">
+          <div className="card-body gap-3 p-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="font-semibold">
+                {profile.name} ({profile.code})
+              </h3>
+              {profile.hasAccount ? (
+                <span
+                  className={`badge badge-sm ${
+                    profile.accountActive ? "badge-success" : "badge-ghost"
+                  }`}
+                >
+                  {profile.accountActive
+                    ? `Fiók: ${profile.username}`
+                    : `Letiltott fiók: ${profile.username}`}
+                </span>
+              ) : (
+                <span className="badge badge-sm badge-warning">
+                  Nincs fiókja
+                </span>
+              )}
+            </div>
+
+            <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm md:grid-cols-4">
+              <ProfileItem label="Munkarend" value={profile.workScheduleName} />
+              <ProfileItem
+                label="Napi munkaidő"
+                value={
+                  profile.workingHourNum ? `${profile.workingHourNum} óra` : null
+                }
+              />
+              <ProfileItem
+                label="Törzsidő"
+                value={timeRange(profile.coreStart, profile.coreEnd)}
+              />
+              <ProfileItem
+                label="Szünet"
+                value={
+                  profile.breakMinutes
+                    ? `${timeRange(profile.breakStart, profile.breakEnd)} (${
+                        profile.breakMinutes
+                      } perc, ${
+                        profile.breakPaid ? "munkaidő" : "nem munkaidő"
+                      })`
+                    : null
+                }
+              />
+              <ProfileItem label="Csoport" value={profile.groupName} />
+              <ProfileItem label="Terület" value={profile.areaName} />
+              <ProfileItem
+                label="Munkavégzés helye"
+                value={profile.workLocationName}
+              />
+            </dl>
+          </div>
+        </div>
+      )}
+
+      {leave && (
+        <div className="stats stats-horizontal bg-base-200">
+          <div className="stat py-3">
+            <div className="stat-title">Éves szabadságkeret</div>
+            <div className="stat-value text-2xl">
+              {leave.entitlementDays} nap
+            </div>
+          </div>
+          <div className="stat py-3">
+            <div className="stat-title">Felhasznált szabadság</div>
+            <div className="stat-value text-2xl">{leave.usedDays} nap</div>
+          </div>
+          <div className="stat py-3">
+            <div className="stat-title">Maradék szabadság</div>
+            <div
+              className={`stat-value text-2xl ${
+                leave.remainingDays < 0 ? "text-error" : ""
+              }`}
+            >
+              {leave.remainingDays} nap
+            </div>
+          </div>
         </div>
       )}
 
@@ -356,3 +446,16 @@ export const MonthlyLogTab = () => {
     </div>
   );
 };
+
+const ProfileItem = ({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | null;
+}) => (
+  <div>
+    <dt className="text-xs uppercase tracking-wide opacity-60">{label}</dt>
+    <dd className="font-medium">{value || "-"}</dd>
+  </div>
+);

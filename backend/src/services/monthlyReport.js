@@ -12,11 +12,15 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
             e.employee_core_start, e.employee_core_end,
             e.employee_code, e.employee_first_name, e.employee_last_name,
             e.employee_user_group_id,
+            e.employee_break_start, e.employee_break_end,
+            e.employee_annual_leave_days,
             c.core_hour_start, c.core_hour_end,
             w.work_schedule_is_shift, w.work_schedule_name,
             h.working_hour_num,
-            g.user_group_name, a.area_name, loc.work_location_name
+            g.user_group_name, a.area_name, loc.work_location_name,
+            u.user_username, u.user_status
             FROM Employees e
+            LEFT JOIN Users         u ON u.user_employee_id = e.employee_id
             LEFT JOIN CoreHours     c ON c.core_hour_id      = e.employee_core_hour_id
             LEFT JOIN WorkSchedules w ON w.work_schedule_id  = e.employee_work_schedule_id
             LEFT JOIN WorkingHours  h ON h.working_hour_id   = e.employee_working_hour_id
@@ -36,6 +40,27 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
     const templateEnd = employee.employee_core_end || employee.core_hour_end;
     const isShiftWorker = Boolean(employee.work_schedule_is_shift);
     const isFlexible = employee.work_schedule_name === 'Kötetlen';
+
+    const employeeProfile = {
+        code: employee.employee_code,
+        name: `${employee.employee_last_name} ${employee.employee_first_name}`,
+        workScheduleName: employee.work_schedule_name,
+        workingHourNum: employee.working_hour_num,
+        coreStart: templateStart,
+        coreEnd: templateEnd,
+        breakMinutes: employee.employee_break_minutes,
+        breakPaid: Boolean(employee.employee_break_paid),
+        breakStart: employee.employee_break_start,
+        breakEnd: employee.employee_break_end,
+        groupName: employee.user_group_name,
+        areaName: employee.area_name,
+        workLocationName: employee.work_location_name,
+        username: employee.user_username,
+        hasAccount: Boolean(employee.user_username),
+        accountActive: employee.user_username
+            ? Boolean(employee.user_status)
+            : null
+    };
 
     const monthPrefix = `${yearNumber}-${String(monthNumber).padStart(2, '0')}`;
     const lastDayNumber = new Date(yearNumber, monthNumber, 0).getDate();
@@ -210,6 +235,7 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
             employeeArea: employee.area_name,
             employeeWorkLocation: employee.work_location_name,
             leave: await buildLeaveBalance(employeeId, yearNumber),            
+            employeeProfile,
             year: yearNumber,
             month: monthNumber,
             isFlexible: true,
@@ -422,6 +448,7 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
         employeeArea: employee.area_name,
         employeeWorkLocation: employee.work_location_name,
         leave: await buildLeaveBalance(employeeId, yearNumber),        
+        employeeProfile,
         year: yearNumber,
         month: monthNumber,
         isFlexible: false,
