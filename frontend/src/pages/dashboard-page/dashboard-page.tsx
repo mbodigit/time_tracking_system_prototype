@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Bar,
   BarChart,
@@ -221,7 +222,10 @@ export const DashboardPage = () => {
               </div>
             </div>
 
-            <div className="card bg-base-200">
+            <Link
+              to="/requests?tab=own"
+              className="card bg-base-200 transition hover:bg-base-300"
+            >
               <div className="card-body">
                 <h2 className="card-title text-base">Saját kérelmeim</h2>
                 <p className="text-sm">
@@ -233,11 +237,17 @@ export const DashboardPage = () => {
                     {overview.openItems.ownRequests.expired} db
                   </p>
                 )}
+                <span className="mt-1 text-xs opacity-60">
+                  Kattints a kérelmeid megnyitásához
+                </span>
               </div>
-            </div>
+            </Link>
 
             {overview.approval && (
-              <div className="card bg-base-200">
+              <Link
+                to="/requests?tab=pending"
+                className="card bg-base-200 transition hover:bg-base-300"
+              >
                 <div className="card-body">
                   <h2 className="card-title text-base">
                     Elbírálásra vár tőlem
@@ -250,8 +260,11 @@ export const DashboardPage = () => {
                       Ebből már lejárt: {overview.approval.expired} db
                     </p>
                   )}
+                  <span className="mt-1 text-xs opacity-60">
+                    Kattints az elbíráláshoz
+                  </span>
                 </div>
-              </div>
+              </Link>
             )}
           </div>
 
