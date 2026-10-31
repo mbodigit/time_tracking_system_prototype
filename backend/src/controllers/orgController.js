@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { syncGroupManagers } = require('../services/groupManagerSync');
 
 const ENTITIES = {
     areas: {
@@ -410,19 +411,11 @@ const update = async (req, res) => {
             return res.status(404).json({ message: 'A szervezeti egység nem található.' });
         }
 
-        let syncMessage = '';
+        const syncedGroups = await syncGroupManagers();
 
-        if (managerId) {
-            const [sync] = await pool.execute(
-                `UPDATE UserGroups SET user_group_manager_id = ?
-                 WHERE ${entity.groupCondition}`,
-                [managerId, id]
-            );
-
-            if (sync.affectedRows > 0) {
-                syncMessage = ' A hozzá tartozó csoport vezetője is frissült.';
-            }
-        }
+        const syncMessage = syncedGroups > 0
+            ? ` ${syncedGroups} csoport vezetője is frissült.`
+            : '';
 
         return res.status(200).json({
             message: `A ${entity.label} módosításra került.${syncMessage}`
