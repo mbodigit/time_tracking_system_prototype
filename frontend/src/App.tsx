@@ -9,6 +9,7 @@ import { RequestsPage } from "./pages/requests-page/requests-page";
 import { ReportsPage } from "./pages/reports-page/reports-page";
 import { CalendarPage } from "./pages/calendar-page/calendar-page";
 import { RequireRole } from "./components/require-role/require-role";
+import { RequireEmployee } from "./components/require-employee/require-employee";
 import { OrgPage } from "./pages/org-page/org-page";
 import { EmployeesPage } from "./pages/employees-page/employees-page";
 import { ConnectionGuard } from "./components/connection-guard/connection-guard";
@@ -29,9 +30,30 @@ const App = () => {
               </ProtectedRoute>
             }
           >
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/time-log" element={<TimeLogPage />} />
-            <Route path="/requests" element={<RequestsPage />} />
+            <Route
+              path="/dashboard"
+              element={
+                <RequireEmployee>
+                  <DashboardPage />
+                </RequireEmployee>
+              }
+            />
+            <Route
+              path="/time-log"
+              element={
+                <RequireEmployee>
+                  <TimeLogPage />
+                </RequireEmployee>
+              }
+            />
+            <Route
+              path="/requests"
+              element={
+                <RequireEmployee>
+                  <RequestsPage />
+                </RequireEmployee>
+              }
+            />
             <Route
               path="/reports"
               element={

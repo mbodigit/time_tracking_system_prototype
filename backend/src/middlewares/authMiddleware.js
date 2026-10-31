@@ -101,4 +101,21 @@ const authorizeAnyPermission = (...permissionKeys) => {
 
 const authorizePermission = (permissionKey) => authorizeAnyPermission(permissionKey);
 
-module.exports = {authenticateToken, authorizePermission, authorizeAnyPermission};
+const requireEmployee = (req, res, next) => {
+    if (!req.user || !req.user.employeeId) {
+        return res.status(403).json({
+            message: 'Ez a művelet dolgozói nyilvántartáshoz kötött, '
+                + 'a rendszergazda fiókhoz pedig nem tartozik dolgozó.',
+            code: 'NO_EMPLOYEE'
+        });
+    }
+
+    return next();
+};
+
+module.exports = {
+    authenticateToken,
+    authorizePermission,
+    authorizeAnyPermission,
+    requireEmployee
+};

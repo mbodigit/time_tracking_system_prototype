@@ -2,7 +2,7 @@ export interface CurrentUser {
   userId: number;
   username: string;
   role: string;
-  employeeId: number;
+  employeeId: number | null;
   fullName: string;
   mustChangePassword: boolean;
 }
@@ -26,6 +26,9 @@ export const getCurrentUser = (): CurrentUser | null => {
 export const saveCurrentUser = (user: CurrentUser): void => {
   localStorage.setItem("user", JSON.stringify(user));
 };
+
+export const getLandingPath = (user: CurrentUser): string =>
+  user.employeeId ? "/dashboard" : "/admin-employees";
 
 export const isLoggedIn = (): boolean => {
   return Boolean(getToken()) && getCurrentUser() !== null;
