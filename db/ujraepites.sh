@@ -94,5 +94,5 @@ FROM Employees e WHERE e.employee_code = '00066';"
 
 echo
 echo "Kesz. Rendszergazda: admin / admin (elso belepesnel jelszocsere)."
-echo "A demo fiokok jelszava: Demo123"
+echo "A demo fiokok jelszava: Demo1234"
 unset MYSQL_PWD

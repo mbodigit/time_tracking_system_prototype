@@ -1,5 +1,5 @@
 const BASE = process.env.BASE_URL || 'http://localhost:3000/api';
-const PASSWORD = 'Demo123';
+const PASSWORD = 'Demo1234';
 const YEAR = 2026;
 const MONTH = 1;
 const TRANSFERRED_WORKDAY = '2026-01-17';

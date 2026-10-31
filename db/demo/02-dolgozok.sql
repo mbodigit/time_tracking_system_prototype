@@ -9,7 +9,7 @@ SET SQL_SAFE_UPDATES = 0;
 SET @koltseghely := (SELECT cost_center_id FROM CostCenters WHERE cost_center_code = 'KP');
 SET @allapot_aktiv := (SELECT employee_status_id FROM EmployeeStatus WHERE employee_status_name = 'Aktív');
 SET @nyolc_ora := (SELECT working_hour_id FROM WorkingHours WHERE working_hour_num = 8);
-SET @hash := '$2b$10$PrzFBLZ66T8ZsU6gxLISXuxqZv6omdFVxlbhy0KetAzEhyeoY5x8u';
+SET @hash := '$2b$10$g75zPce2dGS2neU1Ldqp4eSLfKMTHy/in8cHJRV6j4uEm8coaIDpe';
 
 INSERT INTO Employees (
   employee_code, employee_last_name, employee_first_name,
