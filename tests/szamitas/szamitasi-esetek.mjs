@@ -230,7 +230,7 @@ const run = async () => {
 
     const idsByCode = await resolveEmployeeIds(hrToken);
 
-    await setCalendarDay(hrToken, TRANSFERRED_WORKDAY, 'Munkanap');
+    await setCalendarDay(hrToken, TRANSFERRED_WORKDAY, 'Áthelyezett munkanap');
 
     for (const testCase of CASES) {
         const employeeId = idsByCode[testCase.code];

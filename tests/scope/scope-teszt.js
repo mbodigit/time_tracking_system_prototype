@@ -1,4 +1,27 @@
-require('dotenv').config({ quiet: true });
+const fs = require('fs');
+const path = require('path');
+
+const envFajl = path.join(__dirname, '..', '..', 'backend', '.env');
+
+for (const sor of fs.readFileSync(envFajl, 'utf-8').split('\n')) {
+    const tiszta = sor.trim();
+
+    if (!tiszta || tiszta.startsWith('#')) {
+        continue;
+    }
+
+    const valaszto = tiszta.indexOf('=');
+
+    if (valaszto > 0) {
+        const kulcs = tiszta.slice(0, valaszto).trim();
+        const ertek = tiszta.slice(valaszto + 1).trim().replace(/^["']|["']$/g, '');
+
+        if (!(kulcs in process.env)) {
+            process.env[kulcs] = ertek;
+        }
+    }
+}
+
 const pool = require('../../backend/src/config/db');
 const {
     getAccessibleEmployeeIds,
