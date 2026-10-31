@@ -164,6 +164,7 @@ export const Layout: React.FC = () => {
           label: "Riport és export",
           icon: IconChart,
           roles: ["Vezető", "HR-Bér"],
+          needsEmployee: true,
         },
       ],
     },
@@ -224,6 +225,7 @@ export const Layout: React.FC = () => {
       label: "Riport",
       icon: IconChart,
       roles: ["Vezető", "HR-Bér"],
+      needsEmployee: true,
     },
   ];
 
