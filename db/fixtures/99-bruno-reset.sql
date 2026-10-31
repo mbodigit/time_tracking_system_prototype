@@ -45,3 +45,30 @@ WHERE wtt_employee_id IN (
         SELECT employee_id FROM Employees WHERE employee_code LIKE 'TESZT-%'
       )
 ORDER BY wtt_id;
+DELETE FROM AbsenceWorkSchedules
+WHERE absence_id IN (SELECT absence_id FROM Absences WHERE absence_name LIKE 'Bruno%');
+
+DELETE FROM Absences WHERE absence_name LIKE 'Bruno%';
+
+DELETE FROM WorkScheduleAllowances
+WHERE work_schedule_id IN
+      (SELECT work_schedule_id FROM WorkSchedules WHERE work_schedule_name LIKE 'Bruno%');
+
+DELETE FROM WorkSchedules WHERE work_schedule_name LIKE 'Bruno%';
+
+DELETE FROM WorkingHours WHERE working_hour_name LIKE 'Bruno%';
+
+DELETE FROM CoreHours WHERE core_hour_name LIKE 'Bruno%';
+
+DELETE FROM CostCenters WHERE cost_center_code = 'BRUNO';
+
+SELECT 'Absences' AS tabla, COUNT(*) AS bruno_maradek
+FROM Absences WHERE absence_name LIKE 'Bruno%'
+UNION ALL SELECT 'WorkSchedules', COUNT(*) FROM WorkSchedules
+          WHERE work_schedule_name LIKE 'Bruno%'
+UNION ALL SELECT 'WorkingHours', COUNT(*) FROM WorkingHours
+          WHERE working_hour_name LIKE 'Bruno%'
+UNION ALL SELECT 'CoreHours', COUNT(*) FROM CoreHours
+          WHERE core_hour_name LIKE 'Bruno%'
+UNION ALL SELECT 'CostCenters', COUNT(*) FROM CostCenters
+          WHERE cost_center_code = 'BRUNO';
