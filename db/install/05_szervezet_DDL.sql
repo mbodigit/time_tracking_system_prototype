@@ -3,19 +3,28 @@ USE time_tracking_db_prototype;
 SET NAMES utf8mb4;
 
 CREATE TABLE IF NOT EXISTS Areas (
-  area_id   INT         NOT NULL AUTO_INCREMENT,
-  area_name VARCHAR(30) NOT NULL,
+  area_id         INT         NOT NULL AUTO_INCREMENT,
+  area_name       VARCHAR(30) NOT NULL,
+  area_manager_id INT         NULL,
+  area_parent_id  INT         NULL,
   PRIMARY KEY (area_id),
-  UNIQUE KEY uq_area_name (area_name)
+  UNIQUE KEY uq_area_name (area_name),
+  KEY idx_area_manager (area_manager_id),
+  KEY idx_area_parent (area_parent_id),
+  CONSTRAINT fk_area_parent
+    FOREIGN KEY (area_parent_id) REFERENCES Areas(area_id)
+    ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE IF NOT EXISTS Departments (
-  department_id      INT         NOT NULL AUTO_INCREMENT,
-  department_name    VARCHAR(30) NOT NULL,
-  department_area_id INT         NOT NULL,
+  department_id         INT         NOT NULL AUTO_INCREMENT,
+  department_name       VARCHAR(30) NOT NULL,
+  department_area_id    INT         NOT NULL,
+  department_manager_id INT         NULL,
   PRIMARY KEY (department_id),
   UNIQUE KEY uq_department_name_in_area (department_area_id, department_name),
   UNIQUE KEY uq_department_identity (department_id, department_area_id),
+  KEY idx_department_manager (department_manager_id),
   CONSTRAINT fk_department_area
     FOREIGN KEY (department_area_id) REFERENCES Areas(area_id)
     ON DELETE RESTRICT
@@ -25,9 +34,11 @@ CREATE TABLE IF NOT EXISTS Shifts (
   shift_id            INT         NOT NULL AUTO_INCREMENT,
   shift_name          VARCHAR(50) NOT NULL,
   shift_department_id INT         NOT NULL,
+  shift_manager_id    INT         NULL,
   PRIMARY KEY (shift_id),
   UNIQUE KEY uq_shift_name_in_department (shift_department_id, shift_name),
   UNIQUE KEY uq_shift_identity (shift_id, shift_department_id),
+  KEY idx_shift_manager (shift_manager_id),
   CONSTRAINT fk_shift_department
     FOREIGN KEY (shift_department_id) REFERENCES Departments(department_id)
     ON DELETE RESTRICT
@@ -81,12 +92,3 @@ CREATE TABLE IF NOT EXISTS UserGroups (
     user_group_shift_id IS NULL OR user_group_department_id IS NOT NULL
   )
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
-SELECT TABLE_NAME AS tabla, CONSTRAINT_NAME AS megszoritas,
-       COLUMN_NAME AS oszlop, REFERENCED_TABLE_NAME AS hivatkozott_tabla,
-       REFERENCED_COLUMN_NAME AS hivatkozott_oszlop
-FROM information_schema.KEY_COLUMN_USAGE
-WHERE TABLE_SCHEMA = DATABASE()
-  AND TABLE_NAME IN ('Areas', 'Departments', 'Shifts', 'UserGroups')
-  AND REFERENCED_TABLE_NAME IS NOT NULL
-ORDER BY TABLE_NAME, CONSTRAINT_NAME, ORDINAL_POSITION;
