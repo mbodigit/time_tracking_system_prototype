@@ -5,15 +5,15 @@ variables:
     description: ""
   - name: jelszo
     value: Demo123
-    description: a teszt-fiokok kozos jelszava
+    description: a demo fiokok kozos jelszava
   - name: ma
-    value: 2026-10-29
+    value: 2026-10-31
     description: FUTTATAS ELOTT a mai datumra allitando
   - name: tegnap
-    value: 2026-10-28
+    value: 2026-10-30
     description: FUTTATAS ELOTT az elozo napra allitando
   - name: csoportNap
-    value: 2026-10-27
+    value: 2026-10-29
     description: "FUTTATAS ELOTT: ket nappal a ma elott, a csoportos tesztekhez"
   - name: ev
     value: "2026"
@@ -46,14 +46,14 @@ variables:
     value: 2030-03-04
     description: nyitott vegu kerelem napja
   - name: idVezetoM
-    value: "11"
-    description: TESZT-VM1
+    value: "6"
+    description: demo.elokeszites.a azonositoja, a db/ujraepites.sh irja ki
   - name: idDolgozoM
-    value: "13"
-    description: TESZT-DM1
+    value: "14"
+    description: demo.muszakos azonositoja, a db/ujraepites.sh irja ki
   - name: idKivulallo
-    value: "7"
-    description: TESZT-D5 azonositoja a 02-teszt-fiokok.sql lekerdezesebol
+    value: "66"
+    description: a muszakvezeto hatokoren kivuli dolgozo, a db/ujraepites.sh irja ki
   - name: idKotetlen
-    value: "10"
-    description: TESZT-K1 azonositoja
+    value: "5"
+    description: demo.konyveles kotetlen dolgozo, a db/ujraepites.sh irja ki
