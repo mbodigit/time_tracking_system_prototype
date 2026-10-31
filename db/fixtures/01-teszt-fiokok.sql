@@ -2,7 +2,18 @@ USE time_tracking_db_prototype;
 
 SET NAMES utf8mb4;
 
-SET @hash := 'IDE_JON_A_GENERALT_HASH';
+-- A TESZT dolgozók a DEMO szervezetbe kerülnek, ezért ezt a fájlt
+-- a db/install és a db/demo fájljai UTÁN kell futtatni.
+-- Jelszó minden itt létrehozott fiókhoz: Demo123
+
+SET @hash := '$2b$10$PrzFBLZ66T8ZsU6gxLISXuxqZv6omdFVxlbhy0KetAzEhyeoY5x8u';
+
+SELECT IF(
+  (SELECT COUNT(*) FROM UserGroups WHERE user_group_name = 'DEMO Összeszerelés A') > 0
+  AND (SELECT COUNT(*) FROM Employees WHERE employee_code = 'DEMO-005') > 0,
+  'A DEMO adatok megvannak, a fixture futtatható.',
+  'HIBA: elobb futtasd a db/demo fajljait, kulonben a TESZT dolgozok csoport nelkul maradnak.'
+) AS elofeltetel;
 
 SET @elozo_safe_updates := @@SQL_SAFE_UPDATES;
 SET SQL_SAFE_UPDATES = 0;
@@ -55,6 +66,42 @@ SELECT 'TESZT-K1', 'Bence', 'Virág',
        (SELECT employee_status_id FROM EmployeeStatus
          WHERE employee_status_name = 'Aktív')
 WHERE NOT EXISTS (SELECT 1 FROM Employees WHERE employee_code = 'TESZT-K1');
+
+INSERT INTO Employees (
+  employee_code, employee_first_name, employee_last_name,
+  employee_work_schedule_id, employee_working_hour_id,
+  employee_annual_leave_days, employee_break_paid,
+  employee_cost_center_id, employee_category_id, employee_status_id,
+  employee_user_group_id
+)
+SELECT v.kod, v.knev, v.vnev,
+       (SELECT work_schedule_id FROM WorkSchedules WHERE work_schedule_name = v.munkarend),
+       (SELECT working_hour_id FROM WorkingHours WHERE working_hour_num = 8),
+       25, 0,
+       (SELECT cost_center_id FROM CostCenters WHERE cost_center_code = 'KP'),
+       (SELECT employee_category_id FROM EmployeeCategories
+         WHERE employee_category_name = 'Szellemi'),
+       (SELECT employee_status_id FROM EmployeeStatus
+         WHERE employee_status_name = 'Aktív'),
+       (SELECT user_group_id FROM UserGroups WHERE user_group_name = v.csoport)
+FROM (
+            SELECT 'TESZT-V1' AS kod, 'Ildikó' AS knev, 'Bognár' AS vnev,
+                   'Nem műszakos' AS munkarend, NULL AS csoport
+  UNION ALL SELECT 'TESZT-D1', 'Máté',    'Barta',    'Műszakos',
+                   'DEMO Összeszerelés A'
+  UNION ALL SELECT 'TESZT-D2', 'Rita',    'Csonka',   'Műszakos',
+                   'DEMO Összeszerelés A'
+  UNION ALL SELECT 'TESZT-D3', 'Áron',    'Domonkos', 'Műszakos',
+                   'DEMO Összeszerelés A'
+  UNION ALL SELECT 'TESZT-D4', 'Dávid',   'Kelemen',  'Nem műszakos', NULL
+  UNION ALL SELECT 'TESZT-D5', 'Tímea',   'Nagy',     'Nem műszakos', NULL
+) v
+WHERE NOT EXISTS (SELECT 1 FROM Employees e WHERE e.employee_code = v.kod);
+
+UPDATE Employees e
+JOIN Employees m ON m.employee_code = 'DEMO-005'
+SET e.employee_manager_id = m.employee_id
+WHERE e.employee_code = 'TESZT-D4';
 
 SET @vezeto_m_id  := (SELECT employee_id FROM Employees WHERE employee_code = 'TESZT-VM1');
 SET @vezeto_nm_id := (SELECT employee_id FROM Employees WHERE employee_code = 'TESZT-VN1');
@@ -110,6 +157,7 @@ FROM (
   UNION ALL SELECT 'teszt.dolgozo.nm', 'TESZT-DN1', 'Dolgozó', 1
   UNION ALL SELECT 'teszt.hr',         'TESZT-HR1', 'HR-Bér',  1
   UNION ALL SELECT 'teszt.admin',      'TESZT-A1',  'Admin',   1
+  UNION ALL SELECT 'teszt.vezeto',     'TESZT-V1',  'Vezető',  1
   UNION ALL SELECT 'teszt.inaktiv',    'TESZT-D5',  'Dolgozó', 0
 ) v
 WHERE NOT EXISTS (SELECT 1 FROM Users u WHERE u.user_username = v.nev);

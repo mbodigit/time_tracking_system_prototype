@@ -4,7 +4,7 @@ variables:
     value: http://localhost:3000/api
     description: ""
   - name: jelszo
-    value: Teszt1234
+    value: Demo123
     description: a teszt-fiokok kozos jelszava
   - name: ma
     value: 2026-10-29

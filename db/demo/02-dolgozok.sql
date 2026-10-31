@@ -5,7 +5,8 @@ SET NAMES utf8mb4;
 SET @elozo_safe_updates := @@SQL_SAFE_UPDATES;
 SET SQL_SAFE_UPDATES = 0;
 
-SET @hash := (SELECT user_password_hash FROM Users WHERE user_username = 'teszt.hr');
+SET @hash := '$2b$10$PrzFBLZ66T8ZsU6gxLISXuxqZv6omdFVxlbhy0KetAzEhyeoY5x8u';
+
 SET @koltseghely := (SELECT cost_center_id FROM CostCenters WHERE cost_center_code = 'KP');
 SET @allapot_aktiv := (SELECT employee_status_id FROM EmployeeStatus WHERE employee_status_name = 'Aktív');
 SET @szellemi := (SELECT employee_category_id FROM EmployeeCategories WHERE employee_category_name = 'Szellemi');
@@ -18,78 +19,6 @@ SET @reggel := (SELECT core_hour_id FROM CoreHours WHERE core_hour_name = '06:00
 SET @delutan:= (SELECT core_hour_id FROM CoreHours WHERE core_hour_name = '14:00-22:00');
 SET @ejszaka:= (SELECT core_hour_id FROM CoreHours WHERE core_hour_name = '22:00-06:00');
 SET @iroda  := (SELECT core_hour_id FROM CoreHours WHERE core_hour_name = '07:00-15:00');
-
-INSERT INTO Areas (area_name)
-SELECT v.nev FROM (
-            SELECT 'DEMO Ügyvezetés' AS nev
-  UNION ALL SELECT 'DEMO Gyártás'
-  UNION ALL SELECT 'DEMO Kiszolgálás'
-) v
-WHERE NOT EXISTS (SELECT 1 FROM Areas a WHERE a.area_name = v.nev);
-
-UPDATE Areas
-SET area_parent_id = (SELECT area_id FROM (
-  SELECT area_id FROM Areas WHERE area_name = 'DEMO Ügyvezetés'
-) AS gyoker)
-WHERE area_name IN ('DEMO Gyártás', 'DEMO Kiszolgálás');
-
-INSERT INTO Departments (department_name, department_area_id)
-SELECT v.nev, a.area_id FROM (
-            SELECT 'DEMO Összeszerelés' AS nev, 'DEMO Gyártás'     AS terulet
-  UNION ALL SELECT 'DEMO Festés',               'DEMO Gyártás'
-  UNION ALL SELECT 'DEMO Logisztika',           'DEMO Kiszolgálás'
-  UNION ALL SELECT 'DEMO Iroda',                'DEMO Kiszolgálás'
-  UNION ALL SELECT 'DEMO Fejlesztés',           'DEMO Kiszolgálás'
-) v
-JOIN Areas a ON a.area_name = v.terulet
-WHERE NOT EXISTS (
-  SELECT 1 FROM Departments d WHERE d.department_name = v.nev
-);
-
-INSERT INTO Shifts (shift_name, shift_department_id)
-SELECT v.nev, d.department_id FROM (
-            SELECT 'DEMO A műszak' AS nev, 'DEMO Összeszerelés' AS reszleg
-  UNION ALL SELECT 'DEMO B műszak',        'DEMO Összeszerelés'
-  UNION ALL SELECT 'DEMO C műszak',        'DEMO Összeszerelés'
-  UNION ALL SELECT 'DEMO Festés nappali',  'DEMO Festés'
-  UNION ALL SELECT 'DEMO Raktár nappali',  'DEMO Logisztika'
-) v
-JOIN Departments d ON d.department_name = v.reszleg
-WHERE NOT EXISTS (SELECT 1 FROM Shifts s WHERE s.shift_name = v.nev);
-
-INSERT INTO UserGroups (
-  user_group_name, user_group_status, user_group_area_id,
-  user_group_department_id, user_group_shift_id,
-  user_group_cost_center_id, user_group_work_schedule_id,
-  user_group_working_hour_id, user_group_core_hour_id
-)
-SELECT v.nev, 'Aktív', a.area_id, d.department_id, s.shift_id,
-       @koltseghely, v.munkarend, @nyolc_ora, v.torzsido
-FROM (
-            SELECT 'DEMO Összeszerelés A' AS nev, 'DEMO Gyártás' AS terulet,
-                   'DEMO Összeszerelés' AS reszleg, 'DEMO A műszak' AS muszak,
-                   @muszakos AS munkarend, @reggel AS torzsido
-  UNION ALL SELECT 'DEMO Összeszerelés B', 'DEMO Gyártás', 'DEMO Összeszerelés',
-                   'DEMO B műszak', @muszakos, @delutan
-  UNION ALL SELECT 'DEMO Összeszerelés C', 'DEMO Gyártás', 'DEMO Összeszerelés',
-                   'DEMO C műszak', @muszakos, @ejszaka
-  UNION ALL SELECT 'DEMO Festés', 'DEMO Gyártás', 'DEMO Festés',
-                   'DEMO Festés nappali', @muszakos, @reggel
-  UNION ALL SELECT 'DEMO Logisztika', 'DEMO Kiszolgálás', 'DEMO Logisztika',
-                   'DEMO Raktár nappali', @muszakos, @reggel
-  UNION ALL SELECT 'DEMO Iroda', 'DEMO Kiszolgálás', 'DEMO Iroda',
-                   NULL, @nem_muszakos, @iroda
-  UNION ALL SELECT 'DEMO Fejlesztés', 'DEMO Kiszolgálás', 'DEMO Fejlesztés',
-                   NULL, @kotetlen, NULL
-  UNION ALL SELECT 'DEMO Vezetőség', 'DEMO Ügyvezetés', NULL,
-                   NULL, @nem_muszakos, @iroda
-) v
-JOIN Areas a ON a.area_name = v.terulet
-LEFT JOIN Departments d ON d.department_name = v.reszleg
-LEFT JOIN Shifts      s ON s.shift_name      = v.muszak
-WHERE NOT EXISTS (
-  SELECT 1 FROM UserGroups g WHERE g.user_group_name = v.nev
-);
 
 INSERT INTO Employees (
   employee_code, employee_last_name, employee_first_name,
@@ -176,94 +105,19 @@ JOIN Employees e ON e.employee_code   = v.kod
 JOIN UserRoles r ON r.user_role_name  = v.szerepkor
 WHERE NOT EXISTS (SELECT 1 FROM Users u WHERE u.user_username = v.nev);
 
-UPDATE Areas a
-JOIN (
-            SELECT 'DEMO Ügyvezetés' AS terulet, 'demo.kiraly' AS fiok
-  UNION ALL SELECT 'DEMO Gyártás',               'demo.antal'
-) v ON v.terulet = a.area_name
-JOIN Users u ON u.user_username = v.fiok
-SET a.area_manager_id = u.user_id;
-
-UPDATE Departments d
-JOIN (
-            SELECT 'DEMO Összeszerelés' AS reszleg, 'demo.vass' AS fiok
-  UNION ALL SELECT 'DEMO Iroda',                    'demo.barna'
-  UNION ALL SELECT 'DEMO Fejlesztés',               'demo.lengyel'
-) v ON v.reszleg = d.department_name
-JOIN Users u ON u.user_username = v.fiok
-SET d.department_manager_id = u.user_id;
-
-UPDATE Shifts s
-JOIN (
-            SELECT 'DEMO A műszak' AS muszak, 'demo.varga' AS fiok
-  UNION ALL SELECT 'DEMO B műszak',           'demo.farkas'
-  UNION ALL SELECT 'DEMO C műszak',           'demo.olah'
-  UNION ALL SELECT 'DEMO Festés nappali',     'demo.takacs'
-  UNION ALL SELECT 'DEMO Raktár nappali',     'demo.hegedus'
-) v ON v.muszak = s.shift_name
-JOIN Users u ON u.user_username = v.fiok
-SET s.shift_manager_id = u.user_id;
-
-UPDATE UserGroups g
-LEFT JOIN Shifts      s ON s.shift_id      = g.user_group_shift_id
-LEFT JOIN Departments d ON d.department_id = g.user_group_department_id
-LEFT JOIN Areas       a ON a.area_id       = g.user_group_area_id
-SET g.user_group_manager_id = COALESCE(
-  s.shift_manager_id, d.department_manager_id, a.area_manager_id
-)
-WHERE g.user_group_name LIKE 'DEMO %';
-
-UPDATE Employees e
-JOIN (
-            SELECT 'DEMO-001' AS tol, 'DEMO-004' AS ig, 'DEMO-005' AS vezeto
-  UNION ALL SELECT 'DEMO-006', 'DEMO-009', 'DEMO-010'
-  UNION ALL SELECT 'DEMO-011', 'DEMO-014', 'DEMO-015'
-  UNION ALL SELECT 'DEMO-016', 'DEMO-019', 'DEMO-020'
-  UNION ALL SELECT 'DEMO-021', 'DEMO-023', 'DEMO-024'
-  UNION ALL SELECT 'DEMO-026', 'DEMO-029', 'DEMO-025'
-  UNION ALL SELECT 'DEMO-034', 'DEMO-036', 'DEMO-033'
-) v ON e.employee_code BETWEEN v.tol AND v.ig
-JOIN Employees m ON m.employee_code = v.vezeto
-SET e.employee_manager_id = m.employee_id;
-
-UPDATE Employees e
-JOIN Employees m ON m.employee_code = 'DEMO-030'
-SET e.employee_manager_id = m.employee_id
-WHERE e.employee_code IN ('DEMO-031', 'DEMO-032');
-
-UPDATE Employees e
-JOIN Employees m ON m.employee_code = 'DEMO-031'
-SET e.employee_manager_id = m.employee_id
-WHERE e.employee_code IN ('DEMO-005', 'DEMO-010', 'DEMO-015', 'DEMO-020');
-
-UPDATE Employees e
-JOIN Employees m ON m.employee_code = 'DEMO-030'
-SET e.employee_manager_id = m.employee_id
-WHERE e.employee_code IN ('DEMO-024', 'DEMO-025', 'DEMO-033');
 
 SET SQL_SAFE_UPDATES = @elozo_safe_updates;
 
-SELECT a.area_name AS terulet,
-       p.area_name AS szulo_terulet,
-       u.user_username AS terulet_vezeto
-FROM Areas a
-LEFT JOIN Areas p ON p.area_id = a.area_parent_id
-LEFT JOIN Users u ON u.user_id = a.area_manager_id
-WHERE a.area_name LIKE 'DEMO %'
-ORDER BY COALESCE(p.area_name, ''), a.area_name;
-
-SELECT g.user_group_name AS csoport,
-       COALESCE(s.shift_name, d.department_name, a.area_name) AS csomopont,
-       u.user_username AS vezeto,
+SELECT e.employee_code AS kod,
+       CONCAT(e.employee_last_name, ' ', e.employee_first_name) AS nev,
+       g.user_group_name AS csoport,
        w.work_schedule_name AS munkarend,
-       COUNT(e.employee_id) AS letszam
-FROM UserGroups g
-LEFT JOIN Shifts        s ON s.shift_id            = g.user_group_shift_id
-LEFT JOIN Departments   d ON d.department_id       = g.user_group_department_id
-LEFT JOIN Areas         a ON a.area_id             = g.user_group_area_id
-LEFT JOIN Users         u ON u.user_id             = g.user_group_manager_id
-LEFT JOIN WorkSchedules w ON w.work_schedule_id    = g.user_group_work_schedule_id
-LEFT JOIN Employees     e ON e.employee_user_group_id = g.user_group_id
-WHERE g.user_group_name LIKE 'DEMO %'
-GROUP BY g.user_group_name, csomopont, u.user_username, w.work_schedule_name
-ORDER BY g.user_group_name;
+       u.user_username AS fiok,
+       r.user_role_name AS szerepkor
+FROM Employees e
+LEFT JOIN UserGroups    g ON g.user_group_id    = e.employee_user_group_id
+LEFT JOIN WorkSchedules w ON w.work_schedule_id = e.employee_work_schedule_id
+LEFT JOIN Users         u ON u.user_employee_id = e.employee_id
+LEFT JOIN UserRoles     r ON r.user_role_id     = u.user_role_id
+WHERE e.employee_code LIKE 'DEMO-%'
+ORDER BY e.employee_code;
