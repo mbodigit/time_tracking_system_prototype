@@ -158,26 +158,61 @@ const NODE_MANAGER_QUERY = {
     area: 'SELECT area_manager_id AS manager_id FROM Areas WHERE area_id = ?'
 };
 
+const AREA_CHAIN_MANAGER = `
+    WITH RECURSIVE lanc AS (
+        SELECT area_id, area_parent_id, area_manager_id, 0 AS szint
+        FROM Areas
+        WHERE area_id = ?
+        UNION ALL
+        SELECT a.area_id, a.area_parent_id, a.area_manager_id, l.szint + 1
+        FROM Areas a
+        JOIN lanc l ON a.area_id = l.area_parent_id
+    )
+    SELECT area_manager_id AS manager_id
+    FROM lanc
+    WHERE area_manager_id IS NOT NULL
+    ORDER BY szint
+    LIMIT 1
+`;
+
+const resolveManagerId = async (body) => {
+    for (const type of ['shift', 'department']) {
+        const id = Number(type === 'shift' ? body.shiftId : body.departmentId);
+
+        if (!id) {
+            continue;
+        }
+
+        const [rows] = await pool.execute(NODE_MANAGER_QUERY[type], [id]);
+
+        if (rows.length === 0) {
+            return { error: `A kiválasztott ${NODE_LABEL[type]} nem található.` };
+        }
+
+        if (rows[0].manager_id) {
+            return { managerId: rows[0].manager_id };
+        }
+    }
+
+    const areaId = Number(body.areaId);
+
+    const [areas] = await pool.execute(
+        'SELECT area_id FROM Areas WHERE area_id = ?', [areaId]
+    );
+
+    if (areas.length === 0) {
+        return { error: 'A kiválasztott terület nem található.' };
+    }
+
+    const [chain] = await pool.execute(AREA_CHAIN_MANAGER, [areaId]);
+
+    return { managerId: chain.length > 0 ? chain[0].manager_id : null };
+};
+
 const NODE_LABEL = {
     shift: 'műszak',
     department: 'részleg',
     area: 'terület'
-};
-
-const resolveNode = (body) => {
-    if (Number(body.shiftId)) {
-        return { type: 'shift', id: Number(body.shiftId) };
-    }
-
-    if (Number(body.departmentId)) {
-        return { type: 'department', id: Number(body.departmentId) };
-    }
-
-    if (Number(body.areaId)) {
-        return { type: 'area', id: Number(body.areaId) };
-    }
-
-    return null;
 };
 
 const findGroupOnNode = async (body, groupId) => {
@@ -217,23 +252,20 @@ const prepare = async (body, groupId) => {
         return { error: 'Műszak csak részleg megadása mellett vehető fel.' };
     }
 
-    const node = resolveNode(body);
+    const resolved = await resolveManagerId(body);
 
-    const [nodes] = await pool.execute(
-        NODE_MANAGER_QUERY[node.type], [node.id]
-    );
-
-    if (nodes.length === 0) {
-        return { error: `A kiválasztott ${NODE_LABEL[node.type]} nem található.` };
+    if (resolved.error) {
+        return { error: resolved.error };
     }
 
-    const managerId = nodes[0].manager_id;
+    const managerId = resolved.managerId;
 
     if (!managerId) {
         return {
-            error: `A kiválasztott ${NODE_LABEL[node.type]} nem rendelkezik `
-                + 'vezetővel. A csoport vezetője a szervezeti egység vezetője, '
-                + 'ezért előbb ott kell vezetőt megadni.'
+            error: 'A kiválasztott szervezeti egységnek és a fában fölötte lévő '
+                + 'egységeknek sincs vezetője. A csoport vezetője a szervezeti '
+                + 'egység vezetőjétől öröklődik, ezért előbb valahol a láncban '
+                + 'vezetőt kell megadni.'
         };
     }
 

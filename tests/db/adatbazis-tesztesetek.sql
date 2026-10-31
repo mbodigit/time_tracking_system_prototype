@@ -1,89 +1,35 @@
 -- Adatbázis szintű tesztesetek
--- Futtatás MySQL Workbenchben, a 001-006 migrációk után.
--- A szkript tesztadatot hoz létre, majd hat esetet ellenőriz.
--- A végén a TAKARITAS szakasz mindent eltávolít.
+--
+-- Előfeltétel, ebben a sorrendben:
+--   1. db/install   séma és alkalmazás-törzsadat
+--   2. db/demo      a bemutató vállalat adatai
+--   3. db/fixtures  a TESZT dolgozók és fiókok
+--
+-- Ez a szkript NEM hoz létre adatot, csak ellenőriz. A hatókör-teszt
+-- alanya Varga István (demo.varga), aki a DEMO A műszak vezetője,
+-- és ezen keresztül a DEMO Összeszerelés A csoport vezetője is.
 
--- ============================================================
--- TESZTADAT
--- ============================================================
+USE time_tracking_db_prototype;
 
-INSERT INTO Areas (area_name)
-SELECT 'TESZT Gyártás'
-WHERE NOT EXISTS (SELECT 1 FROM Areas WHERE area_name = 'TESZT Gyártás');
+SET NAMES utf8mb4;
 
-INSERT INTO Departments (department_name, department_area_id)
-SELECT 'TESZT Összeszerelés', (SELECT area_id FROM Areas WHERE area_name = 'TESZT Gyártás')
-WHERE NOT EXISTS (SELECT 1 FROM Departments WHERE department_name = 'TESZT Összeszerelés');
+SET @elozo_safe_updates := @@SQL_SAFE_UPDATES;
+SET SQL_SAFE_UPDATES = 0;
 
-INSERT INTO UserGroups (user_group_name, user_group_area_id, user_group_cost_center_id,
-                        user_group_work_schedule_id)
-SELECT v.nev,
-       (SELECT area_id FROM Areas WHERE area_name = 'TESZT Gyártás'),
-       (SELECT cost_center_id FROM CostCenters WHERE cost_center_code = 'KP'),
-       (SELECT work_schedule_id FROM WorkSchedules WHERE work_schedule_name = 'Műszakos')
-FROM (SELECT 'TESZT A műszak' AS nev UNION ALL SELECT 'TESZT B műszak') v
-WHERE NOT EXISTS (SELECT 1 FROM UserGroups g WHERE g.user_group_name = v.nev);
+SELECT IF(
+  (SELECT COUNT(*) FROM Employees WHERE employee_code LIKE 'TESZT-D%') >= 5
+  AND (SELECT COUNT(*) FROM Users WHERE user_username = 'demo.varga') = 1,
+  'Az előfeltételek megvannak.',
+  'HIBA: elobb futtasd a db/install, db/demo es db/fixtures fajljait.'
+) AS elofeltetel;
 
--- A vezető dolgozói rekordja és fiókja
-INSERT INTO Employees (employee_code, employee_first_name, employee_last_name,
-                       employee_cost_center_id, employee_category_id, employee_status_id,
-                       employee_work_schedule_id, employee_working_hour_id,
-                       employee_annual_leave_days)
-SELECT 'TESZT-V1', 'Ildikó', 'Bognár',
-       (SELECT cost_center_id FROM CostCenters WHERE cost_center_code = 'KP'),
-       (SELECT employee_category_id FROM EmployeeCategories WHERE employee_category_name = 'Szellemi'),
-       (SELECT employee_status_id FROM EmployeeStatus WHERE employee_status_name = 'Aktív'),
-       (SELECT work_schedule_id FROM WorkSchedules WHERE work_schedule_name = 'Nem műszakos'),
-       (SELECT working_hour_id FROM WorkingHours WHERE working_hour_num = 8),
-       25
-WHERE NOT EXISTS (SELECT 1 FROM Employees WHERE employee_code = 'TESZT-V1');
+DELETE FROM WorkingTimeTracking
+WHERE wtt_working_date IN ('2026-10-10', '2026-10-12')
+  AND wtt_employee_id IN (
+    SELECT employee_id FROM Employees WHERE employee_code LIKE 'TESZT-%'
+  );
 
-INSERT INTO Users (user_username, user_password_hash, user_employee_id, user_role_id,
-                   user_status, user_must_change_password)
-SELECT 'teszt.vezeto', '$2b$10$aj/VW7Rk8673XqH2aWFth.4DqhjXqtoiZOyMENQ7ey9LVj2Va9YWu',
-       (SELECT employee_id FROM Employees WHERE employee_code = 'TESZT-V1'),
-       (SELECT user_role_id FROM UserRoles WHERE user_role_name = 'Vezető'), 1, 0
-WHERE NOT EXISTS (SELECT 1 FROM Users WHERE user_username = 'teszt.vezeto');
-
--- A két csoport vezetője ugyanaz a felhasználó
-UPDATE UserGroups
-SET user_group_manager_id = (SELECT user_id FROM Users WHERE user_username = 'teszt.vezeto')
-WHERE user_group_name IN ('TESZT A műszak', 'TESZT B műszak');
-
--- Négy dolgozó:
---   D1, D2  az A műszakban
---   D3      a B műszakban
---   D4      csoport nélkül, de a vezető a közvetlen felettese
---   D5      kontroll: se csoport, se felettes, nem szabad megjelennie
-INSERT INTO Employees (employee_code, employee_first_name, employee_last_name,
-                       employee_cost_center_id, employee_category_id, employee_status_id,
-                       employee_user_group_id, employee_manager_id,
-                       employee_work_schedule_id, employee_working_hour_id,
-                       employee_annual_leave_days)
-SELECT v.kod, v.knev, v.vnev,
-       (SELECT cost_center_id FROM CostCenters WHERE cost_center_code = 'KP'),
-       (SELECT employee_category_id FROM EmployeeCategories WHERE employee_category_name = 'Szellemi'),
-       (SELECT employee_status_id FROM EmployeeStatus WHERE employee_status_name = 'Aktív'),
-       v.csoport, v.felettes,
-       (SELECT work_schedule_id FROM WorkSchedules WHERE work_schedule_name = v.munkarend),
-       (SELECT working_hour_id FROM WorkingHours WHERE working_hour_num = 8),
-       25
-FROM (
-            SELECT 'TESZT-D1' AS kod, 'Máté' AS knev, 'Barta' AS vnev,
-                   (SELECT user_group_id FROM UserGroups WHERE user_group_name = 'TESZT A műszak') AS csoport,
-                   NULL AS felettes, 'Műszakos' AS munkarend
-  UNION ALL SELECT 'TESZT-D2', 'Rita', 'Csonka',
-                   (SELECT user_group_id FROM UserGroups WHERE user_group_name = 'TESZT A műszak'),
-                   NULL, 'Műszakos'
-  UNION ALL SELECT 'TESZT-D3', 'Áron', 'Domonkos',
-                   (SELECT user_group_id FROM UserGroups WHERE user_group_name = 'TESZT B műszak'),
-                   NULL, 'Műszakos'
-  UNION ALL SELECT 'TESZT-D4', 'Dávid', 'Kelemen', NULL,
-                   (SELECT employee_id FROM Employees WHERE employee_code = 'TESZT-V1'),
-                   'Nem műszakos'
-  UNION ALL SELECT 'TESZT-D5', 'Tímea', 'Nagy', NULL, NULL, 'Nem műszakos'
-) v
-WHERE NOT EXISTS (SELECT 1 FROM Employees e WHERE e.employee_code = v.kod);
+SET SQL_SAFE_UPDATES = @elozo_safe_updates;
 
 
 -- ============================================================
@@ -156,7 +102,7 @@ WHERE wtt_working_date = '2026-10-12';
 --    Elvárt: a munkaidő-sor megmarad, az ordered_by NULL lesz,
 --            a jelölő viszont marad 1 (ON DELETE SET NULL).
 --    FIGYELEM: ez törli a teszt vezető fiókját.
---    Futtasd külön, és utána a 6. teszt már nem fut le.
+--    Futtasd külön, és utána a fixture-t újra kell futtatni.
 -- ============================================================
 
 -- DELETE FROM Users WHERE user_username = 'teszt.vezeto';
@@ -168,40 +114,59 @@ WHERE wtt_working_date = '2026-10-12';
 
 -- ============================================================
 -- 6. TESZT  A vezetői hatókör lekérdezése
---    Elvárt: D1, D2, D3 a csoportokon át, D4 a felettesi kapcsolaton át.
---            D5 NEM jelenhet meg. Összesen négy sor.
+--    A lekérdezés a megvalósított hatókör-logikát követi: csoportvezető,
+--    rekurzív területi öröklés, részlegvezető, műszakvezető, közvetlen felettes.
+--    Elvárt a TESZT dolgozókra szűkítve: D1, D2, D3 a csoporton át,
+--    D4 a felettesi kapcsolaton át, összesen négy sor.
+--    D5 NEM jelenhet meg.
 -- ============================================================
 
+SET @vezeto_user := (SELECT user_id FROM Users WHERE user_username = 'demo.varga');
+SET @vezeto_emp  := (SELECT user_employee_id FROM Users WHERE user_username = 'demo.varga');
+
+WITH RECURSIVE managed_areas AS (
+  SELECT area_id FROM Areas WHERE area_manager_id = @vezeto_user
+  UNION ALL
+  SELECT a.area_id FROM Areas a
+  JOIN managed_areas m ON m.area_id = a.area_parent_id
+)
 SELECT '6. teszt' AS teszt,
        e.employee_code,
        CONCAT(e.employee_last_name, ' ', e.employee_first_name) AS nev,
        g.user_group_name AS csoport,
-       CASE WHEN g.user_group_manager_id = u.user_id THEN 'csoport'
-            ELSE 'felettes' END AS kapcsolat
+       CASE WHEN e.employee_manager_id = @vezeto_emp THEN 'felettes'
+            ELSE 'csoport' END AS kapcsolat
 FROM Employees e
-JOIN Users u ON u.user_username = 'teszt.vezeto'
-LEFT JOIN UserGroups g ON g.user_group_id = e.employee_user_group_id
-WHERE g.user_group_manager_id = u.user_id
-   OR e.employee_manager_id   = u.user_employee_id
+LEFT JOIN UserGroups  g ON g.user_group_id    = e.employee_user_group_id
+LEFT JOIN Departments d ON d.department_id    = g.user_group_department_id
+LEFT JOIN Shifts      s ON s.shift_id         = g.user_group_shift_id
+WHERE e.employee_code LIKE 'TESZT-%'
+  AND (
+        g.user_group_manager_id = @vezeto_user
+     OR g.user_group_area_id IN (SELECT area_id FROM managed_areas)
+     OR d.department_manager_id = @vezeto_user
+     OR s.shift_manager_id      = @vezeto_user
+     OR e.employee_manager_id    = @vezeto_emp
+  )
 ORDER BY e.employee_code;
 
 
 -- ============================================================
--- TAKARITAS
+-- 6/b KONTROLL  A TESZT-D5 egyetlen vezető hatókörében sem szerepel
+--    Elvárt: nulla sor.
 -- ============================================================
 
--- DELETE FROM WorkingTimeTracking
--- WHERE wtt_employee_id IN (SELECT employee_id FROM Employees WHERE employee_code LIKE 'TESZT-%');
---
--- DELETE FROM Users WHERE user_username = 'teszt.vezeto';
---
--- UPDATE UserGroups SET user_group_manager_id = NULL
--- WHERE user_group_name IN ('TESZT A műszak', 'TESZT B műszak');
---
--- UPDATE Employees SET employee_user_group_id = NULL, employee_manager_id = NULL
--- WHERE employee_code LIKE 'TESZT-%';
---
--- DELETE FROM UserGroups WHERE user_group_name IN ('TESZT A műszak', 'TESZT B műszak');
--- DELETE FROM Employees WHERE employee_code LIKE 'TESZT-%';
--- DELETE FROM Departments WHERE department_name = 'TESZT Összeszerelés';
--- DELETE FROM Areas WHERE area_name = 'TESZT Gyártás';
+SELECT '6/b kontroll' AS teszt, u.user_username AS lathato_neki
+FROM Users u
+JOIN UserRoles r ON r.user_role_id = u.user_role_id
+JOIN Employees e ON e.employee_code = 'TESZT-D5'
+LEFT JOIN UserGroups  g ON g.user_group_id    = e.employee_user_group_id
+LEFT JOIN Departments d ON d.department_id    = g.user_group_department_id
+LEFT JOIN Shifts      s ON s.shift_id         = g.user_group_shift_id
+WHERE r.user_role_name = 'Vezető'
+  AND (
+        g.user_group_manager_id = u.user_id
+     OR d.department_manager_id = u.user_id
+     OR s.shift_manager_id      = u.user_id
+     OR e.employee_manager_id   = u.user_employee_id
+  );

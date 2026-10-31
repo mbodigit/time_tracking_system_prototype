@@ -58,7 +58,9 @@ const App = () => {
               path="/reports"
               element={
                 <RequireRole roles={["Vezető", "HR-Bér"]}>
-                  <ReportsPage />
+                  <RequireEmployee>
+                    <ReportsPage />
+                  </RequireEmployee>
                 </RequireRole>
               }
             />
