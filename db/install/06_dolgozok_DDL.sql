@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS Users (
   user_id                   INT                 NOT NULL AUTO_INCREMENT,
   user_username             VARCHAR(30)         NOT NULL,
   user_password_hash        VARCHAR(100)        NOT NULL,
-  user_employee_id          INT                 NOT NULL,
+  user_employee_id          INT                 NULL,
   user_role_id              INT                 NOT NULL,
   user_status               BOOLEAN             NOT NULL DEFAULT 1,
   user_must_change_password BOOLEAN             NOT NULL DEFAULT 1,
@@ -99,7 +99,10 @@ CREATE TABLE IF NOT EXISTS Users (
     ON DELETE CASCADE,
   CONSTRAINT fk_user_role
     FOREIGN KEY (user_role_id) REFERENCES UserRoles(user_role_id)
-    ON DELETE RESTRICT
+    ON DELETE RESTRICT,
+  CONSTRAINT chk_user_employee_required CHECK (
+    user_employee_id IS NOT NULL OR user_username = 'admin'
+  )
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 SET @sql := IF(

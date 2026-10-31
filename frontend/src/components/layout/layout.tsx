@@ -25,6 +25,7 @@ interface MenuItem {
   label: string;
   icon: React.FC<{ className?: string }>;
   roles?: string[];
+  needsEmployee?: boolean;
 }
 
 interface MenuSection {
@@ -119,19 +120,40 @@ export const Layout: React.FC = () => {
   const role = currentUser?.role ?? "";
   const initials = currentUser ? getInitials(currentUser.fullName) : "?";
 
-  const canSee = (roles?: string[]) =>
-    !roles || role === "Admin" || roles.includes(role);
+  const hasEmployee = Boolean(currentUser?.employeeId);
+
+  const canSee = (item: MenuItem) => {
+    if (item.needsEmployee && !hasEmployee) return false;
+    return !item.roles || role === "Admin" || item.roles.includes(role);
+  };
 
   const allMenuSections: MenuSection[] = [
     {
       title: "Saját pult",
-      items: [{ to: "/dashboard", label: "Áttekintő", icon: IconDashboard }],
+      items: [
+        {
+          to: "/dashboard",
+          label: "Áttekintő",
+          icon: IconDashboard,
+          needsEmployee: true,
+        },
+      ],
     },
     {
       title: "Rögzítés",
       items: [
-        { to: "/time-log", label: "Munkaidő rögzítése", icon: IconClock },
-        { to: "/requests", label: "Kérelmek és elrendelések", icon: IconInbox },
+        {
+          to: "/time-log",
+          label: "Munkaidő rögzítése",
+          icon: IconClock,
+          needsEmployee: true,
+        },
+        {
+          to: "/requests",
+          label: "Kérelmek és elrendelések",
+          icon: IconInbox,
+          needsEmployee: true,
+        },
       ],
     },
     {
@@ -179,14 +201,24 @@ export const Layout: React.FC = () => {
   const menuSections = allMenuSections
     .map((section) => ({
       ...section,
-      items: section.items.filter((item) => canSee(item.roles)),
+      items: section.items.filter((item) => canSee(item)),
     }))
     .filter((section) => section.items.length > 0);
 
   const headerItems: MenuItem[] = [
-    { to: "/dashboard", label: "Áttekintő", icon: IconDashboard },
-    { to: "/time-log", label: "Munkaidő", icon: IconClock },
-    { to: "/requests", label: "Kérelmek", icon: IconInbox },
+    {
+      to: "/dashboard",
+      label: "Áttekintő",
+      icon: IconDashboard,
+      needsEmployee: true,
+    },
+    { to: "/time-log", label: "Munkaidő", icon: IconClock, needsEmployee: true },
+    {
+      to: "/requests",
+      label: "Kérelmek",
+      icon: IconInbox,
+      needsEmployee: true,
+    },
     {
       to: "/reports",
       label: "Riport",
@@ -195,7 +227,7 @@ export const Layout: React.FC = () => {
     },
   ];
 
-  const headerNav = headerItems.filter((item) => canSee(item.roles));
+  const headerNav = headerItems.filter((item) => canSee(item));
 
   return (
     <div className="h-screen overflow-hidden bg-base-100 flex flex-col">

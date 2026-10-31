@@ -23,9 +23,9 @@ const login = async (req, res) => {
                 e.employee_id, e.employee_first_name, e.employee_last_name,
                 s.employee_status_is_active
             FROM Users u
-            JOIN Employees e ON e.employee_id = u.user_employee_id
             JOIN UserRoles r ON r.user_role_id = u.user_role_id
-            JOIN EmployeeStatus s ON s.employee_status_id = e.employee_status_id
+            LEFT JOIN Employees e ON e.employee_id = u.user_employee_id
+            LEFT JOIN EmployeeStatus s ON s.employee_status_id = e.employee_status_id
             WHERE u.user_username = ?`, [username]
             );
         if (userQueryRows.length === 0){
@@ -66,7 +66,7 @@ const login = async (req, res) => {
             );
         }
 
-        if (!user.employee_status_is_active){
+        if (user.employee_id && !user.employee_status_is_active){
             return res.status(403).json({message: 'A dolgozó státusza inaktív! Kérem forduljon a HR osztályhoz.'})
         }
 
@@ -78,9 +78,11 @@ const login = async (req, res) => {
             userId: user.user_id,
             username: user.user_username,
             role: user.user_role_name,
-            employeeId: user.employee_id,
-            fullName: `${user.employee_last_name} ${user.employee_first_name}`,
-            mustChangePassword: Boolean(user.user_must_change_password) 
+            employeeId: user.employee_id ?? null,
+            fullName: user.employee_id
+                ? `${user.employee_last_name} ${user.employee_first_name}`
+                : user.user_username,
+            mustChangePassword: Boolean(user.user_must_change_password)
         }
 
         const token = jwt.sign(payload, process.env.JWT_SECRET, {expiresIn: '8h'});

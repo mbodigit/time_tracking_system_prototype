@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getLandingPath } from "../../utils/auth";
 import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { login } from "../../api/auth";
@@ -21,7 +22,9 @@ export const LoginPage = () => {
       localStorage.setItem("user", JSON.stringify(data.user));
 
       navigate(
-        data.user.mustChangePassword ? "/change-password" : "/dashboard",
+        data.user.mustChangePassword
+          ? "/change-password"
+          : getLandingPath(data.user),
       );
     } catch (error) {
       setErrorMessage(

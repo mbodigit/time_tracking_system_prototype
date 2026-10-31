@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getLandingPath } from "../../utils/auth";
 import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { changePassword } from "../../api/auth";
@@ -25,7 +26,7 @@ export const ChangePasswordPage = () => {
 
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
-      navigate("/dashboard", { replace: true });
+      navigate(getLandingPath(data.user), { replace: true });
     } catch (error) {
       setErrorMessage(
         error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
