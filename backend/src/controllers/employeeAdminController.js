@@ -91,7 +91,25 @@ const list = async (req, res) => {
             userRoleName: row.user_role_name
         }));
 
-        return res.status(200).json({ employees });
+        const [systemUsers] = await pool.execute(
+            `SELECT u.user_id, u.user_username, u.user_status, u.user_locked_at,
+                    u.user_role_id, r.user_role_name
+             FROM Users u
+             JOIN UserRoles r ON r.user_role_id = u.user_role_id
+             WHERE u.user_employee_id IS NULL
+             ORDER BY u.user_username`
+        );
+
+        const systemAccounts = systemUsers.map((row) => ({
+            userId: row.user_id,
+            username: row.user_username,
+            userActive: Boolean(row.user_status),
+            userLocked: Boolean(row.user_locked_at),
+            userRoleId: row.user_role_id,
+            userRoleName: row.user_role_name
+        }));
+
+        return res.status(200).json({ employees, systemAccounts });
     } catch (error) {
         console.error('Dolgozói lista hiba:', error);
         return res.status(500).json({ message: 'Szerver hiba.' });

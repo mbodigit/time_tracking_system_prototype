@@ -4,6 +4,7 @@ import {
   listEmployeeOptions,
   type AdminEmployee,
   type EmployeeOptions,
+  type SystemAccount,
 } from "../../api/employeeAdmin";
 import { ApiError } from "../../api/client";
 import {
@@ -77,8 +78,45 @@ const accountSortValue = (
   return "";
 };
 
+const rendszerFiokSora = (fiok: SystemAccount): AdminEmployee => ({
+  id: -fiok.userId,
+  code: "—",
+  firstName: "fiók",
+  lastName: "Rendszer",
+  workEmail: null,
+  groupId: null,
+  groupName: null,
+  categoryId: null,
+  categoryName: null,
+  statusId: null,
+  statusName: "Dolgozó nélküli",
+  isActive: true,
+  costCenterId: null,
+  costCenterName: null,
+  workScheduleId: null,
+  workScheduleName: null,
+  workingHourId: null,
+  workingHourNum: null,
+  coreHourId: null,
+  coreHourName: null,
+  breakMinutes: null,
+  breakPaid: false,
+  breakStart: null,
+  breakEnd: null,
+  annualLeaveDays: null,
+  managerId: null,
+  managerName: null,
+  userId: fiok.userId,
+  username: fiok.username,
+  userActive: fiok.userActive,
+  userLocked: fiok.userLocked,
+  userRoleId: fiok.userRoleId,
+  userRoleName: fiok.userRoleName,
+});
+
 export const EmployeesPage = () => {
   const [employees, setEmployees] = useState<AdminEmployee[]>([]);
+  const [systemAccounts, setSystemAccounts] = useState<SystemAccount[]>([]);
   const [options, setOptions] = useState<EmployeeOptions | null>(null);
   const [tab, setTab] = useState<Tab>("employees");
   const [errorMessage, setErrorMessage] = useState("");
@@ -95,8 +133,10 @@ export const EmployeesPage = () => {
     try {
       const data = await listEmployeeAdmin();
       setEmployees(data.employees);
+      setSystemAccounts(data.systemAccounts ?? []);
     } catch (error) {
       setEmployees([]);
+      setSystemAccounts([]);
       setErrorMessage(
         error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
       );
@@ -111,8 +151,11 @@ export const EmployeesPage = () => {
   }, [load]);
 
   const accountSource = useMemo(
-    () => employees.filter((employee) => employee.userId),
-    [employees],
+    () => [
+      ...systemAccounts.map(rendszerFiokSora),
+      ...employees.filter((employee) => employee.userId),
+    ],
+    [employees, systemAccounts],
   );
 
   const candidates = useMemo(

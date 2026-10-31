@@ -1,5 +1,5 @@
 const BASE = process.env.BASE_URL || 'http://localhost:3000/api';
-const PASSWORD = 'Demo123';
+const PASSWORD = 'Demo1234';
 const YEAR = 2026;
 const MONTH = 1;
 const TRANSFERRED_WORKDAY = '2026-01-17';
@@ -38,7 +38,7 @@ const callApi = async (token, method, path, body) => {
 const CASES = [
     {
         name: 'Hétköznapi éjszakás, sablon szerinti szünet',
-        code: 'TESZT-DM1', date: '2026-01-07',
+        code: '00027', date: '2026-01-07',
         start: '2026-01-07 22:00:00', end: '2026-01-08 06:00:00',
         isOrdered: false,
         expected: { presenceMinutes: 480, breakMinutes: 30, workedMinutes: 450,
@@ -47,7 +47,7 @@ const CASES = [
     },
     {
         name: 'Plusz óra a beosztás előtt, elrendelés nélkül',
-        code: 'TESZT-DM1', date: '2026-01-08',
+        code: '00027', date: '2026-01-08',
         start: '2026-01-08 20:00:00', end: '2026-01-09 06:00:00',
         isOrdered: false,
         expected: { presenceMinutes: 600, breakMinutes: 30, workedMinutes: 570,
@@ -56,7 +56,7 @@ const CASES = [
     },
     {
         name: 'Ugyanaz elrendelve, a plusz órát felár váltja ki',
-        code: 'TESZT-DM1', date: '2026-01-09',
+        code: '00027', date: '2026-01-09',
         start: '2026-01-09 20:00:00', end: '2026-01-10 06:00:00',
         isOrdered: true,
         expected: { presenceMinutes: 600, breakMinutes: 30, workedMinutes: 570,
@@ -65,7 +65,7 @@ const CASES = [
     },
     {
         name: 'Szombati éjszakás, szünet nélkül',
-        code: 'TESZT-DM1', date: '2026-01-03',
+        code: '00027', date: '2026-01-03',
         start: '2026-01-03 22:00:00', end: '2026-01-04 06:00:00',
         isOrdered: false,
         expected: { presenceMinutes: 480, breakMinutes: 0, workedMinutes: 480,
@@ -74,7 +74,7 @@ const CASES = [
     },
     {
         name: 'Szombati éjszakás, kézzel megadott szünettel',
-        code: 'TESZT-DM1', date: '2026-01-10',
+        code: '00027', date: '2026-01-10',
         start: '2026-01-10 22:00:00', end: '2026-01-11 06:00:00',
         breakStart: '2026-01-11 02:00:00', breakEnd: '2026-01-11 02:30:00',
         isOrdered: false,
@@ -84,7 +84,7 @@ const CASES = [
     },
     {
         name: 'Vasárnapi munkavégzés',
-        code: 'TESZT-DM1', date: '2026-01-04',
+        code: '00027', date: '2026-01-04',
         start: '2026-01-04 06:00:00', end: '2026-01-04 14:00:00',
         isOrdered: false,
         expected: { presenceMinutes: 480, breakMinutes: 0, workedMinutes: 480,
@@ -93,7 +93,7 @@ const CASES = [
     },
     {
         name: 'Munkaszüneti napon kezdődő éjszakás műszak',
-        code: 'TESZT-DM1', date: '2026-01-01',
+        code: '00027', date: '2026-01-01',
         start: '2026-01-01 22:00:00', end: '2026-01-02 06:00:00',
         isOrdered: false,
         expected: { presenceMinutes: 480, breakMinutes: 0, workedMinutes: 480,
@@ -102,7 +102,7 @@ const CASES = [
     },
     {
         name: 'Nem műszakos dolgozó elrendelt túlórája',
-        code: 'TESZT-DN1', date: '2026-01-02',
+        code: '00057', date: '2026-01-02',
         start: '2026-01-02 07:00:00', end: '2026-01-02 19:00:00',
         isOrdered: true,
         expected: { presenceMinutes: 720, breakMinutes: 30, workedMinutes: 690,
@@ -111,7 +111,7 @@ const CASES = [
     },
     {
         name: 'A szünet a tényleges munkaidőn kívülre esik',
-        code: 'TESZT-DM1', date: '2026-01-13',
+        code: '00027', date: '2026-01-13',
         start: '2026-01-13 22:00:00', end: '2026-01-14 01:00:00',
         isOrdered: false,
         expected: { presenceMinutes: 180, breakMinutes: 0, workedMinutes: 180,
@@ -120,7 +120,7 @@ const CASES = [
     },
     {
         name: 'Áthelyezett munkanapra eső szombati éjszakás',
-        code: 'TESZT-DM1', date: TRANSFERRED_WORKDAY,
+        code: '00027', date: TRANSFERRED_WORKDAY,
         start: `${TRANSFERRED_WORKDAY} 22:00:00`, end: '2026-01-18 06:00:00',
         isOrdered: false,
         expected: { presenceMinutes: 480, breakMinutes: 30, workedMinutes: 450,
@@ -224,13 +224,13 @@ const compare = (day, expected) => {
 };
 
 const run = async () => {
-    const hrToken = await login('teszt.hr');
-    const shiftManagerToken = await login('teszt.vezeto.m');
-    const officeManagerToken = await login('teszt.vezeto.nm');
+    const hrToken = await login('demo.hr');
+    const shiftManagerToken = await login('demo.elokeszites.c');
+    const officeManagerToken = await login('demo.ertekesites');
 
     const idsByCode = await resolveEmployeeIds(hrToken);
 
-    await setCalendarDay(hrToken, TRANSFERRED_WORKDAY, 'Munkanap');
+    await setCalendarDay(hrToken, TRANSFERRED_WORKDAY, 'Áthelyezett munkanap');
 
     for (const testCase of CASES) {
         const employeeId = idsByCode[testCase.code];
@@ -241,7 +241,7 @@ const run = async () => {
 
         await saveEntry(hrToken, testCase, employeeId);
 
-        const approverToken = testCase.code === 'TESZT-DM1'
+        const approverToken = testCase.code === '00027'
             ? shiftManagerToken
             : officeManagerToken;
 

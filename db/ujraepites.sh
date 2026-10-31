@@ -46,19 +46,12 @@ for f in db/demo/01-szervezet.sql db/demo/02-dolgozok.sql \
 done
 echo
 
-echo "== 5. Tesztadatok (db/fixtures)"
-for f in db/fixtures/01-teszt-fiokok.sql db/fixtures/02-teszt-munkaido.sql; do
-  echo "   $f"
-  "${M[@]}" "$DB" < "$f" > /dev/null
-done
-echo
-
-echo "== 6. Bruno reset"
-"${M[@]}" "$DB" < db/fixtures/99-bruno-reset.sql > /dev/null
+echo "== 5. Bruno elokeszites (db/fixtures)"
+"${M[@]}" "$DB" < db/fixtures/01-bruno-reset.sql > /dev/null
 echo "   megtortent"
 echo
 
-echo "== 7. Ellenorzes"
+echo "== 6. Ellenorzes"
 "${M[@]}" "$DB" --table -e "
 SELECT 'Areas' AS tabla, COUNT(*) AS sorok FROM Areas
 UNION ALL SELECT 'Departments', COUNT(*) FROM Departments
@@ -72,25 +65,34 @@ UNION ALL SELECT 'GlobalCalendar', COUNT(*) FROM GlobalCalendar
 UNION ALL SELECT 'Absences', COUNT(*) FROM Absences;"
 
 echo
-echo "== 8. Vezeto nelkuli DEMO csoport (urenek kell lennie)"
+echo "== 7. Vezeto nelkuli csoport (urenek kell lennie)"
 "${M[@]}" "$DB" --table -e "
 SELECT user_group_name FROM UserGroups
-WHERE user_group_manager_id IS NULL AND user_group_name LIKE 'DEMO %';"
+WHERE user_group_manager_id IS NULL;"
 
 echo
-echo "== 9. Hianyos dolgozo (csak TESZT-D5 es a vezetok szerepelhetnek)"
+echo "== 8. Hianyos dolgozo (csak a tulajdonos szerepelhet)"
 "${M[@]}" "$DB" --table -e "
 SELECT employee_code FROM Employees
 WHERE employee_user_group_id IS NULL AND employee_manager_id IS NULL
 ORDER BY employee_code;"
 
 echo
-echo "== 10. A Bruno kornyezetfajlba irando azonositok"
+echo "== 9. A Bruno kornyezetfajlba irando azonositok"
 "${M[@]}" "$DB" --table -e "
-SELECT employee_code AS kod, employee_id AS uj_azonosito FROM Employees
-WHERE employee_code IN ('TESZT-VM1','TESZT-DM1','TESZT-D5','TESZT-K1')
-ORDER BY employee_code;"
+SELECT 'idVezetoM'  AS valtozo, u.user_employee_id AS ertek
+FROM Users u WHERE u.user_username = 'demo.elokeszites.a'
+UNION ALL
+SELECT 'idDolgozoM', u.user_employee_id
+FROM Users u WHERE u.user_username = 'demo.muszakos'
+UNION ALL
+SELECT 'idKotetlen', u.user_employee_id
+FROM Users u WHERE u.user_username = 'demo.konyveles'
+UNION ALL
+SELECT 'idKivulallo', e.employee_id
+FROM Employees e WHERE e.employee_code = '00066';"
 
 echo
-echo "Kesz. A rendszergazda fiok: admin / admin (elso belepesnel jelszocsere)."
+echo "Kesz. Rendszergazda: admin / admin (elso belepesnel jelszocsere)."
+echo "A demo fiokok jelszava: Demo1234"
 unset MYSQL_PWD

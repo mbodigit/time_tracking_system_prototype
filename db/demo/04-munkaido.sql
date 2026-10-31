@@ -10,12 +10,12 @@ SET @zaro_nap  := CURDATE();
 
 DELETE FROM WorkingTimeTracking
 WHERE wtt_employee_id IN (
-  SELECT employee_id FROM Employees WHERE employee_code LIKE 'DEMO-%'
+  SELECT employee_id FROM Employees WHERE employee_code REGEXP '^[0-9]{5}$'
 );
 
 DELETE FROM Requests
 WHERE request_employee_id IN (
-  SELECT employee_id FROM Employees WHERE employee_code LIKE 'DEMO-%'
+  SELECT employee_id FROM Employees WHERE employee_code REGEXP '^[0-9]{5}$'
 );
 
 INSERT INTO Requests (
@@ -25,27 +25,21 @@ INSERT INTO Requests (
   request_decision_by, request_decision_at
 )
 SELECT e.employee_id, a.absence_id, v.kezdet, v.veg, 'Jóváhagyva', 'Demo adat',
-       (SELECT user_id FROM Users WHERE user_username = 'demo.kiraly'), NOW()
+       (SELECT user_id FROM Users WHERE user_username = 'demo.ugyvezeto'), NOW()
 FROM (
-            SELECT 'DEMO-001' AS kod, 'Fizetett szabadság'         AS jogcim, '2026-08-10' AS kezdet, '2026-08-14' AS veg
-  UNION ALL SELECT 'DEMO-002', 'Betegség',                   '2026-08-19', '2026-08-21'
-  UNION ALL SELECT 'DEMO-003', 'Fizetett szabadság',         '2026-09-07', '2026-09-11'
-  UNION ALL SELECT 'DEMO-004', 'Apanap',                     '2026-09-15', '2026-09-16'
-  UNION ALL SELECT 'DEMO-005', 'Fizetett szabadság',         '2026-10-05', '2026-10-09'
-  UNION ALL SELECT 'DEMO-006', 'Betegség',                   '2026-09-23', '2026-09-25'
-  UNION ALL SELECT 'DEMO-008', 'Fizetett szabadság',         '2026-08-24', '2026-08-28'
-  UNION ALL SELECT 'DEMO-010', 'Igazolt fizetett távollét',  '2026-10-13', '2026-10-13'
-  UNION ALL SELECT 'DEMO-011', 'Fizetett szabadság',         '2026-10-19', '2026-10-23'
-  UNION ALL SELECT 'DEMO-013', 'Betegség',                   '2026-10-01', '2026-10-02'
-  UNION ALL SELECT 'DEMO-016', 'Fizetett szabadság',         '2026-08-03', '2026-08-07'
-  UNION ALL SELECT 'DEMO-018', 'Betegség',                   '2026-09-02', '2026-09-04'
-  UNION ALL SELECT 'DEMO-021', 'Fizetett szabadság',         '2026-09-28', '2026-10-02'
-  UNION ALL SELECT 'DEMO-023', 'Igazolt fizetett távollét',  '2026-08-17', '2026-08-17'
-  UNION ALL SELECT 'DEMO-025', 'Fizetett szabadság',         '2026-10-12', '2026-10-16'
-  UNION ALL SELECT 'DEMO-026', 'Betegség',                   '2026-09-09', '2026-09-10'
-  UNION ALL SELECT 'DEMO-028', 'Fizetett szabadság',         '2026-08-24', '2026-08-26'
-  UNION ALL SELECT 'DEMO-033', 'Fizetett szabadság',         '2026-09-21', '2026-09-25'
-  UNION ALL SELECT 'DEMO-034', 'Betegség',                   '2026-10-06', '2026-10-07'
+            SELECT '00019' AS kod, 'Fizetett szabadság'        AS jogcim, '2026-08-10' AS kezdet, '2026-08-14' AS veg
+  UNION ALL SELECT '00023', 'Betegség',                  '2026-08-19', '2026-08-21'
+  UNION ALL SELECT '00031', 'Fizetett szabadság',        '2026-09-07', '2026-09-11'
+  UNION ALL SELECT '00035', 'Apanap',                    '2026-09-15', '2026-09-16'
+  UNION ALL SELECT '00043', 'Fizetett szabadság',        '2026-10-19', '2026-10-23'
+  UNION ALL SELECT '00047', 'Fizetett szabadság',        '2026-10-05', '2026-10-09'
+  UNION ALL SELECT '00052', 'Betegség',                  '2026-09-23', '2026-09-25'
+  UNION ALL SELECT '00057', 'Fizetett szabadság',        '2026-08-24', '2026-08-28'
+  UNION ALL SELECT '00059', 'Igazolt fizetett távollét', '2026-10-13', '2026-10-13'
+  UNION ALL SELECT '00067', 'Betegség',                  '2026-09-09', '2026-09-10'
+  UNION ALL SELECT '00069', 'Betegség',                  '2026-10-06', '2026-10-07'
+  UNION ALL SELECT '00073', 'Fizetett szabadság',        '2026-08-24', '2026-08-26'
+  UNION ALL SELECT '00079', 'Fizetett szabadság',        '2026-09-21', '2026-09-25'
 ) v
 JOIN Employees e ON e.employee_code = v.kod
 JOIN Absences  a ON a.absence_name  = v.jogcim;
@@ -65,11 +59,11 @@ dolgozo AS (
   SELECT e.employee_id,
          e.employee_code,
          COALESCE(e.employee_core_start, c.core_hour_start) AS kezdes,
-         CAST(RIGHT(e.employee_code, 3) AS UNSIGNED)        AS sorszam
+         CAST(e.employee_code AS UNSIGNED)                  AS sorszam
   FROM Employees e
   LEFT JOIN CoreHours     c ON c.core_hour_id     = e.employee_core_hour_id
   JOIN WorkSchedules      w ON w.work_schedule_id = e.employee_work_schedule_id
-  WHERE e.employee_code LIKE 'DEMO-%'
+  WHERE e.employee_code REGEXP '^[0-9]{5}$'
     AND w.work_schedule_name <> 'Kötetlen'
     AND COALESCE(e.employee_core_start, c.core_hour_start) IS NOT NULL
 )
@@ -105,18 +99,18 @@ INSERT INTO WorkingTimeTracking (
 SELECT e.employee_id, v.nap,
        TIMESTAMP(v.nap, v.kezdes),
        TIMESTAMP(v.nap, v.kezdes) + INTERVAL v.orak HOUR,
-       1, 'Demo adat, elrendelt hetvegi munka'
+       1, 'Demo adat, elrendelt hétvégi munka'
 FROM (
-            SELECT 'DEMO-001' AS kod, '2026-08-08' AS nap, '06:00:00' AS kezdes, 8 AS orak
-  UNION ALL SELECT 'DEMO-002', '2026-08-08', '06:00:00', 6
-  UNION ALL SELECT 'DEMO-011', '2026-08-22', '22:00:00', 8
-  UNION ALL SELECT 'DEMO-012', '2026-08-22', '22:00:00', 8
-  UNION ALL SELECT 'DEMO-016', '2026-09-12', '06:00:00', 8
-  UNION ALL SELECT 'DEMO-017', '2026-09-12', '06:00:00', 4
-  UNION ALL SELECT 'DEMO-021', '2026-09-26', '06:00:00', 8
-  UNION ALL SELECT 'DEMO-006', '2026-10-10', '14:00:00', 8
-  UNION ALL SELECT 'DEMO-013', '2026-10-17', '22:00:00', 8
-  UNION ALL SELECT 'DEMO-022', '2026-10-24', '06:00:00', 6
+            SELECT '00019' AS kod, '2026-08-08' AS nap, '06:00:00' AS kezdes, 8 AS orak
+  UNION ALL SELECT '00020', '2026-08-08', '06:00:00', 6
+  UNION ALL SELECT '00027', '2026-08-22', '22:00:00', 8
+  UNION ALL SELECT '00028', '2026-08-22', '22:00:00', 8
+  UNION ALL SELECT '00031', '2026-09-12', '06:00:00', 8
+  UNION ALL SELECT '00032', '2026-09-12', '06:00:00', 4
+  UNION ALL SELECT '00047', '2026-09-26', '06:00:00', 8
+  UNION ALL SELECT '00023', '2026-10-10', '14:00:00', 8
+  UNION ALL SELECT '00039', '2026-10-17', '22:00:00', 8
+  UNION ALL SELECT '00052', '2026-10-24', '06:00:00', 6
 ) v
 JOIN Employees e ON e.employee_code = v.kod
 WHERE NOT EXISTS (
@@ -132,14 +126,11 @@ SELECT DATE_FORMAT(w.wtt_working_date, '%Y-%m') AS honap,
        SUM(w.wtt_is_ordered)                    AS elrendelt_nap
 FROM WorkingTimeTracking w
 JOIN Employees e ON e.employee_id = w.wtt_employee_id
-WHERE e.employee_code LIKE 'DEMO-%'
 GROUP BY DATE_FORMAT(w.wtt_working_date, '%Y-%m')
 ORDER BY honap;
 
 SELECT a.absence_name AS jogcim, COUNT(*) AS kerelem
 FROM Requests r
 JOIN Absences  a ON a.absence_id = r.request_absence_id
-JOIN Employees e ON e.employee_id = r.request_employee_id
-WHERE e.employee_code LIKE 'DEMO-%'
 GROUP BY a.absence_name
 ORDER BY a.absence_name;

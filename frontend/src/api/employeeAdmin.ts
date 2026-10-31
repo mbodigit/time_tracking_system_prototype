@@ -36,6 +36,15 @@ export interface AdminEmployee {
   userRoleName: string | null;
 }
 
+export interface SystemAccount {
+  userId: number;
+  username: string;
+  userActive: boolean;
+  userLocked: boolean;
+  userRoleId: number;
+  userRoleName: string;
+}
+
 export interface AdminOption {
   id: number;
   name: string;
@@ -81,7 +90,9 @@ export interface EmployeePayload {
 }
 
 export const listEmployeeAdmin = () =>
-  apiGet<{ employees: AdminEmployee[] }>("/admin/employees");
+  apiGet<{ employees: AdminEmployee[]; systemAccounts: SystemAccount[] }>(
+    "/admin/employees",
+  );
 
 export const listEmployeeOptions = () =>
   apiGet<EmployeeOptions>("/admin/employees/options");
