@@ -73,7 +73,7 @@ const DIMENSIONS = {
 };
 
 const OVERTIME_CODES = ['tulora', 'szombat', 'vasarnap', 'pihenonap', 'munkaszuneti'];
-const SHIFT_PREMIUM_CODES = ['ejszakai', 'delutani'];
+const SHIFT_PREMIUM_CODES = ['muszak'];
 const SICK_ABSENCE = 'Betegség';
 const VACATION_ABSENCE = 'Fizetett szabadság';
 const UNKNOWN_LABEL = 'Nincs megadva';

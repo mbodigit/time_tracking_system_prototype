@@ -40,7 +40,7 @@ test('éjszakás műszak, a következő nap munkaszüneti nap', () => {
     assert.deepStrictEqual(result, {
         workedMinutes: 540,
         premiumOutsideMinutes: 60,
-        allowances: { ejszakai: 480, munkaszuneti: 60 }
+        allowances: { muszak: 480, munkaszuneti: 60 }
     });
 });
 
@@ -61,7 +61,7 @@ test('pénteki éjszakás műszak, a túlóra szombatra esik', () => {
     assert.deepStrictEqual(result, {
         workedMinutes: 600,
         premiumOutsideMinutes: 120,
-        allowances: { ejszakai: 480, szombat: 120 }
+        allowances: { muszak: 480, szombat: 120 }
     });
 });
 
@@ -103,7 +103,7 @@ test('délutános műszak egy órás elrendelt túlórával', () => {
     assert.deepStrictEqual(result, {
         workedMinutes: 540,
         premiumOutsideMinutes: 60,
-        allowances: { delutani: 240, tulora: 60 }
+        allowances: { muszak: 240, tulora: 60 }
     });
 });
 
@@ -124,7 +124,7 @@ test('éjszakás műszak egy órával korábbi, elrendelt kezdéssel', () => {
     assert.deepStrictEqual(result, {
         workedMinutes: 540,
         premiumOutsideMinutes: 60,
-        allowances: { tulora: 60, ejszakai: 480 }
+        allowances: { tulora: 60, muszak: 480 }
     });
 });
 
@@ -315,7 +315,7 @@ test('időponttal megadott szünet a pótlékból is kimarad', () => {
     assert.deepStrictEqual(result, {
         workedMinutes: 450,
         premiumOutsideMinutes: 0,
-        allowances: { ejszakai: 450 }
+        allowances: { muszak: 450 }
     });
 });
 
@@ -338,7 +338,7 @@ test('fizetett szünet időponttal is beleszámít a pótlékba', () => {
     assert.deepStrictEqual(result, {
         workedMinutes: 480,
         premiumOutsideMinutes: 0,
-        allowances: { ejszakai: 480 }
+        allowances: { muszak: 480 }
     });
 });
 
@@ -359,7 +359,7 @@ test('áthelyezett munkanapra eső szombat rendes munkanapként minősül', () =
     assert.deepStrictEqual(result, {
         workedMinutes: 480,
         premiumOutsideMinutes: 0,
-        allowances: { ejszakai: 480 }
+        allowances: { muszak: 480 }
     });
 });
 

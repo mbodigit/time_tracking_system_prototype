@@ -53,11 +53,9 @@ INSERT INTO Allowances (
   allowance_percent, allowance_start_hour, allowance_end_hour
 )
 SELECT v.nev, v.kod, v.berkod, v.szazalek, v.kezd, v.veg FROM (
-            SELECT 'Délutáni műszakpótlék' AS nev, 'delutani' AS kod,
-                   'POT15' AS berkod, 15.00 AS szazalek,
-                   '18:00:00' AS kezd, '22:00:00' AS veg
-  UNION ALL SELECT 'Éjszakai műszakpótlék',    'ejszakai',     'POT30',     30.00,
-                   '22:00:00', '06:00:00'
+            SELECT 'Műszakpótlék' AS nev, 'muszak' AS kod,
+                   'POT30' AS berkod, 30.00 AS szazalek,
+                   '18:00:00' AS kezd, '06:00:00' AS veg
   UNION ALL SELECT 'Hétköznapi túlóra',        'tulora',       'TUL50',     50.00,
                    '00:00:00', '00:00:00'
   UNION ALL SELECT 'Szombati túlóra',          'szombat',      'TUL100SZ', 100.00,
@@ -78,7 +76,7 @@ SELECT w.work_schedule_id, p.allowance_id
 FROM WorkSchedules w
 CROSS JOIN Allowances p
 WHERE (
-        p.allowance_name NOT IN ('Délutáni műszakpótlék', 'Éjszakai műszakpótlék')
+        p.allowance_name <> 'Műszakpótlék'
         OR w.work_schedule_is_shift = 1
       )
   AND NOT EXISTS (
