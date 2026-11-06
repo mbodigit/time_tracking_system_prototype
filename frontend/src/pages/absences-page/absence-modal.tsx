@@ -190,7 +190,7 @@ export const AbsenceModal = ({
 
             <Field
               label="Rögzítés módja"
-              hint="A HomeOffice-hoz hasonló jogcímeknél a munkaidő megadása kötelező."
+              hint="Akkor válaszd a munkaidő megadását, ha a jogcímnél a munkavégzés kezdetét és végét is rögzíteni kell."
             >
               <select
                 className="select select-sm select-bordered"
