@@ -45,8 +45,6 @@ FROM (
                    'Saját áttekintő megtekintése' AS nev,
                    'dashboard'              AS szulo_kulcs,
                    NULL                     AS utvonal, 11 AS sorrend
-  UNION ALL SELECT 'dashboard.company_info', 'Vállalati információk megtekintése',
-                   'dashboard',   NULL, 12
   UNION ALL SELECT 'monthly_log.record',     'Saját munkaidő rögzítése',
                    'monthly_log', NULL, 21
   UNION ALL SELECT 'monthly_log.edit_past',  'Visszamenőleges módosítás (max. 3 nap)',
@@ -71,8 +69,6 @@ FROM (
                    'admin', '/admin-users',        62
   UNION ALL SELECT 'admin.groups',           'Csoportok kezelése',
                    'admin', '/admin-groups',       63
-  UNION ALL SELECT 'admin.roles',            'Szerepkörök és jogosultságok kezelése',
-                   'admin', '/admin-roles',        64
   UNION ALL SELECT 'admin.org_structure',    'Terület, részleg és műszak kezelése',
                    'admin', '/admin-org-structure', 65
   UNION ALL SELECT 'admin.working_time',     'Munkarendek és munkaidők kezelése',
@@ -81,12 +77,8 @@ FROM (
                    'admin', '/admin-absences',     67
   UNION ALL SELECT 'admin.calendar',         'Központi naptár kezelése',
                    'admin', '/admin-calendar',     68
-  UNION ALL SELECT 'admin.company',          'Cégadatok kezelése',
-                   'admin', '/admin-company',      69
   UNION ALL SELECT 'admin.cost_centers',     'Költséghelyek kezelése',
                    'admin', '/admin-cost-centers', 70
-  UNION ALL SELECT 'admin.work_locations',   'Telephelyek kezelése',
-                   'admin', '/admin-work-locations', 71
   UNION ALL SELECT 'admin.core_hours',       'Törzsidő-sablonok kezelése',
                    'admin', '/admin-core-hours',   72
   UNION ALL SELECT 'admin.structure.view',   'Szervezet és csoportok megtekintése',
@@ -113,7 +105,7 @@ INSERT INTO RolePermissions (user_role_id, permission_id)
 SELECT r.user_role_id, p.permission_id
 FROM UserRoles r
 JOIN Permissions p ON p.permission_key IN (
-  'dashboard.view', 'dashboard.company_info',
+  'dashboard.view',
   'monthly_log.record', 'monthly_log.export',
   'requests.submit'
 )
@@ -128,7 +120,7 @@ INSERT INTO RolePermissions (user_role_id, permission_id)
 SELECT r.user_role_id, p.permission_id
 FROM UserRoles r
 JOIN Permissions p ON p.permission_key IN (
-  'dashboard.view', 'dashboard.company_info',
+  'dashboard.view',
   'monthly_log.record', 'monthly_log.edit_past', 'monthly_log.export',
   'group_log.record', 'group_log.edit_past',
   'requests.submit', 'requests.approve',
@@ -145,7 +137,7 @@ INSERT INTO RolePermissions (user_role_id, permission_id)
 SELECT r.user_role_id, p.permission_id
 FROM UserRoles r
 JOIN Permissions p ON p.permission_key IN (
-  'dashboard.view', 'dashboard.company_info',
+  'dashboard.view',
   'monthly_log.record', 'monthly_log.edit_past', 'monthly_log.export',
   'requests.submit', 'requests.approve',
   'reports.view', 'reports.export',

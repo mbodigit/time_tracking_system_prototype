@@ -22,8 +22,6 @@ FROM (
   UNION ALL SELECT 'Fizetett nap',                 'FIZNAP',  1, 'Egyéb',       0, 0, 100
   UNION ALL SELECT 'Ünnepnap',                     'UNNEP',   1, 'Egyéb',       0, 0, 110
   UNION ALL SELECT 'Pihenőnap',                    'PIHENO',  1, 'Egyéb',       0, 0, 120
-  UNION ALL SELECT 'Homeoffice',                   'HOFFICE', 1, 'Munkavégzés', 0, 1, 130
-  UNION ALL SELECT 'Csúszó nap',                   'CSUSZO',  1, 'Szabadság',   0, 0, 140
   UNION ALL SELECT 'Külföldi kiküldetés',          'KIKULD',  1, 'Munkavégzés', 0, 0, 150
   UNION ALL SELECT 'Tanulmányi szabadság',         'TANSZAB', 1, 'Szabadság',   0, 0, 160
 ) v
@@ -35,14 +33,7 @@ INSERT INTO AbsenceWorkSchedules (absence_id, work_schedule_id)
 SELECT a.absence_id, w.work_schedule_id
 FROM Absences a
 CROSS JOIN WorkSchedules w
-WHERE (
-        a.absence_name NOT IN ('Homeoffice', 'Csúszó nap',
-                               'Külföldi kiküldetés', 'Tanulmányi szabadság')
-        OR (w.work_schedule_name = 'Nem műszakos')
-        OR (w.work_schedule_name = 'Kötetlen'
-            AND a.absence_name IN ('Külföldi kiküldetés', 'Tanulmányi szabadság'))
-      )
-  AND NOT EXISTS (
+WHERE NOT EXISTS (
     SELECT 1 FROM AbsenceWorkSchedules x
     WHERE x.absence_id = a.absence_id
       AND x.work_schedule_id = w.work_schedule_id
