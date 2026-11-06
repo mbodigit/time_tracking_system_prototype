@@ -43,7 +43,7 @@ const CASES = [
         isOrdered: false,
         expected: { presenceMinutes: 480, breakMinutes: 30, workedMinutes: 450,
                 scheduledMinutes: 450, balanceMinutes: 0, settledMinutes: 450,
-                allowances: { ejszakai: 450 } }
+                allowances: { muszak: 450 } }
     },
     {
         name: 'Plusz óra a beosztás előtt, elrendelés nélkül',
@@ -52,7 +52,7 @@ const CASES = [
         isOrdered: false,
         expected: { presenceMinutes: 600, breakMinutes: 30, workedMinutes: 570,
                 scheduledMinutes: 450, balanceMinutes: 120, settledMinutes: 570,
-                allowances: { ejszakai: 450 } }
+                allowances: { muszak: 450 } }
     },
     {
         name: 'Ugyanaz elrendelve, a plusz órát felár váltja ki',
@@ -61,7 +61,7 @@ const CASES = [
         isOrdered: true,
         expected: { presenceMinutes: 600, breakMinutes: 30, workedMinutes: 570,
                 scheduledMinutes: 450, balanceMinutes: 0, settledMinutes: 570,
-                allowances: { ejszakai: 450, tulora: 120 } }
+                allowances: { muszak: 450, tulora: 120 } }
     },
     {
         name: 'Szombati éjszakás, szünet nélkül',
@@ -116,7 +116,7 @@ const CASES = [
         isOrdered: false,
         expected: { presenceMinutes: 180, breakMinutes: 0, workedMinutes: 180,
                 scheduledMinutes: 480, balanceMinutes: -300, settledMinutes: 180,
-                allowances: { ejszakai: 180 } }
+                allowances: { muszak: 180 } }
     },
     {
         name: 'Áthelyezett munkanapra eső szombati éjszakás',
@@ -125,7 +125,7 @@ const CASES = [
         isOrdered: false,
         expected: { presenceMinutes: 480, breakMinutes: 30, workedMinutes: 450,
                 scheduledMinutes: 450, balanceMinutes: 0, settledMinutes: 450,
-                allowances: { ejszakai: 450 } }
+                allowances: { muszak: 450 } }
     }
 ];
 

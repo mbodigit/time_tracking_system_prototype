@@ -18,8 +18,7 @@ const getAllowanceKey = (
         if (!isShiftWorker) return null;
 
         const hour = minute.getHours();
-        if (hour >= 22 || hour < 6) return 'ejszakai';
-        if (hour >= 18)             return 'delutani';
+        if (hour >= 18 || hour < 6) return 'muszak';
         return null;
     }
 
