@@ -25,7 +25,7 @@ const ENTITIES = {
         orderBy: 'working_hour_num',
         label: 'napi munkaidő',
         fields: [
-            { key: 'num', column: 'working_hour_num', type: 'integer', required: true, min: 1, max: 24, label: 'óraszám' },
+            { key: 'num', column: 'working_hour_num', type: 'integer', required: true, min: 1, max: 12, label: 'óraszám' },
             { key: 'name', column: 'working_hour_name', type: 'text', max: 20, label: 'megnevezés' }
         ],
         references: [

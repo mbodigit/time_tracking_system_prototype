@@ -30,6 +30,31 @@ const isBackdated = (date: string): boolean => {
   return new Date(`${date}T00:00:00`) < today;
 };
 
+const BREAK_EARLIEST_MINUTES = 3 * 60;
+const BREAK_LATEST_MINUTES = 6 * 60;
+
+const toMinutes = (time: string): number => {
+  const [hour, minute] = time.split(":").map(Number);
+  return hour * 60 + minute;
+};
+
+const toTime = (minutes: number): string => {
+  const normalized = ((minutes % 1440) + 1440) % 1440;
+  const hour = String(Math.floor(normalized / 60)).padStart(2, "0");
+  const minute = String(normalized % 60).padStart(2, "0");
+  return `${hour}:${minute}`;
+};
+
+const breakWindow = (workStart: string): { from: string; to: string } => ({
+  from: toTime(toMinutes(workStart) + BREAK_EARLIEST_MINUTES),
+  to: toTime(toMinutes(workStart) + BREAK_LATEST_MINUTES),
+});
+
+const breakOffsetMinutes = (workStart: string, breakStart: string): number => {
+  const offset = toMinutes(breakStart) - toMinutes(workStart);
+  return offset < 0 ? offset + 1440 : offset;
+};
+
 export const TimeEntryForm = ({ day, employeeId, onClose, onSaved }: Props) => {
   const initialStart = formatTime(day.workStart);
   const initialEnd = formatTime(day.workEnd);
@@ -56,9 +81,33 @@ export const TimeEntryForm = ({ day, employeeId, onClose, onSaved }: Props) => {
       return;
     }
 
+    if (breakStart && breakEnd) {
+      const offset = breakOffsetMinutes(workStart, breakStart);
+
+      if (offset < BREAK_EARLIEST_MINUTES || offset > BREAK_LATEST_MINUTES) {
+        const window = breakWindow(workStart);
+        setErrorMessage(
+          `A munkaközi szünetet legalább három, legfeljebb hat óra munkavégzést ` +
+            `követően kell kiadni, ebben az esetben ${window.from} és ${window.to} között.`,
+        );
+        return;
+      }
+    }
+
     const startValue = `${day.date} ${workStart}:00`;
     const endDate = workEnd <= workStart ? addOneDay(day.date) : day.date;
     const endValue = `${endDate} ${workEnd}:00`;
+
+    const breakStartDate = breakStart <= workStart ? addOneDay(day.date) : day.date;
+    const breakEndDate = breakEnd <= breakStart ? addOneDay(breakStartDate) : breakStartDate;
+
+    const breakFields =
+      breakStart && breakEnd
+        ? {
+            breakStart: `${breakStartDate} ${breakStart}:00`,
+            breakEnd: `${breakEndDate} ${breakEnd}:00`,
+          }
+        : {};
 
     setIsSaving(true);
     try {
@@ -66,12 +115,7 @@ export const TimeEntryForm = ({ day, employeeId, onClose, onSaved }: Props) => {
         await updateEntry(day.id, {
           workStart: startValue,
           workEnd: endValue,
-          ...(breakStart && breakEnd
-            ? {
-                breakStart: `${day.date} ${breakStart}:00`,
-                breakEnd: `${day.date} ${breakEnd}:00`,
-              }
-            : {}),
+          ...breakFields,
           ...(note ? { note } : {}),
         });
       } else {
@@ -80,12 +124,7 @@ export const TimeEntryForm = ({ day, employeeId, onClose, onSaved }: Props) => {
           workingDate: day.date,
           workStart: startValue,
           workEnd: endValue,
-          ...(breakStart && breakEnd
-            ? {
-                breakStart: `${day.date} ${breakStart}:00`,
-                breakEnd: `${day.date} ${breakEnd}:00`,
-              }
-            : {}),
+          ...breakFields,
           ...(note ? { note } : {}),
         });
       }
@@ -157,6 +196,14 @@ export const TimeEntryForm = ({ day, employeeId, onClose, onSaved }: Props) => {
             />
           </Field>
         </div>
+
+        {workStart && (
+          <p className="text-xs opacity-70">
+            A munkaközi szünetet a jogszabály szerint legalább három, legfeljebb hat
+            óra munkavégzést követően kell kiadni, ebben az esetben{" "}
+            {breakWindow(workStart).from} és {breakWindow(workStart).to} között.
+          </p>
+        )}
 
         <Field
           label={`Indoklás${

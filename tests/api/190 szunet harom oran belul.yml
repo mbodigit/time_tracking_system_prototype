@@ -1,0 +1,35 @@
+info:
+  name: szunet harom oran belul
+  type: http
+  seq: 190
+
+http:
+  method: POST
+  url: "{{baseUrl}}/time-entries"
+  body:
+    type: json
+    data: |-
+      {
+        "employeeId": {{idDolgozoM}},
+        "workingDate": "{{ma}}",
+        "workStart": "{{ma}} 06:00:00",
+        "workEnd": "{{ma}} 14:00:00",
+        "breakStart": "{{ma}} 07:00:00",
+        "breakEnd": "{{ma}} 07:30:00"
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "400"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
