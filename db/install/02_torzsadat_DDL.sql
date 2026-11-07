@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS WorkingHours (
   working_hour_name VARCHAR(20) NULL,
   PRIMARY KEY (working_hour_id),
   UNIQUE KEY uq_working_hour_num (working_hour_num),
-  CONSTRAINT chk_working_hour_num CHECK (working_hour_num BETWEEN 1 AND 24)
+  CONSTRAINT chk_working_hour_num CHECK (working_hour_num BETWEEN 1 AND 12)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE IF NOT EXISTS CoreHours (

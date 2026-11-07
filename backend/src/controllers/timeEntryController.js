@@ -6,6 +6,21 @@ const { DAY_TYPE_MAP, toSqlDateTime, daysSince, addDays, toDate } = require('../
 
 const MAX_DAILY_MINUTES = 12 * 60;
 const BACKDATE_LIMIT_DAYS = 3;
+const BREAK_EARLIEST_MINUTES = 3 * 60;
+const BREAK_LATEST_MINUTES = 6 * 60;
+
+const breakTimingError = (workStart, breakStart) => {
+    const offset = Math.round(
+        (toDate(breakStart).getTime() - toDate(workStart).getTime()) / (1000 * 60)
+    );
+
+    if (offset < BREAK_EARLIEST_MINUTES || offset > BREAK_LATEST_MINUTES) {
+        return 'A munkaközi szünetet legalább három, legfeljebb hat óra '
+            + 'munkavégzést követően kell kiadni.';
+    }
+
+    return null;
+};
 
 const UPDATABLE_FIELDS = {
     workStart: 'wtt_working_start',
@@ -53,6 +68,14 @@ const create = async (req, res) => {
 
     if (minutes > MAX_DAILY_MINUTES) {
         return res.status(400).json({message: 'Egy munkanapra legfeljebb 12 óra munkaidő rögzíthető.'});
+    }
+
+    if (breakStart) {
+        const breakError = breakTimingError(workStart, breakStart);
+
+        if (breakError) {
+            return res.status(400).json({ message: breakError });
+        }
     }
 
     const daysPassed = daysSince(workingDate);
@@ -317,6 +340,14 @@ const update = async (req, res) => {
                 return res.status(400).json({
                     message: 'Egy munkanapra legfeljebb 12 óra munkaidő rögzíthető.'
                 });
+            }
+        }
+
+        if (newStart && req.body.breakStart) {
+            const breakError = breakTimingError(newStart, req.body.breakStart);
+
+            if (breakError) {
+                return res.status(400).json({ message: breakError });
             }
         }
 
@@ -673,6 +704,15 @@ const createBulk = async (req, res) => {
 
             let breakStartValue = breakStart ? toSqlDateTime(breakStart) : null;
             let breakEndValue = breakEnd ? toSqlDateTime(breakEnd) : null;
+
+            if (breakStartValue) {
+                const breakError = breakTimingError(workStart, breakStartValue);
+
+                if (breakError) {
+                    results.push({ employeeId, status: 'error', message: breakError });
+                    continue;
+                }
+            }
 
             const breakAlreadyStored = existing.length > 0 && Boolean(existing[0].wtt_brk_start);
 

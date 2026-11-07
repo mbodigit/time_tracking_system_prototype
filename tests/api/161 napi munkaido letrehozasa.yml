@@ -10,8 +10,8 @@ http:
     type: json
     data: |-
       {
-        "num": 23,
-        "name": "Bruno 23 oras"
+        "num": 11,
+        "name": "Bruno 11 oras"
       }
   auth:
     type: bearer
