@@ -236,12 +236,20 @@ const validateEmployee = (body) => {
         missing.push('státusz');
     }
 
-    if (!Number(body.workScheduleId)) {
-        missing.push('munkarend');
-    }
+    const hasGroup = Boolean(Number(body.groupId));
 
-    if (!Number(body.workingHourId)) {
-        missing.push('napi munkaidő');
+    if (!hasGroup) {
+        if (!Number(body.workScheduleId)) {
+            missing.push('munkarend');
+        }
+
+        if (!Number(body.workingHourId)) {
+            missing.push('napi munkaidő');
+        }
+
+        if (!Number(body.coreHourId)) {
+            missing.push('törzsidő');
+        }
     }
 
     const leaveRaw = body.annualLeaveDays;

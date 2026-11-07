@@ -142,7 +142,8 @@ const create = async (req, res) => {
         const [allowed] = await pool.execute(
             `SELECT 1
              FROM Employees e
-             JOIN AbsenceWorkSchedules s ON s.work_schedule_id = e.employee_work_schedule_id
+             JOIN EmployeeSettings es ON es.employee_id = e.employee_id
+             JOIN AbsenceWorkSchedules s ON s.work_schedule_id = es.employee_setting_work_schedule_id
              WHERE e.employee_id = ? AND s.absence_id = ?
              LIMIT 1`,
             [targetEmployeeId, absenceId]

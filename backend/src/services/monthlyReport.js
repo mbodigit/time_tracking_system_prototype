@@ -20,10 +20,11 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
             g.user_group_name, a.area_name, loc.work_location_name,
             u.user_username, u.user_status
             FROM Employees e
+            JOIN EmployeeSettings   s ON s.employee_id = e.employee_id
             LEFT JOIN Users         u ON u.user_employee_id = e.employee_id
-            LEFT JOIN CoreHours     c ON c.core_hour_id      = e.employee_core_hour_id
-            LEFT JOIN WorkSchedules w ON w.work_schedule_id  = e.employee_work_schedule_id
-            LEFT JOIN WorkingHours  h ON h.working_hour_id   = e.employee_working_hour_id
+            LEFT JOIN CoreHours     c ON c.core_hour_id      = s.employee_setting_core_hour_id
+            LEFT JOIN WorkSchedules w ON w.work_schedule_id  = s.employee_setting_work_schedule_id
+            LEFT JOIN WorkingHours  h ON h.working_hour_id   = s.employee_setting_working_hour_id
             LEFT JOIN UserGroups    g ON g.user_group_id     = e.employee_user_group_id
             LEFT JOIN WorkLocations loc ON loc.work_location_id = e.employee_work_location_id            
             LEFT JOIN Areas         a ON a.area_id           = g.user_group_area_id

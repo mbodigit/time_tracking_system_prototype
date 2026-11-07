@@ -1,0 +1,46 @@
+info:
+  name: dolgozo felvetele csoporttal orokolt adatokkal
+  type: http
+  seq: 191
+
+http:
+  method: POST
+  url: "{{baseUrl}}/admin/employees"
+  body:
+    type: json
+    data: |-
+      {
+        "lastName": "Bruno",
+        "firstName": "Orokolt",
+        "costCenterId": {{empCostCenterId}},
+        "categoryId": {{empCategoryId}},
+        "statusId": {{empStatusId}},
+        "groupId": {{empGroupId}},
+        "annualLeaveDays": 25
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "201"
+
+  actions:
+    - type: set-variable
+      phase: after-response
+      selector:
+        expression: res.body.id
+        method: jsonq
+      variable:
+        name: inheritEmployeeId
+        scope: runtime
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

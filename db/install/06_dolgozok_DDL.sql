@@ -156,3 +156,15 @@ SET @sql := IF(
 PREPARE stmt FROM @sql;
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
+
+CREATE OR REPLACE VIEW EmployeeSettings AS
+SELECT
+  e.employee_id,
+  COALESCE(e.employee_work_schedule_id, g.user_group_work_schedule_id)
+    AS employee_setting_work_schedule_id,
+  COALESCE(e.employee_working_hour_id, g.user_group_working_hour_id)
+    AS employee_setting_working_hour_id,
+  COALESCE(e.employee_core_hour_id, g.user_group_core_hour_id)
+    AS employee_setting_core_hour_id
+FROM Employees e
+LEFT JOIN UserGroups g ON g.user_group_id = e.employee_user_group_id;

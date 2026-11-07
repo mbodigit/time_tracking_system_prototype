@@ -61,14 +61,16 @@ const SelectField = ({
   items,
   placeholder,
   onChange,
+  hint,
 }: {
   label: string;
   value: number | null;
   items: AdminOption[];
   placeholder: string;
   onChange: (value: number | null) => void;
+  hint?: string;
 }) => (
-  <Field label={label}>
+  <Field label={label} hint={hint}>
     <select
       className="select select-sm select-bordered"
       value={value ?? ""}
@@ -122,6 +124,8 @@ export const EmployeeModal = ({
 
   const currentGroupName =
     options.groups.find((item) => item.id === form.groupId)?.name ?? null;
+
+  const inheritsFromGroup = Boolean(form.groupId);
 
   const selectedManager = form.managerId
     ? options.managers.find((item) => item.id === form.managerId)
@@ -271,7 +275,8 @@ export const EmployeeModal = ({
                 label="Munkarend"
                 value={form.workScheduleId}
                 items={options.workSchedules}
-                placeholder="Válassz"
+                placeholder={inheritsFromGroup ? "A csoporté" : "Válassz"}
+                hint={inheritsFromGroup ? undefined : "Csoport nélkül kötelező."}
                 onChange={(workScheduleId) => patch({ workScheduleId })}
               />
 
@@ -279,7 +284,8 @@ export const EmployeeModal = ({
                 label="Napi munkaidő"
                 value={form.workingHourId}
                 items={options.workingHours}
-                placeholder="Válassz"
+                placeholder={inheritsFromGroup ? "A csoporté" : "Válassz"}
+                hint={inheritsFromGroup ? undefined : "Csoport nélkül kötelező."}
                 onChange={(workingHourId) =>
                   patch({ workingHourId, coreHourId: null })
                 }
@@ -373,7 +379,8 @@ export const EmployeeModal = ({
                 label="Törzsidő"
                 value={form.coreHourId}
                 items={coreHours}
-                placeholder="Nincs"
+                placeholder={inheritsFromGroup ? "A csoporté" : "Válassz"}
+                hint={inheritsFromGroup ? undefined : "Csoport nélkül kötelező."}
                 onChange={(coreHourId) => patch({ coreHourId })}
               />
 

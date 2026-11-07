@@ -337,7 +337,8 @@ const statistics = async (req, res) => {
                     w.work_schedule_name, c.employee_category_name,
                     g.user_group_name, a.area_name, d.department_name, s.shift_name
              FROM Employees e
-             LEFT JOIN WorkSchedules      w ON w.work_schedule_id      = e.employee_work_schedule_id
+             JOIN EmployeeSettings        es ON es.employee_id         = e.employee_id
+             LEFT JOIN WorkSchedules      w ON w.work_schedule_id      = es.employee_setting_work_schedule_id
              LEFT JOIN EmployeeCategories c ON c.employee_category_id  = e.employee_category_id
              LEFT JOIN UserGroups         g ON g.user_group_id         = e.employee_user_group_id
              LEFT JOIN Areas              a ON a.area_id               = g.user_group_area_id

@@ -107,7 +107,8 @@ const create = async (req, res) => {
             `SELECT
                 w.work_schedule_name
              FROM Employees e
-             JOIN WorkSchedules w ON w.work_schedule_id = e.employee_work_schedule_id
+             JOIN EmployeeSettings s ON s.employee_id = e.employee_id
+             JOIN WorkSchedules w ON w.work_schedule_id = s.employee_setting_work_schedule_id
              WHERE e.employee_id = ?`,
             [targetEmployeeId]
         );
@@ -506,8 +507,9 @@ const listDaily = async (req, res) => {
                     c.core_hour_start, c.core_hour_end,
                     w.work_schedule_name, w.work_schedule_is_shift
              FROM Employees e
-             LEFT JOIN CoreHours     c ON c.core_hour_id     = e.employee_core_hour_id
-             LEFT JOIN WorkSchedules w ON w.work_schedule_id = e.employee_work_schedule_id
+             JOIN EmployeeSettings   s ON s.employee_id = e.employee_id
+             LEFT JOIN CoreHours     c ON c.core_hour_id     = s.employee_setting_core_hour_id
+             LEFT JOIN WorkSchedules w ON w.work_schedule_id = s.employee_setting_work_schedule_id
              WHERE e.employee_id IN (${placeholders})
              ORDER BY e.employee_last_name, e.employee_first_name`,
             ids
@@ -663,7 +665,8 @@ const createBulk = async (req, res) => {
                 `SELECT w.work_schedule_name,
                         e.employee_break_start, e.employee_break_end
                  FROM Employees e
-                 JOIN WorkSchedules w ON w.work_schedule_id = e.employee_work_schedule_id
+                 JOIN EmployeeSettings s ON s.employee_id = e.employee_id
+                 JOIN WorkSchedules w ON w.work_schedule_id = s.employee_setting_work_schedule_id
                  WHERE e.employee_id = ?`,
                 [employeeId]
             );

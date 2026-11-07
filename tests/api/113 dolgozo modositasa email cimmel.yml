@@ -18,6 +18,7 @@ http:
         "statusId": {{empStatusId}},
         "workScheduleId": {{empWorkScheduleId}},
         "workingHourId": {{empWorkingHourId}},
+        "coreHourId": {{empCoreHourId}},
         "annualLeaveDays": 25,
         "managerId": {{empManagerId}}
       }
