@@ -86,6 +86,22 @@ runtime:
     - type: set-variable
       phase: after-response
       selector:
+        expression: res.body.coreHours[0].id
+        method: jsonq
+      variable:
+        name: empCoreHourId
+        scope: runtime
+    - type: set-variable
+      phase: after-response
+      selector:
+        expression: res.body.groups[0].id
+        method: jsonq
+      variable:
+        name: empGroupId
+        scope: runtime
+    - type: set-variable
+      phase: after-response
+      selector:
         expression: res.body.managers[0].id
         method: jsonq
       variable:

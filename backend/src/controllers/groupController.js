@@ -406,7 +406,8 @@ const listAssignable = async (req, res) => {
              JOIN EmployeeStatus st           ON st.employee_status_id     = e.employee_status_id
              LEFT JOIN UserGroups g           ON g.user_group_id           = e.employee_user_group_id
              LEFT JOIN EmployeeCategories cat ON cat.employee_category_id  = e.employee_category_id
-             LEFT JOIN WorkSchedules w        ON w.work_schedule_id        = e.employee_work_schedule_id
+             JOIN EmployeeSettings es         ON es.employee_id            = e.employee_id
+             LEFT JOIN WorkSchedules w        ON w.work_schedule_id        = es.employee_setting_work_schedule_id
              WHERE st.employee_status_is_active = 1
              ORDER BY e.employee_last_name, e.employee_first_name`
         );
