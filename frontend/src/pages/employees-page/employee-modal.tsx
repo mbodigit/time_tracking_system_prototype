@@ -379,8 +379,16 @@ export const EmployeeModal = ({
                 label="Törzsidő"
                 value={form.coreHourId}
                 items={coreHours}
-                placeholder={inheritsFromGroup ? "A csoporté" : "Válassz"}
-                hint={inheritsFromGroup ? undefined : "Csoport nélkül kötelező."}
+                placeholder={
+                  inheritsFromGroup
+                    ? "A csoporté (nincs egyéni törzsidő)"
+                    : "Válassz"
+                }
+                hint={
+                  inheritsFromGroup
+                    ? "Az első elem törli az egyéni törzsidőt, ilyenkor a csoporté érvényes."
+                    : "Csoport nélkül kötelező."
+                }
                 onChange={(coreHourId) => patch({ coreHourId })}
               />
 

@@ -454,6 +454,8 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
             isOrdered: Boolean(row.wtt_is_ordered),
             presenceMinutes,
             breakMinutes: breakDeduction,
+            scheduleStart: hasSchedule ? scheduleStart : null,
+            scheduleEnd: hasSchedule ? scheduleEnd : null,
             scheduledMinutes,
             balanceMinutes,
             scheduleMissing,
