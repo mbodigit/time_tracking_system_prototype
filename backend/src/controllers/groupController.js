@@ -1,4 +1,19 @@
 const pool = require('../config/db');
+
+const toIsoDate = (value) => {
+    if (!value) {
+        return null;
+    }
+
+    if (typeof value === 'string') {
+        return value.slice(0, 10);
+    }
+
+    const year = value.getFullYear();
+    const month = String(value.getMonth() + 1).padStart(2, '0');
+    const day = String(value.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
 const { coreHourLength } = require('../services/dateHelpers');
 
 const list = async (req, res) => {
@@ -13,6 +28,7 @@ const list = async (req, res) => {
                     g.user_group_work_schedule_id, w.work_schedule_name,
                     g.user_group_working_hour_id, h.working_hour_num,
                     g.user_group_core_hour_id, ch.core_hour_name,
+                    g.user_group_rotation_position, g.user_group_rotation_start,
                     g.user_group_manager_id, u.user_username,
                     m.employee_last_name, m.employee_first_name,
                     (SELECT COUNT(*)
@@ -53,6 +69,8 @@ const list = async (req, res) => {
             workingHourNum: row.working_hour_num,
             coreHourId: row.user_group_core_hour_id,
             coreHourName: row.core_hour_name,
+            rotationPosition: row.user_group_rotation_position,
+            rotationStart: toIsoDate(row.user_group_rotation_start),
             managerId: row.user_group_manager_id,
             managerName: row.employee_last_name
                 ? `${row.employee_last_name} ${row.employee_first_name}`
@@ -248,6 +266,16 @@ const prepare = async (body, groupId) => {
         return { error: 'A költséghely megadása kötelező.' };
     }
 
+    const hasPosition = rotationPosition(body) !== null;
+    const hasStart = rotationStart(body) !== null;
+
+    if (hasPosition !== hasStart) {
+        return {
+            error: 'A műszakrotációhoz a pozíciót és a ciklus kezdő hetét '
+                + 'együtt kell megadni.'
+        };
+    }
+
     if (Number(body.shiftId) && !Number(body.departmentId)) {
         return { error: 'Műszak csak részleg megadása mellett vehető fel.' };
     }
@@ -302,6 +330,21 @@ const prepare = async (body, groupId) => {
     return { managerId };
 };
 
+const rotationPosition = (body) => {
+    const value = body.rotationPosition;
+
+    if (value === null || value === undefined || String(value).trim() === '') {
+        return null;
+    }
+
+    return Number(value);
+};
+
+const rotationStart = (body) => {
+    const value = String(body.rotationStart || '').trim();
+    return value === '' ? null : value;
+};
+
 const toValues = (body, managerId) => ([
     String(body.name).trim(),
     body.status || 'Aktív',
@@ -313,7 +356,9 @@ const toValues = (body, managerId) => ([
     Number(body.workScheduleId) || null,
     Number(body.workingHourId) || null,
     Number(body.coreHourId) || null,
-    managerId
+    managerId,
+    rotationPosition(body),
+    rotationStart(body)
 ]);
 
 const create = async (req, res) => {
@@ -331,8 +376,9 @@ const create = async (req, res) => {
                 user_group_area_id, user_group_department_id, user_group_shift_id,
                 user_group_cost_center_id, user_group_work_schedule_id,
                 user_group_working_hour_id, user_group_core_hour_id,
-                user_group_manager_id
-             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                user_group_manager_id,
+                user_group_rotation_position, user_group_rotation_start
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             toValues(body, prepared.managerId)
         );
 
@@ -373,7 +419,8 @@ const update = async (req, res) => {
                 user_group_area_id = ?, user_group_department_id = ?, user_group_shift_id = ?,
                 user_group_cost_center_id = ?, user_group_work_schedule_id = ?,
                 user_group_working_hour_id = ?, user_group_core_hour_id = ?,
-                user_group_manager_id = ?
+                user_group_manager_id = ?,
+                user_group_rotation_position = ?, user_group_rotation_start = ?
              WHERE user_group_id = ?`,
             [...toValues(body, prepared.managerId), groupId]
         );

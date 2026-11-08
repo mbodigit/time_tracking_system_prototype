@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { loadRotationSlots, resolveRotation } = require('./shiftRotation');
 const { calculateAllowances } = require('./allowanceCalculator');
 const {
     DAY_TYPE_MAP, addDays, toDate, minutesBetween, overlapMinutes
@@ -14,6 +15,8 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
             e.employee_user_group_id,
             e.employee_break_start, e.employee_break_end,
             e.employee_annual_leave_days,
+            e.employee_core_hour_id AS own_core_hour_id,
+            g.user_group_rotation_position, g.user_group_rotation_start,
             c.core_hour_start, c.core_hour_end,
             w.work_schedule_is_shift, w.work_schedule_name,
             h.working_hour_num,
@@ -39,6 +42,14 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
     const employee = employees[0];
     const templateStart = employee.employee_core_start || employee.core_hour_start;
     const templateEnd = employee.employee_core_end || employee.core_hour_end;
+
+    const hasOwnCoreHours = Boolean(employee.employee_core_start)
+        || Boolean(employee.own_core_hour_id);
+    const usesRotation = Boolean(employee.work_schedule_is_shift)
+        && !hasOwnCoreHours
+        && employee.user_group_rotation_position !== null
+        && employee.user_group_rotation_position !== undefined;
+    const rotationSlots = usesRotation ? await loadRotationSlots() : [];
     const isShiftWorker = Boolean(employee.work_schedule_is_shift);
     const isFlexible = employee.work_schedule_name === 'Kötetlen';
 
@@ -361,11 +372,23 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
         let scheduleStart = row.wtt_schedule_start;
         let scheduleEnd = row.wtt_schedule_end;
 
-        if (!scheduleStart && isWorkingDay && templateStart && templateEnd) {
-            scheduleStart = `${date} ${templateStart}`;
-            scheduleEnd = templateEnd > templateStart
-                ? `${date} ${templateEnd}`
-                : `${addDays(date, 1)} ${templateEnd}`;
+        const rotated = usesRotation
+            ? resolveRotation(
+                date,
+                employee.user_group_rotation_position,
+                employee.user_group_rotation_start,
+                rotationSlots
+              )
+            : null;
+
+        const dayStart = rotated ? rotated.start : templateStart;
+        const dayEnd = rotated ? rotated.end : templateEnd;
+
+        if (!scheduleStart && isWorkingDay && dayStart && dayEnd) {
+            scheduleStart = `${date} ${dayStart}`;
+            scheduleEnd = dayEnd > dayStart
+                ? `${date} ${dayEnd}`
+                : `${addDays(date, 1)} ${dayEnd}`;
         }
 
         const hasSchedule = Boolean(scheduleStart) && Boolean(scheduleEnd);

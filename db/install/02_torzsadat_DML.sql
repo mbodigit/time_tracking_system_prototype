@@ -71,3 +71,15 @@ SELECT 1, 'ALAP', 1
 WHERE NOT EXISTS (
   SELECT 1 FROM CompanySettings WHERE company_settings_id = 1
 );
+
+INSERT INTO ShiftRotations (shift_rotation_position, shift_rotation_core_hour_id)
+SELECT v.pozicio, c.core_hour_id
+FROM (
+            SELECT 0 AS pozicio, '06:00-14:00' AS torzsido
+  UNION ALL SELECT 1,            '14:00-22:00'
+  UNION ALL SELECT 2,            '22:00-06:00'
+) v
+JOIN CoreHours c ON c.core_hour_name = v.torzsido
+WHERE NOT EXISTS (
+  SELECT 1 FROM ShiftRotations r WHERE r.shift_rotation_position = v.pozicio
+);

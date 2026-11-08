@@ -19,6 +19,8 @@ export interface Group {
   workingHourNum: number | null;
   coreHourId: number | null;
   coreHourName: string | null;
+  rotationPosition: number | null;
+  rotationStart: string | null;
   managerId: number | null;
   managerName: string | null;
   activeEmployees: number;
@@ -56,6 +58,8 @@ export interface GroupPayload {
   workScheduleId: number | null;
   workingHourId: number | null;
   coreHourId: number | null;
+  rotationPosition: number | null;
+  rotationStart: string | null;
   managerId: number | null;
 }
 

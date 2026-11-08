@@ -1,0 +1,46 @@
+info:
+  name: csoport rotacioval
+  type: http
+  seq: 196
+
+http:
+  method: POST
+  url: "{{baseUrl}}/groups"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Bruno teszt rotacio",
+        "description": "Automata teszt, torolheto",
+        "areaId": {{areaId}},
+        "costCenterId": {{costCenterId}},
+        "managerId": {{managerUserId}},
+        "rotationPosition": 1,
+        "rotationStart": "2026-01-05"
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "201"
+
+  actions:
+    - type: set-variable
+      phase: after-response
+      selector:
+        expression: res.body.id
+        method: jsonq
+      variable:
+        name: rotationGroupId
+        scope: runtime
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
