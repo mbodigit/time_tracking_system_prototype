@@ -68,7 +68,9 @@ const App = () => {
               path="/admin-calendar"
               element={
                 <RequireRole roles={["HR-Bér"]}>
-                  <CalendarPage />
+                  <RequireEmployee>
+                    <CalendarPage />
+                  </RequireEmployee>
                 </RequireRole>
               }
             />

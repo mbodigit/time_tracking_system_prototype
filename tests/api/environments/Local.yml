@@ -7,13 +7,13 @@ variables:
     value: Demo1234
     description: a demo fiokok kozos jelszava
   - name: ma
-    value: 2026-11-06
+    value: 2026-11-08
     description: FUTTATAS ELOTT a mai datumra allitando
   - name: tegnap
-    value: 2026-11-05
+    value: 2026-11-07
     description: FUTTATAS ELOTT az elozo napra allitando
   - name: csoportNap
-    value: 2026-11-04
+    value: 2026-11-06
     description: "FUTTATAS ELOTT: ket nappal a ma elott, a csoportos tesztekhez"
   - name: ev
     value: "2026"

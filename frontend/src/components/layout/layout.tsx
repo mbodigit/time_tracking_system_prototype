@@ -194,6 +194,7 @@ export const Layout: React.FC = () => {
           label: "Központi naptár",
           icon: IconCalendar,
           roles: ["HR-Bér"],
+          needsEmployee: true,
         },
       ],
     },
