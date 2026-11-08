@@ -33,6 +33,8 @@ const EMPTY_FORM: GroupPayload = {
   workScheduleId: null,
   workingHourId: null,
   coreHourId: null,
+  rotationPosition: null,
+  rotationStart: null,
   managerId: null,
 };
 
@@ -50,6 +52,8 @@ const toForm = (group: Group): GroupPayload => ({
   workScheduleId: group.workScheduleId,
   workingHourId: group.workingHourId,
   coreHourId: group.coreHourId,
+  rotationPosition: group.rotationPosition,
+  rotationStart: group.rotationStart,
   managerId: group.managerId,
 });
 
@@ -473,6 +477,44 @@ export const GroupModal = ({
                       </option>
                     ))}
                   </select>
+                </Field>
+
+                <Field
+                  label="Műszakrotáció pozíciója"
+                  hint="Üresen hagyva a csoport beosztása a törzsidő marad."
+                >
+                  <select
+                    className="select select-sm select-bordered"
+                    value={form.rotationPosition ?? ""}
+                    onChange={(event) =>
+                      patch({
+                        rotationPosition: toNumber(event.target.value),
+                        rotationStart: event.target.value
+                          ? form.rotationStart
+                          : null,
+                      })
+                    }
+                  >
+                    <option value="">Nincs rotáció</option>
+                    <option value="0">1. műszak</option>
+                    <option value="1">2. műszak</option>
+                    <option value="2">3. műszak</option>
+                  </select>
+                </Field>
+
+                <Field
+                  label="Rotáció kezdő hete"
+                  hint="A ciklus első hetének hétfője."
+                >
+                  <input
+                    type="date"
+                    className="input input-sm input-bordered"
+                    value={form.rotationStart ?? ""}
+                    disabled={form.rotationPosition === null}
+                    onChange={(event) =>
+                      patch({ rotationStart: event.target.value || null })
+                    }
+                  />
                 </Field>
 
                 <Field label="Megjegyzés" span={2}>

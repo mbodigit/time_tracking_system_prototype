@@ -73,3 +73,16 @@ CREATE TABLE IF NOT EXISTS CompanySettings (
   PRIMARY KEY (company_settings_id),
   CONSTRAINT chk_company_single_row CHECK (company_settings_id = 1)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE IF NOT EXISTS ShiftRotations (
+  shift_rotation_id           INT         NOT NULL AUTO_INCREMENT,
+  shift_rotation_position     TINYINT     NOT NULL,
+  shift_rotation_core_hour_id INT         NOT NULL,
+  PRIMARY KEY (shift_rotation_id),
+  UNIQUE KEY uq_shift_rotation_position (shift_rotation_position),
+  UNIQUE KEY uq_shift_rotation_core_hour (shift_rotation_core_hour_id),
+  CONSTRAINT chk_shift_rotation_position CHECK (shift_rotation_position >= 0),
+  CONSTRAINT fk_shift_rotation_core_hour
+    FOREIGN KEY (shift_rotation_core_hour_id) REFERENCES CoreHours(core_hour_id)
+    ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

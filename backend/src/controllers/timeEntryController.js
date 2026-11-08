@@ -3,6 +3,7 @@ const { canAccessEmployee, getAccessibleEmployeeIds } = require('../services/emp
 const { calculateAllowances } = require('../services/allowanceCalculator');
 const { buildMonthlyReport } = require('../services/monthlyReport');
 const { DAY_TYPE_MAP, toSqlDateTime, daysSince, addDays, toDate } = require('../services/dateHelpers');
+const { loadRotationSlots, resolveRotation } = require('../services/shiftRotation');
 
 const MAX_DAILY_MINUTES = 12 * 60;
 const BACKDATE_LIMIT_DAYS = 3;
@@ -504,10 +505,13 @@ const listDaily = async (req, res) => {
             `SELECT e.employee_id, e.employee_code,
                     e.employee_last_name, e.employee_first_name,
                     e.employee_core_start, e.employee_core_end,
+                    e.employee_core_hour_id AS own_core_hour_id,
+                    g.user_group_rotation_position, g.user_group_rotation_start,
                     c.core_hour_start, c.core_hour_end,
                     w.work_schedule_name, w.work_schedule_is_shift
              FROM Employees e
              JOIN EmployeeSettings   s ON s.employee_id = e.employee_id
+             LEFT JOIN UserGroups    g ON g.user_group_id     = e.employee_user_group_id
              LEFT JOIN CoreHours     c ON c.core_hour_id     = s.employee_setting_core_hour_id
              LEFT JOIN WorkSchedules w ON w.work_schedule_id = s.employee_setting_work_schedule_id
              WHERE e.employee_id IN (${placeholders})
@@ -547,11 +551,38 @@ const listDaily = async (req, res) => {
             }
         }
 
+        const needsRotation = employeeRows.some((row) =>
+            row.work_schedule_is_shift
+            && !row.employee_core_start && !row.own_core_hour_id
+            && row.user_group_rotation_position !== null
+            && row.user_group_rotation_position !== undefined
+        );
+        const rotationSlots = needsRotation ? await loadRotationSlots() : [];
+
         const employees = employeeRows.map((row) => {
             const entry = entryByEmployee[row.employee_id];
             const absence = absenceByEmployee[row.employee_id];
-            const templateStart = row.employee_core_start || row.core_hour_start;
-            const templateEnd = row.employee_core_end || row.core_hour_end;
+
+            const usesRotation = Boolean(row.work_schedule_is_shift)
+                && !row.employee_core_start && !row.own_core_hour_id
+                && row.user_group_rotation_position !== null
+                && row.user_group_rotation_position !== undefined;
+
+            const rotated = usesRotation
+                ? resolveRotation(
+                    date,
+                    row.user_group_rotation_position,
+                    row.user_group_rotation_start,
+                    rotationSlots
+                  )
+                : null;
+
+            const templateStart = rotated
+                ? rotated.start
+                : (row.employee_core_start || row.core_hour_start);
+            const templateEnd = rotated
+                ? rotated.end
+                : (row.employee_core_end || row.core_hour_end);
 
             return {
                 id: row.employee_id,

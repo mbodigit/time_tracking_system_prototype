@@ -57,9 +57,16 @@ CREATE TABLE IF NOT EXISTS UserGroups (
   user_group_working_hour_id  INT          NULL,
   user_group_core_hour_id     INT          NULL,
   user_group_manager_id       INT          NULL,
+  user_group_rotation_position TINYINT     NULL,
+  user_group_rotation_start    DATE        NULL,
   PRIMARY KEY (user_group_id),
   UNIQUE KEY uq_user_group_name (user_group_name),
   KEY idx_user_group_manager (user_group_manager_id),
+
+  CONSTRAINT chk_group_rotation_pair CHECK (
+    (user_group_rotation_position IS NULL AND user_group_rotation_start IS NULL)
+    OR (user_group_rotation_position IS NOT NULL AND user_group_rotation_start IS NOT NULL)
+  ),
 
   CONSTRAINT fk_group_area
     FOREIGN KEY (user_group_area_id) REFERENCES Areas(area_id)
