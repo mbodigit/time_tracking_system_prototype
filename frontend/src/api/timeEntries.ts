@@ -20,8 +20,11 @@ export interface TimeEntryDay {
   isOrdered: boolean;
   presenceMinutes: number;
   breakMinutes: number;
+  breakStart: string | null;
+  breakEnd: string | null;
   scheduleStart: string | null;
   scheduleEnd: string | null;
+  scheduleFromEntry: boolean;
   scheduledMinutes: number | null;
   balanceMinutes: number | null;
   scheduleMissing?: boolean;

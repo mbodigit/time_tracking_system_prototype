@@ -79,6 +79,12 @@ const create = async (req, res) => {
         }
     }
 
+    if (req.user.role === 'Dolgozó' && (scheduleStart || scheduleEnd)) {
+        return res.status(403).json({
+            message: 'A beosztás szerinti munkaidőt a vezető határozza meg.'
+        });
+    }
+
     const daysPassed = daysSince(workingDate);
 
     if (daysPassed < 0) {
@@ -301,6 +307,14 @@ const update = async (req, res) => {
         if (daysPassed > 0 && !note) {
             return res.status(400).json({
                 message: 'Visszamenőleges módosításhoz indoklás megadása kötelező.'
+            });
+        }
+
+        if (req.user.role === 'Dolgozó'
+            && (req.body.scheduleStart !== undefined
+                || req.body.scheduleEnd !== undefined)) {
+            return res.status(403).json({
+                message: 'A beosztás szerinti munkaidőt a vezető határozza meg.'
             });
         }
 
