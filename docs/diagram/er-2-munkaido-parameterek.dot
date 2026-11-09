@@ -33,6 +33,8 @@ graph ER {
   "Absences" -- "Absences__absence_id" [len=0.8, weight=4];
   "Absences__absence_name" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="absence_name"];
   "Absences" -- "Absences__absence_name" [len=0.8, weight=4];
+  "Absences__absence_payroll_code" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="absence_payroll_code"];
+  "Absences" -- "Absences__absence_payroll_code" [len=0.8, weight=4];
   "Absences__absence_is_paid" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="absence_is_paid"];
   "Absences" -- "Absences__absence_is_paid" [len=0.8, weight=4];
   "Absences__absence_category" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="absence_category"];
@@ -45,25 +47,31 @@ graph ER {
   "Absences" -- "Absences__absence_status" [len=0.8, weight=4];
   "Absences__absence_sort" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="absence_sort"];
   "Absences" -- "Absences__absence_sort" [len=0.8, weight=4];
-  "Absences__absence_payroll_code" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="absence_payroll_code"];
-  "Absences" -- "Absences__absence_payroll_code" [len=0.8, weight=4];
   "Allowances" [shape=box, style="filled,bold", fillcolor="#DCE9F7", color="#2E5C8A", penwidth=1.6];
   "Allowances__allowance_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label=<<U>allowance_id</U>>];
   "Allowances" -- "Allowances__allowance_id" [len=0.8, weight=4];
   "Allowances__allowance_name" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="allowance_name"];
   "Allowances" -- "Allowances__allowance_name" [len=0.8, weight=4];
+  "Allowances__allowance_code" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="allowance_code"];
+  "Allowances" -- "Allowances__allowance_code" [len=0.8, weight=4];
+  "Allowances__allowance_payroll_code" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="allowance_payroll_code"];
+  "Allowances" -- "Allowances__allowance_payroll_code" [len=0.8, weight=4];
   "Allowances__allowance_percent" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="allowance_percent"];
   "Allowances" -- "Allowances__allowance_percent" [len=0.8, weight=4];
   "Allowances__allowance_start_hour" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="allowance_start_hour"];
   "Allowances" -- "Allowances__allowance_start_hour" [len=0.8, weight=4];
   "Allowances__allowance_end_hour" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="allowance_end_hour"];
   "Allowances" -- "Allowances__allowance_end_hour" [len=0.8, weight=4];
-  "Allowances__allowance_code" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="allowance_code"];
-  "Allowances" -- "Allowances__allowance_code" [len=0.8, weight=4];
-  "Allowances__allowance_payroll_code" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="allowance_payroll_code"];
-  "Allowances" -- "Allowances__allowance_payroll_code" [len=0.8, weight=4];
+  "ShiftRotations" [shape=box, style="filled,bold", fillcolor="#DCE9F7", color="#2E5C8A", penwidth=1.6];
+  "ShiftRotations__shift_rotation_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label=<<U>shift_rotation_id</U>>];
+  "ShiftRotations" -- "ShiftRotations__shift_rotation_id" [len=0.8, weight=4];
+  "ShiftRotations__shift_rotation_position" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="shift_rotation_position"];
+  "ShiftRotations" -- "ShiftRotations__shift_rotation_position" [len=0.8, weight=4];
 
   // kapcsolatok
+  "R_fk_shift_rotation_core_hour" [shape=diamond, style=filled, fillcolor="white", color="#666666", fontsize=8, label="corehours", width=1.0, height=0.55];
+  "ShiftRotations" -- "R_fk_shift_rotation_core_hour" [label="N", len=2.4];
+  "R_fk_shift_rotation_core_hour" -- "CoreHours" [label="1", len=2.4];
 
   // több-a-többhöz kapcsolatok (a relációs sémában kapcsolótábla)
   "R_AbsenceWorkSchedules" [shape=diamond, style=filled, fillcolor="white", color="#666666", fontsize=9, label="AvailableIn", width=1.3, height=0.7];

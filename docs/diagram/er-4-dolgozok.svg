@@ -313,413 +313,435 @@
 <path fill="none" stroke="#555555" d="M405.37,-1311.83C410.96,-1244.58 432.85,-1003.59 474.42,-809 488.55,-742.85 471.18,-712.37 517.42,-663 523.91,-656.07 532.2,-650.79 540.95,-646.77"/>
 </g>
 <!-- R_fk_employee_work_schedule -->
-<g id="node53" class="node">
+<g id="node55" class="node">
 <title>R_fk_employee_work_schedule</title>
 <polygon fill="white" stroke="#666666" points="597.4,-594 560.47,-574 597.4,-554 634.33,-574 597.4,-594"/>
 <text text-anchor="middle" x="597.4" y="-572.1" font-family="Helvetica,sans-Serif" font-size="8.00">Follows</text>
 </g>
 <!-- Employees&#45;&#45;R_fk_employee_work_schedule -->
-<g id="edge42" class="edge">
+<g id="edge44" class="edge">
 <title>Employees&#45;&#45;R_fk_employee_work_schedule</title>
 <path fill="none" stroke="#555555" d="M404.89,-1311.51C408.99,-1238.45 426.89,-963.14 474.42,-742 487.83,-679.61 473.9,-651.68 517.42,-605 530.88,-590.56 551.89,-582.75 568.86,-578.58"/>
 <text text-anchor="middle" x="477.92" y="-744.8" font-family="Helvetica,sans-Serif" font-size="9.00">N</text>
 </g>
 <!-- R_fk_employee_working_hour -->
-<g id="node54" class="node">
+<g id="node56" class="node">
 <title>R_fk_employee_working_hour</title>
 <polygon fill="white" stroke="#666666" points="597.4,-532 556.1,-512 597.4,-492 638.7,-512 597.4,-532"/>
 <text text-anchor="middle" x="597.4" y="-510.1" font-family="Helvetica,sans-Serif" font-size="8.00">Requires</text>
 </g>
 <!-- Employees&#45;&#45;R_fk_employee_working_hour -->
-<g id="edge44" class="edge">
+<g id="edge46" class="edge">
 <title>Employees&#45;&#45;R_fk_employee_working_hour</title>
 <path fill="none" stroke="#555555" d="M404.55,-1311.9C407.5,-1234.7 422.16,-925.59 474.42,-678 487.43,-616.39 474.38,-588.96 517.42,-543 530.31,-529.24 550.05,-521.49 566.58,-517.18"/>
 <text text-anchor="middle" x="477.92" y="-680.8" font-family="Helvetica,sans-Serif" font-size="9.00">N</text>
 </g>
 <!-- R_fk_employee_core_hour -->
-<g id="node55" class="node">
+<g id="node57" class="node">
 <title>R_fk_employee_core_hour</title>
 <polygon fill="white" stroke="#666666" points="597.4,-470 556.1,-450 597.4,-430 638.7,-450 597.4,-470"/>
 <text text-anchor="middle" x="597.4" y="-448.1" font-family="Helvetica,sans-Serif" font-size="8.00">Requires</text>
 </g>
 <!-- Employees&#45;&#45;R_fk_employee_core_hour -->
-<g id="edge46" class="edge">
+<g id="edge48" class="edge">
 <title>Employees&#45;&#45;R_fk_employee_core_hour</title>
 <path fill="none" stroke="#555555" d="M404.3,-1311.83C406.29,-1230.05 417.77,-888.28 474.42,-615 487.12,-553.76 474.62,-526.61 517.42,-481 530.32,-467.25 550.07,-459.5 566.59,-455.19"/>
 <text text-anchor="middle" x="477.92" y="-617.8" font-family="Helvetica,sans-Serif" font-size="9.00">N</text>
 </g>
 <!-- R_fk_employee_cost_center -->
-<g id="node56" class="node">
+<g id="node58" class="node">
 <title>R_fk_employee_cost_center</title>
 <polygon fill="white" stroke="#666666" points="597.4,-408 550.66,-388 597.4,-368 644.14,-388 597.4,-408"/>
 <text text-anchor="middle" x="597.4" y="-386.1" font-family="Helvetica,sans-Serif" font-size="8.00">ChargedTo</text>
 </g>
 <!-- Employees&#45;&#45;R_fk_employee_cost_center -->
-<g id="edge48" class="edge">
+<g id="edge50" class="edge">
 <title>Employees&#45;&#45;R_fk_employee_cost_center</title>
 <path fill="none" stroke="#555555" d="M404.08,-1311.98C405.15,-1226.23 413.27,-851.31 474.42,-552 486.86,-491.13 474.86,-464.25 517.42,-419 529.73,-405.91 548.25,-398.26 564.26,-393.83"/>
 <text text-anchor="middle" x="477.92" y="-554.8" font-family="Helvetica,sans-Serif" font-size="9.00">N</text>
 </g>
 <!-- R_fk_employee_work_location -->
-<g id="node57" class="node">
+<g id="node59" class="node">
 <title>R_fk_employee_work_location</title>
 <polygon fill="white" stroke="#666666" points="597.4,-346 558.28,-326 597.4,-306 636.52,-326 597.4,-346"/>
 <text text-anchor="middle" x="597.4" y="-324.1" font-family="Helvetica,sans-Serif" font-size="8.00">WorksAt</text>
 </g>
 <!-- Employees&#45;&#45;R_fk_employee_work_location -->
-<g id="edge50" class="edge">
+<g id="edge52" class="edge">
 <title>Employees&#45;&#45;R_fk_employee_work_location</title>
 <path fill="none" stroke="#555555" d="M403.9,-1311.73C404.1,-1221.41 408.8,-813.94 474.42,-489 486.63,-428.52 475.1,-401.9 517.42,-357 530.66,-342.96 551.03,-335.17 567.76,-330.91"/>
 <text text-anchor="middle" x="477.92" y="-491.8" font-family="Helvetica,sans-Serif" font-size="9.00">N</text>
 </g>
 <!-- R_fk_employee_category -->
-<g id="node58" class="node">
+<g id="node60" class="node">
 <title>R_fk_employee_category</title>
 <polygon fill="white" stroke="#666666" points="597.4,-284 545.79,-264 597.4,-244 649.01,-264 597.4,-284"/>
 <text text-anchor="middle" x="597.4" y="-262.1" font-family="Helvetica,sans-Serif" font-size="8.00">ClassifiedAs</text>
 </g>
 <!-- Employees&#45;&#45;R_fk_employee_category -->
-<g id="edge52" class="edge">
+<g id="edge54" class="edge">
 <title>Employees&#45;&#45;R_fk_employee_category</title>
-<path fill="none" stroke="#555555" d="M403.7,-1311.89C402.89,-1217.83 403.22,-775.79 474.42,-424 486.41,-364.77 475.82,-338.84 517.42,-295 529.28,-282.5 546.8,-274.95 562.32,-270.44"/>
+<path fill="none" stroke="#555555" d="M403.7,-1311.89C402.89,-1217.83 403.22,-775.79 474.42,-424 480.42,-394.38 496.62,-316.92 517.42,-295 529.28,-282.5 546.8,-274.95 562.32,-270.44"/>
 <text text-anchor="middle" x="477.92" y="-426.8" font-family="Helvetica,sans-Serif" font-size="9.00">N</text>
 </g>
 <!-- R_fk_employee_status -->
-<g id="node59" class="node">
+<g id="node61" class="node">
 <title>R_fk_employee_status</title>
 <polygon fill="white" stroke="#666666" points="597.4,-222 551.22,-202 597.4,-182 643.58,-202 597.4,-222"/>
 <text text-anchor="middle" x="597.4" y="-200.1" font-family="Helvetica,sans-Serif" font-size="8.00">HasStatus</text>
 </g>
 <!-- Employees&#45;&#45;R_fk_employee_status -->
-<g id="edge54" class="edge">
+<g id="edge56" class="edge">
 <title>Employees&#45;&#45;R_fk_employee_status</title>
-<path fill="none" stroke="#555555" d="M403.59,-1311.98C402.15,-1214.46 399.47,-740.26 474.42,-363 486.28,-303.31 475.58,-277.19 517.42,-233 529.78,-219.95 548.29,-212.3 564.29,-207.86"/>
-<text text-anchor="middle" x="477.92" y="-365.8" font-family="Helvetica,sans-Serif" font-size="9.00">N</text>
+<path fill="none" stroke="#555555" d="M403.82,-1311.98C403.6,-1215.46 406.29,-750.09 474.42,-378 486.53,-311.88 471.97,-282.52 517.42,-233 529.57,-219.76 548.08,-212.1 564.12,-207.71"/>
+<text text-anchor="middle" x="477.92" y="-380.8" font-family="Helvetica,sans-Serif" font-size="9.00">N</text>
 </g>
 <!-- R_fk_employee_group -->
-<g id="node60" class="node">
+<g id="node62" class="node">
 <title>R_fk_employee_group</title>
 <polygon fill="white" stroke="#666666" points="597.4,-160 551.22,-140 597.4,-120 643.58,-140 597.4,-160"/>
 <text text-anchor="middle" x="597.4" y="-138.1" font-family="Helvetica,sans-Serif" font-size="8.00">MemberOf</text>
 </g>
 <!-- Employees&#45;&#45;R_fk_employee_group -->
-<g id="edge56" class="edge">
+<g id="edge58" class="edge">
 <title>Employees&#45;&#45;R_fk_employee_group</title>
-<path fill="none" stroke="#555555" d="M404.53,-1311.88C408.64,-1191.37 433.63,-504.22 474.42,-299 486.12,-240.14 476.06,-214.48 517.42,-171 529.81,-157.98 548.32,-150.33 564.32,-145.89"/>
-<text text-anchor="middle" x="477.92" y="-301.8" font-family="Helvetica,sans-Serif" font-size="9.00">N</text>
+<path fill="none" stroke="#555555" d="M404.55,-1311.96C408.83,-1191.94 434.7,-507.61 474.42,-303 486.18,-242.43 475.1,-215.9 517.42,-171 529.75,-157.92 548.26,-150.27 564.27,-145.84"/>
+<text text-anchor="middle" x="477.92" y="-305.8" font-family="Helvetica,sans-Serif" font-size="9.00">N</text>
 </g>
 <!-- R_fk_employee_manager -->
-<g id="node61" class="node">
+<g id="node63" class="node">
 <title>R_fk_employee_manager</title>
 <polygon fill="white" stroke="#666666" points="597.4,-98 552.85,-78 597.4,-58 641.95,-78 597.4,-98"/>
 <text text-anchor="middle" x="597.4" y="-76.1" font-family="Helvetica,sans-Serif" font-size="8.00">ReportsTo</text>
 </g>
 <!-- Employees&#45;&#45;R_fk_employee_manager -->
-<g id="edge58" class="edge">
+<g id="edge60" class="edge">
 <title>Employees&#45;&#45;R_fk_employee_manager</title>
-<path fill="none" stroke="#555555" d="M404.44,-1311.99C408.09,-1187.59 431.18,-454.44 474.42,-236 485.99,-177.54 476.3,-152.13 517.42,-109 530.03,-95.78 548.95,-88.09 565.11,-83.68"/>
-<text text-anchor="middle" x="477.92" y="-238.8" font-family="Helvetica,sans-Serif" font-size="9.00">N</text>
+<path fill="none" stroke="#555555" d="M404.46,-1311.63C408.24,-1186.31 431.81,-455.91 474.42,-238 486.02,-178.69 475.82,-152.84 517.42,-109 529.99,-95.75 548.92,-88.06 565.09,-83.66"/>
+<text text-anchor="middle" x="477.92" y="-240.8" font-family="Helvetica,sans-Serif" font-size="9.00">N</text>
 </g>
 <!-- Users -->
 <g id="node29" class="node">
 <title>Users</title>
-<polygon fill="#fbe6d4" stroke="#a5661f" stroke-width="1.6" points="54,-1367 0,-1367 0,-1331 54,-1331 54,-1367"/>
-<text text-anchor="middle" x="27" y="-1346.5" font-family="Helvetica,sans-Serif" font-size="10.00">Users</text>
+<polygon fill="#fbe6d4" stroke="#a5661f" stroke-width="1.6" points="54,-1425 0,-1425 0,-1389 54,-1389 54,-1425"/>
+<text text-anchor="middle" x="27" y="-1404.5" font-family="Helvetica,sans-Serif" font-size="10.00">Users</text>
 </g>
 <!-- Users__user_id -->
 <g id="node30" class="node">
 <title>Users__user_id</title>
-<ellipse fill="white" stroke="#999999" cx="210.71" cy="-1465" rx="27" ry="18"/>
-<text text-anchor="start" x="195.71" y="-1464.1" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="8.00">user_id</text>
+<ellipse fill="white" stroke="#999999" cx="210.71" cy="-1581" rx="27" ry="18"/>
+<text text-anchor="start" x="195.71" y="-1580.1" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="8.00">user_id</text>
 </g>
 <!-- Users&#45;&#45;Users__user_id -->
 <g id="edge28" class="edge">
 <title>Users&#45;&#45;Users__user_id</title>
-<path fill="none" stroke="#555555" d="M45.93,-1367.07C65.78,-1386.27 99.44,-1416.48 133,-1436 149.62,-1445.66 170.04,-1453.2 185.63,-1458.16"/>
+<path fill="none" stroke="#555555" d="M36.71,-1425.23C52.08,-1455.6 86.83,-1516.7 133,-1552 148.27,-1563.67 168.77,-1571.1 184.73,-1575.51"/>
 </g>
 <!-- Users__user_username -->
 <g id="node31" class="node">
 <title>Users__user_username</title>
-<ellipse fill="white" stroke="#999999" cx="210.71" cy="-1407" rx="45.26" ry="18"/>
-<text text-anchor="middle" x="210.71" y="-1405.1" font-family="Helvetica,sans-Serif" font-size="8.00">user_username</text>
+<ellipse fill="white" stroke="#999999" cx="210.71" cy="-1523" rx="45.26" ry="18"/>
+<text text-anchor="middle" x="210.71" y="-1521.1" font-family="Helvetica,sans-Serif" font-size="8.00">user_username</text>
 </g>
 <!-- Users&#45;&#45;Users__user_username -->
 <g id="edge29" class="edge">
 <title>Users&#45;&#45;Users__user_username</title>
-<path fill="none" stroke="#555555" d="M54.03,-1357.31C85.73,-1367.43 139.39,-1384.56 174.69,-1395.82"/>
+<path fill="none" stroke="#555555" d="M45.93,-1425.07C65.78,-1444.27 99.44,-1474.48 133,-1494 145.68,-1501.37 160.57,-1507.51 173.85,-1512.21"/>
 </g>
 <!-- Users__user_password_hash -->
 <g id="node32" class="node">
 <title>Users__user_password_hash</title>
-<ellipse fill="white" stroke="#999999" cx="210.71" cy="-1349" rx="57.71" ry="18"/>
-<text text-anchor="middle" x="210.71" y="-1347.1" font-family="Helvetica,sans-Serif" font-size="8.00">user_password_hash</text>
+<ellipse fill="white" stroke="#999999" cx="210.71" cy="-1465" rx="57.71" ry="18"/>
+<text text-anchor="middle" x="210.71" y="-1463.1" font-family="Helvetica,sans-Serif" font-size="8.00">user_password_hash</text>
 </g>
 <!-- Users&#45;&#45;Users__user_password_hash -->
 <g id="edge30" class="edge">
 <title>Users&#45;&#45;Users__user_password_hash</title>
-<path fill="none" stroke="#555555" d="M54.03,-1349C79.65,-1349 119.6,-1349 152.62,-1349"/>
+<path fill="none" stroke="#555555" d="M54.03,-1415.31C84.26,-1424.96 134.46,-1440.98 169.66,-1452.22"/>
 </g>
 <!-- Users__user_status -->
 <g id="node33" class="node">
 <title>Users__user_status</title>
-<ellipse fill="white" stroke="#999999" cx="210.71" cy="-1291" rx="36.11" ry="18"/>
-<text text-anchor="middle" x="210.71" y="-1289.1" font-family="Helvetica,sans-Serif" font-size="8.00">user_status</text>
+<ellipse fill="white" stroke="#999999" cx="210.71" cy="-1407" rx="36.11" ry="18"/>
+<text text-anchor="middle" x="210.71" y="-1405.1" font-family="Helvetica,sans-Serif" font-size="8.00">user_status</text>
 </g>
 <!-- Users&#45;&#45;Users__user_status -->
 <g id="edge31" class="edge">
 <title>Users&#45;&#45;Users__user_status</title>
-<path fill="none" stroke="#555555" d="M54.03,-1340.69C87.3,-1330.07 144.76,-1311.73 179.8,-1300.55"/>
+<path fill="none" stroke="#555555" d="M54.03,-1407C85.63,-1407 139.06,-1407 174.36,-1407"/>
 </g>
 <!-- Users__user_must_change_password -->
 <g id="node34" class="node">
 <title>Users__user_must_change_password</title>
-<ellipse fill="white" stroke="#999999" cx="210.71" cy="-1233" rx="77.92" ry="18"/>
-<text text-anchor="middle" x="210.71" y="-1231.1" font-family="Helvetica,sans-Serif" font-size="8.00">user_must_change_password</text>
+<ellipse fill="white" stroke="#999999" cx="210.71" cy="-1349" rx="77.92" ry="18"/>
+<text text-anchor="middle" x="210.71" y="-1347.1" font-family="Helvetica,sans-Serif" font-size="8.00">user_must_change_password</text>
 </g>
 <!-- Users&#45;&#45;Users__user_must_change_password -->
 <g id="edge32" class="edge">
 <title>Users&#45;&#45;Users__user_must_change_password</title>
-<path fill="none" stroke="#555555" d="M45.93,-1330.93C65.78,-1311.73 99.44,-1281.52 133,-1262 142.6,-1256.42 153.47,-1251.54 163.95,-1247.47"/>
+<path fill="none" stroke="#555555" d="M54.03,-1398.69C82.79,-1389.51 129.61,-1374.57 164.41,-1363.46"/>
+</g>
+<!-- Users__user_failed_attempts -->
+<g id="node35" class="node">
+<title>Users__user_failed_attempts</title>
+<ellipse fill="white" stroke="#999999" cx="210.71" cy="-1291" rx="57.71" ry="18"/>
+<text text-anchor="middle" x="210.71" y="-1289.1" font-family="Helvetica,sans-Serif" font-size="8.00">user_failed_attempts</text>
+</g>
+<!-- Users&#45;&#45;Users__user_failed_attempts -->
+<g id="edge33" class="edge">
+<title>Users&#45;&#45;Users__user_failed_attempts</title>
+<path fill="none" stroke="#555555" d="M45.93,-1388.93C65.78,-1369.73 99.44,-1339.52 133,-1320 144.08,-1313.56 156.85,-1308.06 168.75,-1303.64"/>
+</g>
+<!-- Users__user_locked_at -->
+<g id="node36" class="node">
+<title>Users__user_locked_at</title>
+<ellipse fill="white" stroke="#999999" cx="210.71" cy="-1233" rx="43.85" ry="18"/>
+<text text-anchor="middle" x="210.71" y="-1231.1" font-family="Helvetica,sans-Serif" font-size="8.00">user_locked_at</text>
+</g>
+<!-- Users&#45;&#45;Users__user_locked_at -->
+<g id="edge34" class="edge">
+<title>Users&#45;&#45;Users__user_locked_at</title>
+<path fill="none" stroke="#555555" d="M36.71,-1388.77C52.08,-1358.4 86.83,-1297.3 133,-1262 144.65,-1253.09 159.34,-1246.66 172.75,-1242.15"/>
 </g>
 <!-- R_fk_user_employee -->
-<g id="node62" class="node">
+<g id="node64" class="node">
 <title>R_fk_user_employee</title>
 <polygon fill="white" stroke="#666666" points="210.71,-1193 164.53,-1173 210.71,-1153 256.89,-1173 210.71,-1193"/>
 <text text-anchor="middle" x="210.71" y="-1171.1" font-family="Helvetica,sans-Serif" font-size="8.00">AccountOf</text>
 </g>
 <!-- Users&#45;&#45;R_fk_user_employee -->
-<g id="edge60" class="edge">
+<g id="edge62" class="edge">
 <title>Users&#45;&#45;R_fk_user_employee</title>
-<path fill="none" stroke="#555555" d="M36.8,-1330.88C52.3,-1300.68 87.23,-1239.82 133,-1204 147.14,-1192.93 165.76,-1185.28 181.11,-1180.35"/>
-<text text-anchor="middle" x="93.5" y="-1247.8" font-family="Helvetica,sans-Serif" font-size="9.00">N</text>
+<path fill="none" stroke="#555555" d="M32.64,-1388.83C43.53,-1349.67 74.35,-1256.57 133,-1204 146.16,-1192.21 164.38,-1184.59 179.76,-1179.86"/>
+<text text-anchor="middle" x="93.5" y="-1253.8" font-family="Helvetica,sans-Serif" font-size="9.00">N</text>
 </g>
 <!-- R_fk_user_role -->
-<g id="node63" class="node">
+<g id="node65" class="node">
 <title>R_fk_user_role</title>
 <polygon fill="white" stroke="#666666" points="210.71,-975 171.59,-955 210.71,-935 249.83,-955 210.71,-975"/>
 <text text-anchor="middle" x="210.71" y="-953.1" font-family="Helvetica,sans-Serif" font-size="8.00">HasRole</text>
 </g>
 <!-- Users&#45;&#45;R_fk_user_role -->
-<g id="edge62" class="edge">
+<g id="edge64" class="edge">
 <title>Users&#45;&#45;R_fk_user_role</title>
-<path fill="none" stroke="#555555" d="M36.4,-1330.79C67.18,-1264.04 173.51,-1033.49 202.41,-970.82"/>
-<text text-anchor="middle" x="93.5" y="-1212.8" font-family="Helvetica,sans-Serif" font-size="9.00">N</text>
+<path fill="none" stroke="#555555" d="M33.9,-1388.75C44.45,-1356.46 67.53,-1287.29 90,-1230 129.16,-1130.14 182.81,-1012.92 202.28,-970.95"/>
+<text text-anchor="middle" x="93.5" y="-1232.8" font-family="Helvetica,sans-Serif" font-size="9.00">N</text>
 </g>
 <!-- CoreHours -->
-<g id="node35" class="node">
+<g id="node37" class="node">
 <title>CoreHours</title>
 <polygon fill="#dce9f7" stroke="#2e5c8a" stroke-width="1.6" points="849.38,-468 781.38,-468 781.38,-432 849.38,-432 849.38,-468"/>
 <text text-anchor="middle" x="815.38" y="-447.5" font-family="Helvetica,sans-Serif" font-size="10.00">CoreHours</text>
 </g>
 <!-- CoreHours__core_hour_id -->
-<g id="node36" class="node">
+<g id="node38" class="node">
 <title>CoreHours__core_hour_id</title>
 <ellipse fill="white" stroke="#999999" cx="1008.64" cy="-450" rx="38.64" ry="18"/>
 <text text-anchor="start" x="982.64" y="-449.1" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="8.00">core_hour_id</text>
 </g>
 <!-- CoreHours&#45;&#45;CoreHours__core_hour_id -->
-<g id="edge33" class="edge">
+<g id="edge35" class="edge">
 <title>CoreHours&#45;&#45;CoreHours__core_hour_id</title>
 <path fill="none" stroke="#555555" d="M849.69,-450C883.19,-450 934.76,-450 969.79,-450"/>
 </g>
 <!-- CostCenters -->
-<g id="node37" class="node">
+<g id="node39" class="node">
 <title>CostCenters</title>
 <polygon fill="#dce9f7" stroke="#2e5c8a" stroke-width="1.6" points="853.38,-406 777.38,-406 777.38,-370 853.38,-370 853.38,-406"/>
 <text text-anchor="middle" x="815.38" y="-385.5" font-family="Helvetica,sans-Serif" font-size="10.00">CostCenters</text>
 </g>
 <!-- CostCenters__cost_center_id -->
-<g id="node38" class="node">
+<g id="node40" class="node">
 <title>CostCenters__cost_center_id</title>
 <ellipse fill="white" stroke="#999999" cx="1008.64" cy="-388" rx="42.58" ry="18"/>
 <text text-anchor="start" x="979.14" y="-387.1" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="8.00">cost_center_id</text>
 </g>
 <!-- CostCenters&#45;&#45;CostCenters__cost_center_id -->
-<g id="edge34" class="edge">
+<g id="edge36" class="edge">
 <title>CostCenters&#45;&#45;CostCenters__cost_center_id</title>
 <path fill="none" stroke="#555555" d="M853.71,-388C886,-388 932.62,-388 966.09,-388"/>
 </g>
 <!-- EmployeeCategories -->
-<g id="node39" class="node">
+<g id="node41" class="node">
 <title>EmployeeCategories</title>
 <polygon fill="#dce9f7" stroke="#2e5c8a" stroke-width="1.6" points="874.38,-282 756.38,-282 756.38,-246 874.38,-246 874.38,-282"/>
 <text text-anchor="middle" x="815.38" y="-261.5" font-family="Helvetica,sans-Serif" font-size="10.00">EmployeeCategories</text>
 </g>
 <!-- EmployeeCategories__employee_category_id -->
-<g id="node40" class="node">
+<g id="node42" class="node">
 <title>EmployeeCategories__employee_category_id</title>
 <ellipse fill="white" stroke="#999999" cx="1008.64" cy="-264" rx="61.02" ry="18"/>
 <text text-anchor="start" x="962.64" y="-263.1" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="8.00">employee_category_id</text>
 </g>
 <!-- EmployeeCategories&#45;&#45;EmployeeCategories__employee_category_id -->
-<g id="edge35" class="edge">
+<g id="edge37" class="edge">
 <title>EmployeeCategories&#45;&#45;EmployeeCategories__employee_category_id</title>
 <path fill="none" stroke="#555555" d="M874.54,-264C897.51,-264 923.91,-264 947.1,-264"/>
 </g>
 <!-- EmployeeStatus -->
-<g id="node41" class="node">
+<g id="node43" class="node">
 <title>EmployeeStatus</title>
 <polygon fill="#dce9f7" stroke="#2e5c8a" stroke-width="1.6" points="863.38,-220 767.38,-220 767.38,-184 863.38,-184 863.38,-220"/>
 <text text-anchor="middle" x="815.38" y="-199.5" font-family="Helvetica,sans-Serif" font-size="10.00">EmployeeStatus</text>
 </g>
 <!-- EmployeeStatus__employee_status_id -->
-<g id="node42" class="node">
+<g id="node44" class="node">
 <title>EmployeeStatus__employee_status_id</title>
 <ellipse fill="white" stroke="#999999" cx="1008.64" cy="-202" rx="55.68" ry="18"/>
 <text text-anchor="start" x="967.64" y="-201.1" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="8.00">employee_status_id</text>
 </g>
 <!-- EmployeeStatus&#45;&#45;EmployeeStatus__employee_status_id -->
-<g id="edge36" class="edge">
+<g id="edge38" class="edge">
 <title>EmployeeStatus&#45;&#45;EmployeeStatus__employee_status_id</title>
 <path fill="none" stroke="#555555" d="M863.66,-202C890.65,-202 924.61,-202 952.78,-202"/>
 </g>
 <!-- UserGroups -->
-<g id="node43" class="node">
+<g id="node45" class="node">
 <title>UserGroups</title>
 <polygon fill="#ddeedd" stroke="#3b7a3b" stroke-width="1.6" points="852.38,-158 778.38,-158 778.38,-122 852.38,-122 852.38,-158"/>
 <text text-anchor="middle" x="815.38" y="-137.5" font-family="Helvetica,sans-Serif" font-size="10.00">UserGroups</text>
 </g>
 <!-- UserGroups__user_group_id -->
-<g id="node44" class="node">
+<g id="node46" class="node">
 <title>UserGroups__user_group_id</title>
 <ellipse fill="white" stroke="#999999" cx="1008.64" cy="-140" rx="41.95" ry="18"/>
 <text text-anchor="start" x="979.64" y="-139.1" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="8.00">user_group_id</text>
 </g>
 <!-- UserGroups&#45;&#45;UserGroups__user_group_id -->
-<g id="edge37" class="edge">
+<g id="edge39" class="edge">
 <title>UserGroups&#45;&#45;UserGroups__user_group_id</title>
 <path fill="none" stroke="#555555" d="M852.8,-140C885.21,-140 932.57,-140 966.37,-140"/>
 </g>
 <!-- UserRoles -->
-<g id="node45" class="node">
+<g id="node47" class="node">
 <title>UserRoles</title>
-<polygon fill="#dce9f7" stroke="#2e5c8a" stroke-width="1.6" points="435.92,-36 369.92,-36 369.92,0 435.92,0 435.92,-36"/>
+<polygon fill="#e7e0f3" stroke="#5b4b8a" stroke-width="1.6" points="435.92,-36 369.92,-36 369.92,0 435.92,0 435.92,-36"/>
 <text text-anchor="middle" x="402.92" y="-15.5" font-family="Helvetica,sans-Serif" font-size="10.00">UserRoles</text>
 </g>
 <!-- UserRoles__user_role_id -->
-<g id="node46" class="node">
+<g id="node48" class="node">
 <title>UserRoles__user_role_id</title>
 <ellipse fill="white" stroke="#999999" cx="597.4" cy="-18" rx="36.74" ry="18"/>
 <text text-anchor="start" x="572.9" y="-17.1" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="8.00">user_role_id</text>
 </g>
 <!-- UserRoles&#45;&#45;UserRoles__user_role_id -->
-<g id="edge38" class="edge">
+<g id="edge40" class="edge">
 <title>UserRoles&#45;&#45;UserRoles__user_role_id</title>
 <path fill="none" stroke="#555555" d="M436.14,-18C470.49,-18 524.76,-18 560.47,-18"/>
 </g>
 <!-- WorkLocations -->
-<g id="node47" class="node">
+<g id="node49" class="node">
 <title>WorkLocations</title>
 <polygon fill="#dce9f7" stroke="#2e5c8a" stroke-width="1.6" points="859.38,-344 771.38,-344 771.38,-308 859.38,-308 859.38,-344"/>
 <text text-anchor="middle" x="815.38" y="-323.5" font-family="Helvetica,sans-Serif" font-size="10.00">WorkLocations</text>
 </g>
 <!-- WorkLocations__work_location_id -->
-<g id="node48" class="node">
+<g id="node50" class="node">
 <title>WorkLocations__work_location_id</title>
 <ellipse fill="white" stroke="#999999" cx="1008.64" cy="-326" rx="47.79" ry="18"/>
 <text text-anchor="start" x="974.64" y="-325.1" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="8.00">work_location_id</text>
 </g>
 <!-- WorkLocations&#45;&#45;WorkLocations__work_location_id -->
-<g id="edge39" class="edge">
+<g id="edge41" class="edge">
 <title>WorkLocations&#45;&#45;WorkLocations__work_location_id</title>
 <path fill="none" stroke="#555555" d="M859.78,-326C889.87,-326 929.91,-326 960.73,-326"/>
 </g>
 <!-- WorkSchedules -->
-<g id="node49" class="node">
+<g id="node51" class="node">
 <title>WorkSchedules</title>
 <polygon fill="#dce9f7" stroke="#2e5c8a" stroke-width="1.6" points="860.88,-592 769.88,-592 769.88,-556 860.88,-556 860.88,-592"/>
 <text text-anchor="middle" x="815.38" y="-571.5" font-family="Helvetica,sans-Serif" font-size="10.00">WorkSchedules</text>
 </g>
 <!-- WorkSchedules__work_schedule_id -->
-<g id="node50" class="node">
+<g id="node52" class="node">
 <title>WorkSchedules__work_schedule_id</title>
 <ellipse fill="white" stroke="#999999" cx="1008.64" cy="-574" rx="50.47" ry="18"/>
 <text text-anchor="start" x="972.14" y="-573.1" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="8.00">work_schedule_id</text>
 </g>
 <!-- WorkSchedules&#45;&#45;WorkSchedules__work_schedule_id -->
-<g id="edge40" class="edge">
+<g id="edge42" class="edge">
 <title>WorkSchedules&#45;&#45;WorkSchedules__work_schedule_id</title>
 <path fill="none" stroke="#555555" d="M861.22,-574C890.26,-574 928.1,-574 958.04,-574"/>
 </g>
 <!-- WorkingHours -->
-<g id="node51" class="node">
+<g id="node53" class="node">
 <title>WorkingHours</title>
 <polygon fill="#dce9f7" stroke="#2e5c8a" stroke-width="1.6" points="857.88,-530 772.88,-530 772.88,-494 857.88,-494 857.88,-530"/>
 <text text-anchor="middle" x="815.38" y="-509.5" font-family="Helvetica,sans-Serif" font-size="10.00">WorkingHours</text>
 </g>
 <!-- WorkingHours__working_hour_id -->
-<g id="node52" class="node">
+<g id="node54" class="node">
 <title>WorkingHours__working_hour_id</title>
 <ellipse fill="white" stroke="#999999" cx="1008.64" cy="-512" rx="47.16" ry="18"/>
 <text text-anchor="start" x="975.14" y="-511.1" font-family="Helvetica,sans-Serif" text-decoration="underline" font-size="8.00">working_hour_id</text>
 </g>
 <!-- WorkingHours&#45;&#45;WorkingHours__working_hour_id -->
-<g id="edge41" class="edge">
+<g id="edge43" class="edge">
 <title>WorkingHours&#45;&#45;WorkingHours__working_hour_id</title>
 <path fill="none" stroke="#555555" d="M857.88,-512C888.42,-512 929.95,-512 961.53,-512"/>
 </g>
 <!-- R_fk_employee_work_schedule&#45;&#45;WorkSchedules -->
-<g id="edge43" class="edge">
+<g id="edge45" class="edge">
 <title>R_fk_employee_work_schedule&#45;&#45;WorkSchedules</title>
 <path fill="none" stroke="#555555" d="M634.55,-574C671.78,-574 729.85,-574 769.88,-574"/>
 <text text-anchor="middle" x="716.88" y="-576.8" font-family="Helvetica,sans-Serif" font-size="9.00">1</text>
 </g>
 <!-- R_fk_employee_working_hour&#45;&#45;WorkingHours -->
-<g id="edge45" class="edge">
+<g id="edge47" class="edge">
 <title>R_fk_employee_working_hour&#45;&#45;WorkingHours</title>
 <path fill="none" stroke="#555555" d="M638.77,-512C676.99,-512 734.11,-512 772.73,-512"/>
 <text text-anchor="middle" x="716.88" y="-514.8" font-family="Helvetica,sans-Serif" font-size="9.00">1</text>
 </g>
 <!-- R_fk_employee_core_hour&#45;&#45;CoreHours -->
-<g id="edge47" class="edge">
+<g id="edge49" class="edge">
 <title>R_fk_employee_core_hour&#45;&#45;CoreHours</title>
 <path fill="none" stroke="#555555" d="M638.77,-450C679.92,-450 742.98,-450 781.28,-450"/>
 <text text-anchor="middle" x="716.88" y="-452.8" font-family="Helvetica,sans-Serif" font-size="9.00">1</text>
 </g>
 <!-- R_fk_employee_cost_center&#45;&#45;CostCenters -->
-<g id="edge49" class="edge">
+<g id="edge51" class="edge">
 <title>R_fk_employee_cost_center&#45;&#45;CostCenters</title>
 <path fill="none" stroke="#555555" d="M644.2,-388C683.83,-388 740.4,-388 777.25,-388"/>
 <text text-anchor="middle" x="716.88" y="-390.8" font-family="Helvetica,sans-Serif" font-size="9.00">1</text>
 </g>
 <!-- R_fk_employee_work_location&#45;&#45;WorkLocations -->
-<g id="edge51" class="edge">
+<g id="edge53" class="edge">
 <title>R_fk_employee_work_location&#45;&#45;WorkLocations</title>
 <path fill="none" stroke="#555555" d="M636.52,-326C674.18,-326 731.71,-326 771.08,-326"/>
 <text text-anchor="middle" x="716.88" y="-328.8" font-family="Helvetica,sans-Serif" font-size="9.00">1</text>
 </g>
 <!-- R_fk_employee_category&#45;&#45;EmployeeCategories -->
-<g id="edge53" class="edge">
+<g id="edge55" class="edge">
 <title>R_fk_employee_category&#45;&#45;EmployeeCategories</title>
 <path fill="none" stroke="#555555" d="M649.04,-264C681.08,-264 722.61,-264 756.04,-264"/>
 <text text-anchor="middle" x="716.88" y="-266.8" font-family="Helvetica,sans-Serif" font-size="9.00">1</text>
 </g>
 <!-- R_fk_employee_status&#45;&#45;EmployeeStatus -->
-<g id="edge55" class="edge">
+<g id="edge57" class="edge">
 <title>R_fk_employee_status&#45;&#45;EmployeeStatus</title>
 <path fill="none" stroke="#555555" d="M643.68,-202C679.92,-202 730.58,-202 767.3,-202"/>
 <text text-anchor="middle" x="716.88" y="-204.8" font-family="Helvetica,sans-Serif" font-size="9.00">1</text>
 </g>
 <!-- R_fk_employee_group&#45;&#45;UserGroups -->
-<g id="edge57" class="edge">
+<g id="edge59" class="edge">
 <title>R_fk_employee_group&#45;&#45;UserGroups</title>
 <path fill="none" stroke="#555555" d="M643.68,-140C683.63,-140 741.11,-140 778.1,-140"/>
 <text text-anchor="middle" x="716.88" y="-142.8" font-family="Helvetica,sans-Serif" font-size="9.00">1</text>
 </g>
 <!-- R_fk_employee_manager&#45;&#45;Employees -->
-<g id="edge59" class="edge">
+<g id="edge61" class="edge">
 <title>R_fk_employee_manager&#45;&#45;Employees</title>
-<path fill="none" stroke="#555555" d="M567.56,-84.76C551.56,-89.57 532.01,-97.29 517.42,-109 490.7,-130.46 485.4,-140.54 474.42,-173 398.8,-396.51 402.56,-1181.36 403.73,-1311.62"/>
-<text text-anchor="middle" x="477.92" y="-175.8" font-family="Helvetica,sans-Serif" font-size="9.00">1</text>
+<path fill="none" stroke="#555555" d="M567.46,-84.64C551.43,-89.41 531.88,-97.13 517.42,-109 490.07,-131.44 485.41,-142.37 474.42,-176 401.33,-399.71 402.99,-1181.88 403.78,-1311.68"/>
+<text text-anchor="middle" x="477.92" y="-178.8" font-family="Helvetica,sans-Serif" font-size="9.00">1</text>
 </g>
 <!-- R_fk_user_employee&#45;&#45;Employees -->
-<g id="edge61" class="edge">
+<g id="edge63" class="edge">
 <title>R_fk_user_employee&#45;&#45;Employees</title>
 <path fill="none" stroke="#555555" d="M239.13,-1180.71C254.48,-1185.83 273.48,-1193.54 288.42,-1204 332.07,-1234.56 370.74,-1284.89 389.64,-1311.76"/>
 <text text-anchor="middle" x="327.92" y="-1242.8" font-family="Helvetica,sans-Serif" font-size="9.00">1</text>
 </g>
 <!-- R_fk_user_role&#45;&#45;UserRoles -->
-<g id="edge63" class="edge">
+<g id="edge65" class="edge">
 <title>R_fk_user_role&#45;&#45;UserRoles</title>
 <path fill="none" stroke="#555555" d="M215.34,-937.12C239.27,-819.22 374.2,-154.55 398.25,-36.07"/>
 <text text-anchor="middle" x="327.92" y="-377.8" font-family="Helvetica,sans-Serif" font-size="9.00">1</text>

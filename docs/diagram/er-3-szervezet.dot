@@ -10,24 +10,16 @@ graph ER {
   "Areas" -- "Areas__area_id" [len=0.8, weight=4];
   "Areas__area_name" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="area_name"];
   "Areas" -- "Areas__area_name" [len=0.8, weight=4];
-  "Areas__area_manager_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="area_manager_id"];
-  "Areas" -- "Areas__area_manager_id" [len=0.8, weight=4];
-  "Areas__area_parent_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="area_parent_id"];
-  "Areas" -- "Areas__area_parent_id" [len=0.8, weight=4];
   "Departments" [shape=box, style="filled,bold", fillcolor="#DDEEDD", color="#3B7A3B", penwidth=1.6];
   "Departments__department_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label=<<U>department_id</U>>];
   "Departments" -- "Departments__department_id" [len=0.8, weight=4];
   "Departments__department_name" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="department_name"];
   "Departments" -- "Departments__department_name" [len=0.8, weight=4];
-  "Departments__department_manager_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="department_manager_id"];
-  "Departments" -- "Departments__department_manager_id" [len=0.8, weight=4];
   "Shifts" [shape=box, style="filled,bold", fillcolor="#DDEEDD", color="#3B7A3B", penwidth=1.6];
   "Shifts__shift_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label=<<U>shift_id</U>>];
   "Shifts" -- "Shifts__shift_id" [len=0.8, weight=4];
   "Shifts__shift_name" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="shift_name"];
   "Shifts" -- "Shifts__shift_name" [len=0.8, weight=4];
-  "Shifts__shift_manager_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="shift_manager_id"];
-  "Shifts" -- "Shifts__shift_manager_id" [len=0.8, weight=4];
   "UserGroups" [shape=box, style="filled,bold", fillcolor="#DDEEDD", color="#3B7A3B", penwidth=1.6];
   "UserGroups__user_group_id" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label=<<U>user_group_id</U>>];
   "UserGroups" -- "UserGroups__user_group_id" [len=0.8, weight=4];
@@ -37,6 +29,10 @@ graph ER {
   "UserGroups" -- "UserGroups__user_group_status" [len=0.8, weight=4];
   "UserGroups__user_group_description" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="user_group_description"];
   "UserGroups" -- "UserGroups__user_group_description" [len=0.8, weight=4];
+  "UserGroups__user_group_rotation_position" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="user_group_rotation_position"];
+  "UserGroups" -- "UserGroups__user_group_rotation_position" [len=0.8, weight=4];
+  "UserGroups__user_group_rotation_start" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="user_group_rotation_start"];
+  "UserGroups" -- "UserGroups__user_group_rotation_start" [len=0.8, weight=4];
 
   // kapcsolódó egyedek, csak az elsődleges kulccsal
   "CoreHours" [shape=box, style="filled,bold", fillcolor="#DCE9F7", color="#2E5C8A", penwidth=1.6];
@@ -56,12 +52,24 @@ graph ER {
   "WorkingHours" -- "WorkingHours__working_hour_id" [len=0.8, weight=4];
 
   // kapcsolatok
+  "R_fk_area_parent" [shape=diamond, style=filled, fillcolor="white", color="#666666", fontsize=8, label="areas", width=1.0, height=0.55];
+  "Areas" -- "R_fk_area_parent" [label="N", len=2.4];
+  "R_fk_area_parent" -- "Areas" [label="1", len=2.4];
+  "R_fk_area_manager" [shape=diamond, style=filled, fillcolor="white", color="#666666", fontsize=8, label="users", width=1.0, height=0.55];
+  "Areas" -- "R_fk_area_manager" [label="N", len=2.4];
+  "R_fk_area_manager" -- "Users" [label="1", len=2.4];
   "R_fk_department_area" [shape=diamond, style=filled, fillcolor="white", color="#666666", fontsize=8, label="BelongsTo", width=1.0, height=0.55];
   "Departments" -- "R_fk_department_area" [label="N", len=2.4];
   "R_fk_department_area" -- "Areas" [label="1", len=2.4];
+  "R_fk_department_manager" [shape=diamond, style=filled, fillcolor="white", color="#666666", fontsize=8, label="users", width=1.0, height=0.55];
+  "Departments" -- "R_fk_department_manager" [label="N", len=2.4];
+  "R_fk_department_manager" -- "Users" [label="1", len=2.4];
   "R_fk_shift_department" [shape=diamond, style=filled, fillcolor="white", color="#666666", fontsize=8, label="BelongsTo", width=1.0, height=0.55];
   "Shifts" -- "R_fk_shift_department" [label="N", len=2.4];
   "R_fk_shift_department" -- "Departments" [label="1", len=2.4];
+  "R_fk_shift_manager" [shape=diamond, style=filled, fillcolor="white", color="#666666", fontsize=8, label="users", width=1.0, height=0.55];
+  "Shifts" -- "R_fk_shift_manager" [label="N", len=2.4];
+  "R_fk_shift_manager" -- "Users" [label="1", len=2.4];
   "R_fk_group_area" [shape=diamond, style=filled, fillcolor="white", color="#666666", fontsize=8, label="LocatedIn", width=1.0, height=0.55];
   "UserGroups" -- "R_fk_group_area" [label="N", len=2.4];
   "R_fk_group_area" -- "Areas" [label="1", len=2.4];
