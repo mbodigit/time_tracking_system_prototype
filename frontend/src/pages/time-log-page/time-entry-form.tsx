@@ -6,11 +6,20 @@ import {
 } from "../../api/timeEntries";
 import { ApiError } from "../../api/client";
 import { Field } from "../../components/form-field/form-field";
-import { formatTime } from "../../utils/datetime";
+import { getCurrentUser } from "../../utils/auth";
+
+export interface FormDefaults {
+  coreStart: string | null;
+  coreEnd: string | null;
+  breakStart: string | null;
+  breakEnd: string | null;
+  breakMinutes: number | null;
+}
 
 interface Props {
   day: TimeEntryDay;
   employeeId?: number | null;
+  defaults?: FormDefaults | null;
   onClose: () => void;
   onSaved: () => void;
 }
@@ -55,23 +64,68 @@ const breakOffsetMinutes = (workStart: string, breakStart: string): number => {
   return offset < 0 ? offset + 1440 : offset;
 };
 
-export const TimeEntryForm = ({ day, employeeId, onClose, onSaved }: Props) => {
-  const initialStart = formatTime(day.workStart);
-  const initialEnd = formatTime(day.workEnd);
+const toInputTime = (value: string | null): string => {
+  if (!value) {
+    return "";
+  }
 
+  return value.length > 8 ? value.slice(11, 16) : value.slice(0, 5);
+};
+
+const firstTime = (...values: (string | null | undefined)[]): string => {
+  for (const value of values) {
+    const time = toInputTime(value ?? null);
+
+    if (time) {
+      return time;
+    }
+  }
+
+  return "";
+};
+
+export const TimeEntryForm = ({
+  day,
+  employeeId,
+  defaults,
+  onClose,
+  onSaved,
+}: Props) => {
   const [workStart, setWorkStart] = useState(
-    initialStart === "-" ? "" : initialStart,
+    firstTime(day.workStart, day.scheduleStart, defaults?.coreStart),
   );
-  const [workEnd, setWorkEnd] = useState(initialEnd === "-" ? "" : initialEnd);
+  const [workEnd, setWorkEnd] = useState(
+    firstTime(day.workEnd, day.scheduleEnd, defaults?.coreEnd),
+  );
   const [breakStart, setBreakStart] = useState(
-    day.breakMinutes && day.workStart ? "" : "",
+    firstTime(day.breakStart, defaults?.breakStart),
   );
-  const [breakEnd, setBreakEnd] = useState("");
+  const [breakEnd, setBreakEnd] = useState(
+    firstTime(day.breakEnd, defaults?.breakEnd),
+  );
+  const [scheduleShown, setScheduleShown] = useState(day.scheduleFromEntry);
+  const [scheduleStart, setScheduleStart] = useState(
+    day.scheduleFromEntry ? toInputTime(day.scheduleStart) : "",
+  );
+  const [scheduleEnd, setScheduleEnd] = useState(
+    day.scheduleFromEntry ? toInputTime(day.scheduleEnd) : "",
+  );
   const [note, setNote] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
   const noteRequired = isBackdated(day.date);
+  const canSetSchedule = ["Vezető", "HR-Bér", "Admin"].includes(
+    getCurrentUser()?.role ?? "",
+  );
+
+  const changeBreakStart = (value: string) => {
+    setBreakStart(value);
+
+    if (value && defaults?.breakMinutes) {
+      setBreakEnd(toTime(toMinutes(value) + defaults.breakMinutes));
+    }
+  };
 
   const handleSubmit = async () => {
     setErrorMessage("");
@@ -109,6 +163,20 @@ export const TimeEntryForm = ({ day, employeeId, onClose, onSaved }: Props) => {
           }
         : {};
 
+    const scheduleEndDate =
+      scheduleEnd <= scheduleStart ? addOneDay(day.date) : day.date;
+
+    const scheduleFields = !canSetSchedule
+      ? {}
+      : scheduleStart && scheduleEnd
+        ? {
+            scheduleStart: `${day.date} ${scheduleStart}:00`,
+            scheduleEnd: `${scheduleEndDate} ${scheduleEnd}:00`,
+          }
+        : day.scheduleFromEntry
+          ? { scheduleStart: null, scheduleEnd: null }
+          : {};
+
     setIsSaving(true);
     try {
       if (day.id) {
@@ -116,6 +184,7 @@ export const TimeEntryForm = ({ day, employeeId, onClose, onSaved }: Props) => {
           workStart: startValue,
           workEnd: endValue,
           ...breakFields,
+          ...scheduleFields,
           ...(note ? { note } : {}),
         });
       } else {
@@ -125,6 +194,7 @@ export const TimeEntryForm = ({ day, employeeId, onClose, onSaved }: Props) => {
           workStart: startValue,
           workEnd: endValue,
           ...breakFields,
+          ...scheduleFields,
           ...(note ? { note } : {}),
         });
       }
@@ -183,7 +253,7 @@ export const TimeEntryForm = ({ day, employeeId, onClose, onSaved }: Props) => {
               type="time"
               className="input input-bordered"
               value={breakStart}
-              onChange={(event) => setBreakStart(event.target.value)}
+              onChange={(event) => changeBreakStart(event.target.value)}
             />
           </Field>
 
@@ -203,6 +273,64 @@ export const TimeEntryForm = ({ day, employeeId, onClose, onSaved }: Props) => {
             óra munkavégzést követően kell kiadni, ebben az esetben{" "}
             {breakWindow(workStart).from} és {breakWindow(workStart).to} között.
           </p>
+        )}
+
+        {canSetSchedule && (
+          <div>
+          <button
+            type="button"
+            className="btn btn-xs btn-ghost px-0"
+            onClick={() => setScheduleShown((current) => !current)}
+          >
+            {scheduleShown
+              ? "▲ Aznapi beosztás elrejtése"
+              : "▼ Aznapi beosztás módosítása"}
+          </button>
+          </div>
+        )}
+
+        {canSetSchedule && scheduleShown && (
+          <>
+            <div className="flex gap-3">
+              <Field label="Beosztás kezdete" grow>
+                <input
+                  type="time"
+                  className="input input-bordered"
+                  value={scheduleStart}
+                  onChange={(event) => setScheduleStart(event.target.value)}
+                />
+              </Field>
+
+              <Field label="Beosztás vége" grow>
+                <input
+                  type="time"
+                  className="input input-bordered"
+                  value={scheduleEnd}
+                  onChange={(event) => setScheduleEnd(event.target.value)}
+                />
+              </Field>
+
+              <button
+                type="button"
+                className="btn btn-sm btn-ghost self-end"
+                disabled={!scheduleStart && !scheduleEnd}
+                title="A két mező kiürítése"
+                onClick={() => {
+                  setScheduleStart("");
+                  setScheduleEnd("");
+                }}
+              >
+                Ürítés
+              </button>
+            </div>
+
+            <p className="text-xs opacity-70">
+              Üresen hagyva a munkavállaló törzsideje, illetve a csoport
+              műszakrotációja adja a beosztást. Töltsd ki, ha ezen a napon a
+              tényleges műszak ettől eltért, például műszakcsere miatt. A két
+              mező kiürítésével a napra rögzített beosztás törlődik.
+            </p>
+          </>
         )}
 
         <Field

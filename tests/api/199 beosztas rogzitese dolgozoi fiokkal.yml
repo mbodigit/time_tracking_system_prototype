@@ -1,0 +1,34 @@
+info:
+  name: beosztas rogzitese dolgozoi fiokkal
+  type: http
+  seq: 199
+
+http:
+  method: POST
+  url: "{{baseUrl}}/time-entries"
+  body:
+    type: json
+    data: |-
+      {
+        "workingDate": "{{ma}}",
+        "workStart": "{{ma}} 06:00:00",
+        "workEnd": "{{ma}} 14:00:00",
+        "scheduleStart": "{{ma}} 05:00:00",
+        "scheduleEnd": "{{ma}} 13:00:00"
+      }
+  auth:
+    type: bearer
+    token: "{{dolgozoToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "403"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

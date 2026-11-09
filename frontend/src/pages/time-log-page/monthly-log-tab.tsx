@@ -422,6 +422,17 @@ export const MonthlyLogTab = () => {
         <TimeEntryForm
           day={editedDay}
           employeeId={employeeId}
+          defaults={
+            profile
+              ? {
+                  coreStart: profile.coreStart,
+                  coreEnd: profile.coreEnd,
+                  breakStart: profile.breakStart,
+                  breakEnd: profile.breakEnd,
+                  breakMinutes: profile.breakMinutes,
+                }
+              : null
+          }
           onClose={() => setEditedDay(null)}
           onSaved={() => {
             setEditedDay(null);
