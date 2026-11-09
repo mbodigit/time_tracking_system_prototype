@@ -12,7 +12,7 @@
 <!-- UserRoles -->
 <g id="node1" class="node">
 <title>UserRoles</title>
-<polygon fill="#dce9f7" stroke="#2e5c8a" stroke-width="1.6" points="66,-281 0,-281 0,-245 66,-245 66,-281"/>
+<polygon fill="#e7e0f3" stroke="#5b4b8a" stroke-width="1.6" points="66,-281 0,-281 0,-245 66,-245 66,-281"/>
 <text text-anchor="middle" x="33" y="-260.5" font-family="Helvetica,sans-Serif" font-size="10.00">UserRoles</text>
 </g>
 <!-- UserRoles__user_role_id -->
@@ -52,7 +52,7 @@
 <!-- Permissions -->
 <g id="node4" class="node">
 <title>Permissions</title>
-<polygon fill="#dce9f7" stroke="#2e5c8a" stroke-width="1.6" points="395,-216 319,-216 319,-180 395,-180 395,-216"/>
+<polygon fill="#e7e0f3" stroke="#5b4b8a" stroke-width="1.6" points="395,-216 319,-216 319,-180 395,-180 395,-216"/>
 <text text-anchor="middle" x="357" y="-195.5" font-family="Helvetica,sans-Serif" font-size="10.00">Permissions</text>
 </g>
 <!-- Permissions__permission_id -->

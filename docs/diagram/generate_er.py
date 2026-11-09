@@ -3,7 +3,7 @@
 ER-diagram generátor — munkaidő-nyilvántartó rendszer
 ======================================================
 
-Ez a szkript a backend/migrations mappában lévő SQL-szkriptekből olvassa ki az
+Ez a szkript a db/install mappában lévő szerkezeti (DDL) szkriptekből olvassa ki az
 adatbázis szerkezetét, és ebből rajzolja meg az ER-diagramokat. Semmi nincs
 kézzel beírva, ezért a diagram soha nem térhet el a tényleges adatbázistól.
 
@@ -40,14 +40,10 @@ import html
 
 # ---------------------------------------------------------------- útvonalak
 ITT = os.path.dirname(os.path.abspath(__file__))
-MIGRACIOK = os.path.join(ITT, "..", "..", "backend", "migrations")
-FAJLOK = ["001_torzsadatok.sql", "002_szervezet.sql",
-          "003_dolgozok.sql", "004_mukodes.sql", 
-          "006_elrendeles.sql", "007_beosztas_es_szabadsagkeret.sql",
-          "011_potlek_jogcimkodok.sql", "012_berkodok.sql", 
-          "014_szervezeti_vezetok.sql", "015_dolgozoi_kod_sorszam.sql",
-          "016_terulet_szulo.sql"
-          ]
+TELEPITO = os.path.join(ITT, "..", "..", "db", "install")
+FAJLOK = sorted(
+    f for f in os.listdir(TELEPITO) if f.endswith("_DDL.sql")
+)
 
 TIPUSOK = (r"(?:INT|TINYINT|BOOLEAN|VARCHAR\(\d+\)|DATETIME|DATE|TIME"
            r"|DECIMAL\([\d,]+\)|TEXT|ENUM\([^)]*\))")
@@ -59,7 +55,7 @@ def sema_beolvasas():
     tablak, sorrend = {}, []
 
     for fajlnev in FAJLOK:
-        sql = open(os.path.join(MIGRACIOK, fajlnev), encoding="utf-8").read()
+        sql = open(os.path.join(TELEPITO, fajlnev), encoding="utf-8").read()
 
         for tnev, torzs in re.findall(
                 r"CREATE TABLE IF NOT EXISTS (\w+)\s*\((.*?)\n\)\s*ENGINE", sql, re.S):
@@ -205,11 +201,15 @@ KAPCSOLOTABLA_NEV = {
 }
 
 SZIN = {
-    "001_torzsadatok.sql": ("#DCE9F7", "#2E5C8A"),
-    "002_szervezet.sql":   ("#DDEEDD", "#3B7A3B"),
-    "003_dolgozok.sql":    ("#FBE6D4", "#A5661F"),
-    "004_mukodes.sql":     ("#F6DDDD", "#8A3B3B"),
+    "01_jogosultsag_DDL.sql": ("#E7E0F3", "#5B4B8A"),
+    "02_torzsadat_DDL.sql":   ("#DCE9F7", "#2E5C8A"),
+    "03_jogcimek_DDL.sql":    ("#DCE9F7", "#2E5C8A"),
+    "04_naptar_DDL.sql":      ("#DCE9F7", "#2E5C8A"),
+    "05_szervezet_DDL.sql":   ("#DDEEDD", "#3B7A3B"),
+    "06_dolgozok_DDL.sql":    ("#FBE6D4", "#A5661F"),
+    "07_mukodes_DDL.sql":     ("#F6DDDD", "#8A3B3B"),
 }
+ALAPSZIN = ("#EEEEEE", "#666666")
 
 # A hat részdiagram. A "fokusz" egyedei minden attribútummal megjelennek,
 # a hozzájuk kapcsolódó többi egyed csak az elsődleges kulcsával.
@@ -225,7 +225,8 @@ RESZDIAGRAMOK = [
 
     ("2-munkaido-parameterek", "Munkaidő-paraméterek",
      ["WorkSchedules", "WorkingHours", "CoreHours", "Absences",
-      "AbsenceWorkSchedules", "Allowances", "WorkScheduleAllowances"], "dot"),
+      "AbsenceWorkSchedules", "Allowances", "WorkScheduleAllowances",
+      "ShiftRotations"], "dot"),
 
     ("3-szervezet", "Szervezeti hierarchia és csoportok",
      ["Areas", "Departments", "Shifts", "UserGroups"], "dot"),
@@ -296,7 +297,7 @@ def diagram_keszites(tablak, azonosito, cim, fokusz, motor="fdp"):
 
     def egyed_rajzolas(tnev, teljes):
         t = tablak[tnev]
-        hatter, keret = SZIN[t["fajl"]]
+        hatter, keret = SZIN.get(t["fajl"], ALAPSZIN)
         pk = set(t["pk"])
         fk = {c for f in t["fk"] for c in f["oszlopok"]}
 
