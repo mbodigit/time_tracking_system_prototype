@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   createEntry,
+  deleteEntry,
   updateEntry,
   type TimeEntryDay,
 } from "../../api/timeEntries";
@@ -91,17 +92,40 @@ export const TimeEntryForm = ({
   onClose,
   onSaved,
 }: Props) => {
-  const [workStart, setWorkStart] = useState(
-    firstTime(day.workStart, day.scheduleStart, defaults?.coreStart),
+  const initialWorkStart = firstTime(
+    day.workStart,
+    day.scheduleStart,
+    defaults?.coreStart,
   );
+
+  const templateBreak = toInputTime(defaults?.breakStart ?? null);
+  const templateFits =
+    Boolean(initialWorkStart) &&
+    Boolean(templateBreak) &&
+    breakOffsetMinutes(initialWorkStart, templateBreak) >=
+      BREAK_EARLIEST_MINUTES &&
+    breakOffsetMinutes(initialWorkStart, templateBreak) <= BREAK_LATEST_MINUTES;
+
+  const suggestedBreakStart = !initialWorkStart
+    ? ""
+    : templateFits
+      ? templateBreak
+      : toTime(toMinutes(initialWorkStart) + BREAK_EARLIEST_MINUTES);
+
+  const suggestedBreakEnd =
+    suggestedBreakStart && defaults?.breakMinutes
+      ? toTime(toMinutes(suggestedBreakStart) + defaults.breakMinutes)
+      : "";
+
+  const [workStart, setWorkStart] = useState(initialWorkStart);
   const [workEnd, setWorkEnd] = useState(
     firstTime(day.workEnd, day.scheduleEnd, defaults?.coreEnd),
   );
   const [breakStart, setBreakStart] = useState(
-    firstTime(day.breakStart, defaults?.breakStart),
+    firstTime(day.breakStart) || suggestedBreakStart,
   );
   const [breakEnd, setBreakEnd] = useState(
-    firstTime(day.breakEnd, defaults?.breakEnd),
+    firstTime(day.breakEnd) || suggestedBreakEnd,
   );
   const [scheduleShown, setScheduleShown] = useState(day.scheduleFromEntry);
   const [scheduleStart, setScheduleStart] = useState(
@@ -113,6 +137,7 @@ export const TimeEntryForm = ({
   const [note, setNote] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const noteRequired = isBackdated(day.date);
   const canSetSchedule = ["Vezető", "HR-Bér", "Admin"].includes(
@@ -124,6 +149,34 @@ export const TimeEntryForm = ({
 
     if (value && defaults?.breakMinutes) {
       setBreakEnd(toTime(toMinutes(value) + defaults.breakMinutes));
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!day.id) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Biztosan törlöd a nap rögzítését? A művelet nem vonható vissza.",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setErrorMessage("");
+    setIsDeleting(true);
+
+    try {
+      await deleteEntry(day.id);
+      onSaved();
+    } catch (error) {
+      setErrorMessage(
+        error instanceof ApiError ? error.message : "A törlés nem sikerült.",
+      );
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -347,17 +400,26 @@ export const TimeEntryForm = ({
         </Field>
 
         <div className="modal-action">
+          {day.id && (
+            <button
+              className="btn btn-outline btn-error mr-auto"
+              onClick={handleDelete}
+              disabled={isSaving || isDeleting}
+            >
+              {isDeleting ? "Törlés..." : "Nap törlése"}
+            </button>
+          )}
           <button
             className="btn btn-ghost"
             onClick={onClose}
-            disabled={isSaving}
+            disabled={isSaving || isDeleting}
           >
             Mégse
           </button>
           <button
             className="btn btn-primary"
             onClick={handleSubmit}
-            disabled={isSaving}
+            disabled={isSaving || isDeleting}
           >
             {isSaving ? "Mentés..." : "Mentés"}
           </button>

@@ -9,10 +9,12 @@ import {
   formatMinutes,
   formatSignedMinutes,
   formatMonth,
+  formatRange,
   formatTime,
   getCurrentMonth,
   getDayNumber,
   getWeekdayName,
+  isToday,
   isWeekend,
   shiftMonth,
 } from "../../utils/datetime";
@@ -29,6 +31,9 @@ const getDayLabel = (day: TimeEntryDay): string => {
 };
 
 const getRowClass = (day: TimeEntryDay): string => {
+  if (isToday(day.date)) {
+    return "bg-primary/10 hover:bg-primary/20 border-l-4 border-primary";
+  }
   if (day.dayType === "holiday") {
     return "bg-error/5 hover:bg-error/15";
   }
@@ -83,6 +88,7 @@ export const MonthlyLogTab = () => {
 
   const summary = log?.summary;
   const allowanceTypes = log?.allowanceTypes ?? [];
+  const [allowancesShown, setAllowancesShown] = useState(false);
   const isFlexible = log?.isFlexible ?? false;
   const profile = log?.employeeProfile;
   const leave = log?.leave;
@@ -312,6 +318,7 @@ export const MonthlyLogTab = () => {
               <tr>
                 <th>Nap</th>
                 <th>Jelleg</th>
+                <th>Beosztás</th>
                 <th>Kezdés</th>
                 <th>Végzés</th>
                 <th>Jelenlét</th>
@@ -321,15 +328,29 @@ export const MonthlyLogTab = () => {
                 <th>Egyenleg</th>
                 <th>Jogcím</th>
                 <th>Elszámolt</th>
-                {allowanceTypes.map((tipus) => (
-                  <th key={tipus.code}>
-                    {tipus.name}
-                    <div className="font-normal opacity-60">
-                      {tipus.percent}%
-                    </div>
-                  </th>
-                ))}
                 <th />
+                <th>
+                  <button
+                    className="btn btn-xs btn-ghost"
+                    onClick={() => setAllowancesShown((current) => !current)}
+                    title={
+                      allowancesShown
+                        ? "A pótlékoszlopok elrejtése"
+                        : "A pótlékoszlopok megjelenítése"
+                    }
+                  >
+                    {allowancesShown ? "◀ Pótlékok" : "Pótlékok ▶"}
+                  </button>
+                </th>
+                {allowancesShown &&
+                  allowanceTypes.map((tipus) => (
+                    <th key={tipus.code}>
+                      {tipus.name}
+                      <div className="font-normal opacity-60">
+                        {tipus.percent}%
+                      </div>
+                    </th>
+                  ))}
               </tr>
             </thead>
             <tbody>
@@ -354,10 +375,28 @@ export const MonthlyLogTab = () => {
                       </span>
                     )}
                   </td>
+                  <td className="whitespace-nowrap">
+                    {formatRange(day.scheduleStart, day.scheduleEnd)}
+                    {day.scheduleFromEntry && (
+                      <span
+                        className="badge badge-xs badge-ghost ml-1"
+                        title="Erre a napra külön beosztás van rögzítve."
+                      >
+                        egyedi
+                      </span>
+                    )}
+                  </td>
                   <td>{formatTime(day.workStart)}</td>
                   <td>{formatTime(day.workEnd)}</td>
                   <td>{formatMinutes(day.presenceMinutes)}</td>
-                  <td>{formatMinutes(day.breakMinutes)}</td>
+                  <td className="whitespace-nowrap">
+                    {formatMinutes(day.breakMinutes)}
+                    {day.breakStart && day.breakEnd && (
+                      <span className="opacity-60 ml-1">
+                        ({formatRange(day.breakStart, day.breakEnd)})
+                      </span>
+                    )}
+                  </td>
                   <td>{formatMinutes(day.workedMinutes)}</td>
                   <td>{formatMinutes(day.scheduledMinutes ?? 0)}</td>
                   <td
@@ -396,11 +435,6 @@ export const MonthlyLogTab = () => {
                         ? "0:00"
                         : "-"}
                   </td>
-                  {allowanceTypes.map((tipus) => (
-                    <td key={tipus.code}>
-                      {formatMinutes(day.allowances[tipus.code] ?? 0)}
-                    </td>
-                  ))}
                   <td>
                     {!isFlexible && (
                       <button
@@ -411,6 +445,13 @@ export const MonthlyLogTab = () => {
                       </button>
                     )}
                   </td>
+                  <td />
+                  {allowancesShown &&
+                    allowanceTypes.map((tipus) => (
+                      <td key={tipus.code}>
+                        {formatMinutes(day.allowances[tipus.code] ?? 0)}
+                      </td>
+                    ))}
                 </tr>
               ))}
             </tbody>
@@ -420,6 +461,7 @@ export const MonthlyLogTab = () => {
 
       {editedDay && (
         <TimeEntryForm
+          key={`${editedDay.date}-${editedDay.id ?? "uj"}`}
           day={editedDay}
           employeeId={employeeId}
           defaults={

@@ -1,0 +1,24 @@
+info:
+  name: nap ismetelt torlese
+  type: http
+  seq: 201
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/time-entries/{{entryId}}"
+  auth:
+    type: bearer
+    token: "{{token}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "404"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
