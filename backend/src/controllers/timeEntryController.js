@@ -381,6 +381,81 @@ const update = async (req, res) => {
     }
 };
 
+const remove = async (req, res) => {
+    const entryId = Number(req.params.id);
+
+    if (!entryId) {
+        return res.status(400).json({ message: 'Érvénytelen azonosító.' });
+    }
+
+    try {
+        const [existing] = await pool.execute(
+            `SELECT wtt_employee_id, wtt_working_date, wtt_is_ordered
+             FROM WorkingTimeTracking
+             WHERE wtt_id = ?`,
+            [entryId]
+        );
+
+        if (existing.length === 0) {
+            return res.status(404).json({ message: 'A munkaidő-bejegyzés nem található.' });
+        }
+
+        const entry = existing[0];
+        const isSelf = entry.wtt_employee_id === req.user.employeeId;
+
+        if (!isSelf) {
+            const hasAccess = await canAccessEmployee(
+                req.user.userId, req.user.employeeId, entry.wtt_employee_id, req.user.role
+            );
+
+            if (!hasAccess) {
+                return res.status(403).json({ message: 'Ehhez a dolgozóhoz nincs hozzáférése.' });
+            }
+        }
+
+        const daysPassed = daysSince(entry.wtt_working_date);
+
+        if (req.user.role === 'Dolgozó' && daysPassed > 0) {
+            return res.status(403).json({
+                message: 'A lezárt munkaidő-adat a dolgozói jogosultsággal nem törölhető.'
+            });
+        }
+
+        if (daysPassed > BACKDATE_LIMIT_DAYS && req.user.role !== 'HR-Bér') {
+            return res.status(403).json({
+                message: 'Visszamenőleges törlésre legfeljebb három napig van lehetőség.'
+            });
+        }
+
+        if (entry.wtt_is_ordered) {
+            await pool.execute(
+                `UPDATE WorkingTimeTracking
+                 SET wtt_working_start = NULL, wtt_working_end = NULL,
+                     wtt_brk_start = NULL, wtt_brk_end = NULL,
+                     wtt_schedule_start = NULL, wtt_schedule_end = NULL,
+                     wtt_note = NULL
+                 WHERE wtt_id = ?`,
+                [entryId]
+            );
+
+            return res.status(200).json({
+                message: 'A rögzített időpontok törlésre kerültek, '
+                    + 'az elrendelés jelölője megmaradt.'
+            });
+        }
+
+        await pool.execute(
+            `DELETE FROM WorkingTimeTracking WHERE wtt_id = ?`,
+            [entryId]
+        );
+
+        return res.status(200).json({ message: 'A nap rögzítése törlésre került.' });
+    } catch (error) {
+        console.error('Munkaidő törlési hiba:', error);
+        return res.status(500).json({ message: 'Szerver hiba.' });
+    }
+};
+
 const setOrdered = async (req, res) => {
     const { employeeId, workingDate, isOrdered } = req.body || {};
 
@@ -822,4 +897,4 @@ const createBulk = async (req, res) => {
     }
 };
 
-module.exports = { create, list, update, setOrdered, listDaily, createBulk };
+module.exports = { create, list, update, remove, setOrdered, listDaily, createBulk };

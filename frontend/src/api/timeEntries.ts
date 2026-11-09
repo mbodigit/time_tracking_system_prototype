@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiPatch } from "./client";
+import { apiGet, apiPost, apiPatch, apiDelete } from "./client";
 
 export type DayType = "workday" | "restday" | "holiday" | "transferred";
 
@@ -100,6 +100,9 @@ export const createEntry = (payload: Record<string, unknown>) =>
 
 export const updateEntry = (id: number, payload: Record<string, unknown>) =>
   apiPatch<{ message: string }>(`/time-entries/${id}`, payload);
+
+export const deleteEntry = (id: number) =>
+  apiDelete<{ message: string }>(`/time-entries/${id}`);
 
 export interface DailyEmployee {
   id: number;

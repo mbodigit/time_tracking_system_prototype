@@ -321,6 +321,29 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
               }
             : null;
 
+        const weekday = new Date(`${date}T00:00:00`).getDay();
+        const isWorkingDay = dayType === 'transferred'
+            || (dayType === 'workday' && weekday !== 0 && weekday !== 6);
+
+        const rotated = usesRotation
+            ? resolveRotation(
+                date,
+                employee.user_group_rotation_position,
+                employee.user_group_rotation_start,
+                rotationSlots
+              )
+            : null;
+
+        const dayStart = rotated ? rotated.start : templateStart;
+        const dayEnd = rotated ? rotated.end : templateEnd;
+
+        const defaultScheduleStart = (isWorkingDay && dayStart && dayEnd)
+            ? `${date} ${dayStart}`
+            : null;
+        const defaultScheduleEnd = (isWorkingDay && dayStart && dayEnd)
+            ? (dayEnd > dayStart ? `${date} ${dayEnd}` : `${addDays(date, 1)} ${dayEnd}`)
+            : null;
+
         if (!row) {
             days.push({
                 id: null,
@@ -333,6 +356,11 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
                 isOrdered: false,
                 presenceMinutes: 0,
                 breakMinutes: 0,
+                breakStart: null,
+                breakEnd: null,
+                scheduleStart: defaultScheduleStart,
+                scheduleEnd: defaultScheduleEnd,
+                scheduleFromEntry: false,
                 scheduledMinutes: null,
                 balanceMinutes: absenceMinutes > 0 ? 0 : null,
                 workedMinutes: 0,
@@ -356,6 +384,11 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
                 isOrdered: Boolean(row.wtt_is_ordered),
                 presenceMinutes: 0,
                 breakMinutes: 0,
+                breakStart: row.wtt_brk_start,
+                breakEnd: row.wtt_brk_end,
+                scheduleStart: row.wtt_schedule_start || defaultScheduleStart,
+                scheduleEnd: row.wtt_schedule_end || defaultScheduleEnd,
+                scheduleFromEntry: Boolean(row.wtt_schedule_start),
                 scheduledMinutes: null,
                 balanceMinutes: absenceMinutes > 0 ? 0 : null,
                 workedMinutes: 0,
@@ -365,31 +398,8 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
             continue;
         }
 
-        const weekday = new Date(`${date}T00:00:00`).getDay();
-        const isWorkingDay = dayType === 'transferred'
-            || (dayType === 'workday' && weekday !== 0 && weekday !== 6);
-
-        let scheduleStart = row.wtt_schedule_start;
-        let scheduleEnd = row.wtt_schedule_end;
-
-        const rotated = usesRotation
-            ? resolveRotation(
-                date,
-                employee.user_group_rotation_position,
-                employee.user_group_rotation_start,
-                rotationSlots
-              )
-            : null;
-
-        const dayStart = rotated ? rotated.start : templateStart;
-        const dayEnd = rotated ? rotated.end : templateEnd;
-
-        if (!scheduleStart && isWorkingDay && dayStart && dayEnd) {
-            scheduleStart = `${date} ${dayStart}`;
-            scheduleEnd = dayEnd > dayStart
-                ? `${date} ${dayEnd}`
-                : `${addDays(date, 1)} ${dayEnd}`;
-        }
+        let scheduleStart = row.wtt_schedule_start || defaultScheduleStart;
+        let scheduleEnd = row.wtt_schedule_end || defaultScheduleEnd;
 
         const hasSchedule = Boolean(scheduleStart) && Boolean(scheduleEnd);
         const scheduleMissing = isWorkingDay && !hasSchedule;

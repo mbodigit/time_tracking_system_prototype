@@ -62,3 +62,21 @@ export const formatSignedMinutes = (minutes: number | null): string => {
   const rest = absolute % 60;
   return `${sign}${hours}:${String(rest).padStart(2, "0")}`;
 };
+export const isToday = (date: string): boolean => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  return date === `${year}-${month}-${day}`;
+};
+
+export const formatRange = (
+  from: string | null,
+  to: string | null,
+): string => {
+  if (!from || !to) {
+    return "-";
+  }
+
+  return `${formatTime(from)}-${formatTime(to)}`;
+};

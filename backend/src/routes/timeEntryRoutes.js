@@ -24,6 +24,13 @@ router.patch('/time-entries/:id',
     timeEntryController.update
 );
 
+router.delete('/time-entries/:id',
+    authenticateToken,
+    requireEmployee,
+    authorizePermission('monthly_log.record'),
+    timeEntryController.remove
+);
+
 router.put('/time-entries/ordered',
     authenticateToken,
     requireEmployee,

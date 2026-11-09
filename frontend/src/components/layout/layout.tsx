@@ -286,8 +286,13 @@ export const Layout: React.FC = () => {
             role="button"
             className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-base-200 cursor-pointer"
           >
-            <span className="text-sm text-base-content/70 hidden sm:inline">
-              {currentUser?.fullName ?? "Ismeretlen felhasználó"}
+            <span className="hidden sm:flex flex-col items-end leading-tight">
+              <span className="text-sm text-base-content/70">
+                {currentUser?.fullName ?? "Ismeretlen felhasználó"}
+              </span>
+              <span className="text-xs text-base-content/50">
+                {currentUser?.username ?? ""}
+              </span>
             </span>
             <div className="avatar avatar-placeholder">
               <div className="bg-primary text-primary-content w-10 rounded-full">
