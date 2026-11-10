@@ -20,6 +20,9 @@ runtime:
     - expression: res.status
       operator: eq
       value: "401"
+    - expression: res.body.message
+      operator: contains
+      value: "Még 2 próbálkozása maradt"
 
 settings:
   encodeUrl: true

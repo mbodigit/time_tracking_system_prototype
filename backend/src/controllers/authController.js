@@ -50,10 +50,13 @@ const login = async (req, res) => {
                 [failedAttempts, isLocked ? new Date() : null, user.user_id]
             );
 
+            const remaining = MAX_FAILED_ATTEMPTS - failedAttempts;
+
             return res.status(isLocked ? 423 : 401).json({
                 message: isLocked
                     ? LOCKED_MESSAGE
-                    : 'Hibás felhasználónév vagy jelszó!'
+                    : 'Hibás felhasználónév vagy jelszó! Még '
+                      + `${remaining} próbálkozása maradt a fiók zárolásáig.`
             });
         }
 
