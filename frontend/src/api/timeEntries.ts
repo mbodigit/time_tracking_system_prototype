@@ -12,7 +12,7 @@ export interface TimeEntryDay {
     id: number;
     name: string;
     isPaid: boolean;
-    status: "Függőben" | "Jóváhagyva";
+    status: "Függőben" | "Folyamatban" | "Jóváhagyva";
     coversDay: boolean;
   } | null;
   absenceMinutes: number;

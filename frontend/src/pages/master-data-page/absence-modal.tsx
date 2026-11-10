@@ -17,6 +17,7 @@ const EMPTY: AbsencePayload = {
   category: "Egyéb",
   isPaid: true,
   isOpenEnded: false,
+  needsApproval: true,
   recType: 0,
   status: true,
   sort: 0,
@@ -29,6 +30,7 @@ const toForm = (absence: AdminAbsence): AbsencePayload => ({
   category: absence.category,
   isPaid: absence.isPaid,
   isOpenEnded: absence.isOpenEnded,
+  needsApproval: absence.needsApproval,
   recType: absence.recType,
   status: absence.status,
   sort: absence.sort,
@@ -240,6 +242,20 @@ export const AbsenceModal = ({
                 }
               />
               <span className="text-sm">Nyitott végű (záró nap nélkül is)</span>
+            </label>
+
+            <label className="flex cursor-pointer items-center gap-3">
+              <input
+                type="checkbox"
+                className="checkbox checkbox-sm"
+                checked={form.needsApproval}
+                onChange={(event) =>
+                  patch({ needsApproval: event.target.checked })
+                }
+              />
+              <span className="text-sm">
+                Elbírálást igényel (kikapcsolva a leadáskor azonnal jóváhagyott)
+              </span>
             </label>
 
             <label className="flex cursor-pointer items-center gap-3">

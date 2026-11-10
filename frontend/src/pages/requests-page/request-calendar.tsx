@@ -161,7 +161,7 @@ export const RequestCalendar = ({
               {day.absence && (
                 <span
                   className={`absolute bottom-0.5 left-1/2 h-1 w-3 -translate-x-1/2 rounded ${
-                    day.absence.status === "Jóváhagyva"
+                    day.absence.status !== "Függőben"
                       ? "bg-success"
                       : "bg-warning"
                   }`}

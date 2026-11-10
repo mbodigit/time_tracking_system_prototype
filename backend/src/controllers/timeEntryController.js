@@ -4,6 +4,7 @@ const { calculateAllowances } = require('../services/allowanceCalculator');
 const { buildMonthlyReport } = require('../services/monthlyReport');
 const { DAY_TYPE_MAP, toSqlDateTime, daysSince, addDays, toDate } = require('../services/dateHelpers');
 const { loadRotationSlots, resolveRotation } = require('../services/shiftRotation');
+const { ACTIVE_SQL, COVERING_SQL, isCovering } = require('../services/requestStatus');
 
 const MAX_DAILY_MINUTES = 12 * 60;
 const BACKDATE_LIMIT_DAYS = 3;
@@ -131,7 +132,7 @@ const create = async (req, res) => {
              FROM Requests r
              JOIN Absences a ON a.absence_id = r.request_absence_id
              WHERE r.request_employee_id = ?
-               AND r.request_status = 'Jóváhagyva'
+               AND r.request_status IN (${COVERING_SQL})
                AND a.absence_rec_type = 0
                AND ? BETWEEN r.request_start_date AND IF(a.absence_is_open_ended = 1 AND r.request_closed_at IS NULL, CURDATE(), r.request_end_date)
              LIMIT 1`,
@@ -500,7 +501,7 @@ const setOrdered = async (req, res) => {
             `SELECT 1
              FROM Requests
              WHERE request_employee_id = ?
-               AND request_status = 'Jóváhagyva'
+               AND request_status IN (${COVERING_SQL})
                AND ? BETWEEN request_start_date AND request_end_date
              LIMIT 1`,
             [targetEmployeeId, workingDate]
@@ -626,7 +627,7 @@ const listDaily = async (req, res) => {
                     a.absence_name, a.absence_rec_type
              FROM Requests r
              JOIN Absences a ON a.absence_id = r.request_absence_id
-             WHERE r.request_status IN ('Függőben', 'Jóváhagyva')
+             WHERE r.request_status IN (${ACTIVE_SQL})
                AND r.request_start_date <= ? AND IF(a.absence_is_open_ended = 1 AND r.request_closed_at IS NULL, CURDATE(), r.request_end_date) >= ?
                AND r.request_employee_id IN (${placeholders})`,
             [date, date, ...ids]
@@ -635,7 +636,7 @@ const listDaily = async (req, res) => {
         const absenceByEmployee = {};
         for (const row of absenceRows) {
             const current = absenceByEmployee[row.request_employee_id];
-            if (!current || row.request_status === 'Jóváhagyva') {
+            if (!current || isCovering(row.request_status)) {
                 absenceByEmployee[row.request_employee_id] = row;
             }
         }
@@ -695,7 +696,7 @@ const listDaily = async (req, res) => {
                     ? {
                         name: absence.absence_name,
                         status: absence.request_status,
-                        coversDay: absence.request_status === 'Jóváhagyva'
+                        coversDay: isCovering(absence.request_status)
                                    && absence.absence_rec_type === 0
                       }
                     : null,
@@ -804,7 +805,7 @@ const createBulk = async (req, res) => {
                  FROM Requests r
                  JOIN Absences a ON a.absence_id = r.request_absence_id
                  WHERE r.request_employee_id = ?
-                   AND r.request_status = 'Jóváhagyva'
+                   AND r.request_status IN (${COVERING_SQL})
                    AND a.absence_rec_type = 0
                    AND ? BETWEEN r.request_start_date AND r.request_end_date
                  LIMIT 1`,

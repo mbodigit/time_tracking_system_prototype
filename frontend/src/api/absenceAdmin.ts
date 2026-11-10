@@ -7,6 +7,7 @@ export interface AdminAbsence {
   isPaid: boolean;
   category: string;
   isOpenEnded: boolean;
+  needsApproval: boolean;
   recType: number;
   status: boolean;
   sort: number;
@@ -26,6 +27,7 @@ export interface AbsencePayload {
   isPaid: boolean;
   category: string;
   isOpenEnded: boolean;
+  needsApproval: boolean;
   recType: number;
   status: boolean;
   sort: number;

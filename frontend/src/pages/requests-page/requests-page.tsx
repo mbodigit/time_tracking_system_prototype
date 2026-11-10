@@ -25,6 +25,7 @@ type Tab = "own" | "pending" | "ordered";
 
 const STATUS_CLASS: Record<string, string> = {
   Függőben: "badge-warning",
+  Folyamatban: "badge-info",
   Jóváhagyva: "badge-success",
   Elutasítva: "badge-error",
   Visszavonva: "badge-ghost",
@@ -45,6 +46,7 @@ const statusLabel = (item: AbsenceRequest) => {
 const STATUS_FILTERS = [
   "Mind",
   "Függőben",
+  "Folyamatban",
   "Jóváhagyva",
   "Elutasítva",
   "Visszavonva",
@@ -379,7 +381,8 @@ export const RequestsPage = () => {
                     </td>
                     <td className="text-sm">{item.decisionReason ?? "-"}</td>
                     <td>
-                      {item.status === "Függőben" && (
+                      {(item.status === "Függőben" ||
+                        item.status === "Folyamatban") && (
                         <button
                           className="btn btn-xs btn-ghost"
                           onClick={() =>

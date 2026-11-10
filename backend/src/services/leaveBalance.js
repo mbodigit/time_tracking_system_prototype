@@ -1,5 +1,6 @@
 const pool = require('./../config/db');
 const { addDays, DAY_TYPE_MAP } = require('./dateHelpers');
+const { COVERING_SQL } = require('./requestStatus');
 
 const ANNUAL_LEAVE_ABSENCE = 'Fizetett szabadság';
 
@@ -21,7 +22,7 @@ const buildLeaveBalance = async (employeeId, yearNumber) => {
          FROM Requests r
          JOIN Absences a ON a.absence_id = r.request_absence_id
          WHERE r.request_employee_id = ?
-           AND r.request_status = 'Jóváhagyva'
+           AND r.request_status IN (${COVERING_SQL})
            AND a.absence_name = ?
            AND r.request_start_date <= ?
            AND r.request_end_date   >= ?`,

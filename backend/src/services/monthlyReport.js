@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { ACTIVE_SQL, isCovering } = require('./requestStatus');
 const { loadRotationSlots, resolveRotation } = require('./shiftRotation');
 const { calculateAllowances } = require('./allowanceCalculator');
 const {
@@ -128,7 +129,7 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
          FROM Requests r
          JOIN Absences a ON a.absence_id = r.request_absence_id
          WHERE r.request_employee_id = ?
-           AND r.request_status IN ('Függőben', 'Jóváhagyva')
+           AND r.request_status IN (${ACTIVE_SQL})
            AND r.request_start_date <= ?
            AND IF(a.absence_is_open_ended = 1 AND r.request_closed_at IS NULL, CURDATE(), r.request_end_date) >= ?`,
         [employeeId, lastDay, firstDay]
@@ -146,7 +147,7 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
         while (cursor <= last) {
             const current = absenceByDate[cursor];
 
-            if (!current || entry.request_status === 'Jóváhagyva') {
+            if (!current || isCovering(entry.request_status)) {
                 absenceByDate[cursor] = entry;
             }
 
@@ -170,7 +171,7 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
 
             const absence = absenceByDate[date];
             const coversDay = Boolean(absence)
-                && absence.request_status === 'Jóváhagyva'
+                && isCovering(absence.request_status)
                 && absence.absence_rec_type === 0
                 && isWorkingDay;
 
@@ -291,7 +292,7 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
         const nextDayType = calendar[addDays(date, 1)] || 'workday';
         const row = rowsByDate[date];
         const absence = absenceByDate[date];
-        const isApprovedAbsence = Boolean(absence) && absence.request_status === 'Jóváhagyva';
+        const isApprovedAbsence = Boolean(absence) && isCovering(absence.request_status);
         const weekdayNumber = new Date(`${date}T00:00:00`).getDay();
         const isWorkingDayForAbsence = dayType === 'transferred'
             || (dayType === 'workday' && weekdayNumber !== 0 && weekdayNumber !== 6);

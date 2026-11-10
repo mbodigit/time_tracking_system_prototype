@@ -4,9 +4,11 @@ SET NAMES utf8mb4;
 
 INSERT INTO Absences (
   absence_name, absence_payroll_code, absence_is_paid, absence_category,
-  absence_is_open_ended, absence_rec_type, absence_status, absence_sort
+  absence_is_open_ended, absence_rec_type, absence_needs_approval,
+  absence_status, absence_sort
 )
-SELECT v.nev, v.berkod, v.fizetett, v.kategoria, v.nyitott, v.rogzites, 1, v.sorrend
+SELECT v.nev, v.berkod, v.fizetett, v.kategoria, v.nyitott, v.rogzites,
+       IF(v.nev = 'Betegség', 0, 1), 1, v.sorrend
 FROM (
             SELECT 'Fizetett szabadság'            AS nev, 'SZAB'    AS berkod,
                    1 AS fizetett, 'Szabadság'      AS kategoria,

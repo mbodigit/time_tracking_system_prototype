@@ -1,6 +1,11 @@
 import { apiGet, apiPost, apiPatch, apiPut } from "./client";
 
-export type RequestStatus = "Függőben" | "Jóváhagyva" | "Elutasítva" | "Visszavonva";
+export type RequestStatus =
+  | "Függőben"
+  | "Folyamatban"
+  | "Jóváhagyva"
+  | "Elutasítva"
+  | "Visszavonva";
 
 export interface AbsenceRequest {
   id: number;
@@ -21,6 +26,7 @@ export interface AbsenceRequest {
   createdAt: string;
   closedAt: string | null;
   isOpenEnded: boolean;
+  needsApproval: boolean;
   isClosable: boolean;
   isUrgent: boolean;
   isBackdated: boolean;
