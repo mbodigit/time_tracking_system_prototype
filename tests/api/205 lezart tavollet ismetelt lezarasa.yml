@@ -1,0 +1,30 @@
+info:
+  name: lezart tavollet ismetelt lezarasa
+  type: http
+  seq: 205
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/requests/{{betegKerelemId}}/close"
+  body:
+    type: json
+    data: |-
+      {
+        "endDate": "2030-03-08"
+      }
+  auth:
+    type: bearer
+    token: "{{hrToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "409"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

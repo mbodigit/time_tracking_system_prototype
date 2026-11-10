@@ -21,6 +21,10 @@ const SELECT_FIELDS = `
     r.request_status, r.request_decision_at, r.request_decision_reason,
     r.request_created_at,
     a.absence_name, a.absence_is_paid, a.absence_category,
+    a.absence_is_open_ended,
+    r.request_closed_at,
+    IF(a.absence_is_open_ended = 1 AND r.request_closed_at IS NULL,
+       CURDATE(), r.request_end_date) AS effective_end_date,
     e.employee_code, e.employee_first_name, e.employee_last_name,
     d.user_username AS decision_by_username
 `;
@@ -48,9 +52,12 @@ const toOutput = (row) => {
         absenceId: row.request_absence_id,
         absenceName: row.absence_name,
         isPaid: Boolean(row.absence_is_paid),
+        isOpenEnded: Boolean(row.absence_is_open_ended),
+        isClosable: Boolean(row.absence_is_open_ended) && closable(row),
         category: row.absence_category,
         startDate: row.request_start_date,
-        endDate: row.request_end_date,
+        endDate: row.effective_end_date,
+        closedAt: row.request_closed_at,
         message: row.request_message,
         status: row.request_status,
         decisionAt: row.request_decision_at,
@@ -62,6 +69,8 @@ const toOutput = (row) => {
         isExpired: isPending && startDay < today && createdAt <= startDay
     };
 };
+
+const closable = (row) => !row.request_closed_at;
 
 const create = async (req, res) => {
     const { employeeId, absenceId, startDate, endDate, message } = req.body || {};
@@ -156,11 +165,13 @@ const create = async (req, res) => {
         }
 
         const [overlap] = await pool.execute(
-            `SELECT 1 FROM Requests
-             WHERE request_employee_id = ?
-               AND request_status IN ('Függőben', 'Jóváhagyva')
-               AND request_start_date <= ?
-               AND request_end_date   >= ?
+            `SELECT 1
+             FROM Requests r
+             JOIN Absences a ON a.absence_id = r.request_absence_id
+             WHERE r.request_employee_id = ?
+               AND r.request_status IN ('Függőben', 'Jóváhagyva')
+               AND r.request_start_date <= ?
+               AND IF(a.absence_is_open_ended = 1 AND r.request_closed_at IS NULL, CURDATE(), r.request_end_date) >= ?
              LIMIT 1`,
             [targetEmployeeId, effectiveEndDate, startDate]
         );
@@ -233,6 +244,108 @@ const list = async (req, res) => {
         return res.status(200).json({ requests: rows.map(toOutput) });
     } catch (error) {
         console.error('Kérelem lekérdezési hiba:', error);
+        return res.status(500).json({ message: 'Szerver hiba.' });
+    }
+};
+
+const close = async (req, res) => {
+    const requestId = Number(req.params.id);
+    const { endDate } = req.body || {};
+
+    if (!requestId) {
+        return res.status(400).json({ message: 'Érvénytelen azonosító.' });
+    }
+
+    if (!endDate) {
+        return res.status(400).json({
+            message: 'A távollét záró napjának megadása kötelező.'
+        });
+    }
+
+    if (req.user.role !== 'HR-Bér' && req.user.role !== 'Admin') {
+        return res.status(403).json({
+            message: 'A nyitott végű távollét lezárása a HR feladata.'
+        });
+    }
+
+    try {
+        const [existing] = await pool.execute(
+            `SELECT r.request_id, r.request_employee_id, r.request_start_date,
+                    r.request_end_date, r.request_status, r.request_closed_at,
+                    a.absence_is_open_ended
+             FROM Requests r
+             JOIN Absences a ON a.absence_id = r.request_absence_id
+             WHERE r.request_id = ?`,
+            [requestId]
+        );
+
+        if (existing.length === 0) {
+            return res.status(404).json({ message: 'A kérelem nem található.' });
+        }
+
+        const request = existing[0];
+
+        if (!request.absence_is_open_ended) {
+            return res.status(400).json({
+                message: 'Csak nyitott végű jogcím zárható le utólag.'
+            });
+        }
+
+        if (request.request_status === 'Elutasítva'
+            || request.request_status === 'Visszavonva') {
+            return res.status(409).json({
+                message: `A kérelem állapota ${request.request_status}, ezért nem zárható le.`
+            });
+        }
+
+        if (request.request_closed_at) {
+            return res.status(409).json({
+                message: 'A távollét már lezárásra került, ezért nem módosítható.'
+            });
+        }
+
+        if (toDate(endDate) < toDate(request.request_start_date)) {
+            return res.status(400).json({
+                message: 'A távollét vége nem lehet korábbi a kezdeténél.'
+            });
+        }
+
+        const [overlap] = await pool.execute(
+            `SELECT 1
+             FROM Requests r
+             JOIN Absences a ON a.absence_id = r.request_absence_id
+             WHERE r.request_employee_id = ?
+               AND r.request_id <> ?
+               AND r.request_status IN ('Függőben', 'Jóváhagyva')
+               AND r.request_start_date <= ?
+               AND IF(a.absence_is_open_ended = 1 AND r.request_closed_at IS NULL, CURDATE(), r.request_end_date) >= ?
+             LIMIT 1`,
+            [request.request_employee_id, requestId, endDate,
+             request.request_start_date]
+        );
+
+        if (overlap.length > 0) {
+            return res.status(409).json({
+                message: 'A megadott időszak átfedi a dolgozó másik kérelmét.'
+            });
+        }
+
+        await pool.execute(
+            `UPDATE Requests
+             SET request_end_date       = ?,
+                 request_status         = 'Jóváhagyva',
+                 request_decision_by    = ?,
+                 request_decision_at    = NOW(),
+                 request_closed_at      = NOW()
+             WHERE request_id = ?`,
+            [endDate, req.user.userId, requestId]
+        );
+
+        return res.status(200).json({
+            message: 'A távollét lezárásra került.'
+        });
+    } catch (error) {
+        console.error('Kérelem lezárási hiba:', error);
         return res.status(500).json({ message: 'Szerver hiba.' });
     }
 };
@@ -372,4 +485,4 @@ const withdraw = async (req, res) => {
     }
 };
 
-module.exports = { create, list, decide, withdraw };
+module.exports = { create, list, decide, close, withdraw };

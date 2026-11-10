@@ -24,6 +24,13 @@ router.patch('/requests/:id',
     requestController.decide
 );
 
+router.patch('/requests/:id/close',
+    authenticateToken,
+    requireEmployee,
+    authorizePermission('requests.approve'),
+    requestController.close
+);
+
 router.patch('/requests/:id/withdraw',
     authenticateToken,
     requireEmployee,
