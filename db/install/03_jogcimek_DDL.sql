@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS Absences (
   absence_category      VARCHAR(30) NOT NULL DEFAULT 'Egyéb',
   absence_is_open_ended BOOLEAN     NOT NULL DEFAULT 0,
   absence_rec_type      TINYINT     NOT NULL DEFAULT 0,
+  absence_needs_approval BOOLEAN    NOT NULL DEFAULT 1,
   absence_status        TINYINT     NOT NULL DEFAULT 1,
   absence_sort          INT         NOT NULL DEFAULT 0,
   PRIMARY KEY (absence_id),

@@ -22,6 +22,9 @@ runtime:
     - expression: res.status
       operator: eq
       value: "201"
+    - expression: res.body.message
+      operator: contains
+      value: "folyamatban lévőként"
 
   actions:
     - type: set-variable

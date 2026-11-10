@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { ACTIVE_SQL, PENDING, IN_PROGRESS, APPROVED } = require('../services/requestStatus');
 const { canAccessEmployee, getAccessibleEmployeeIds } = require('../services/employeeScope');
 
 const URGENT_HOURS = 24;
@@ -21,7 +22,7 @@ const SELECT_FIELDS = `
     r.request_status, r.request_decision_at, r.request_decision_reason,
     r.request_created_at,
     a.absence_name, a.absence_is_paid, a.absence_category,
-    a.absence_is_open_ended,
+    a.absence_is_open_ended, a.absence_needs_approval,
     r.request_closed_at,
     IF(a.absence_is_open_ended = 1 AND r.request_closed_at IS NULL,
        CURDATE(), r.request_end_date) AS effective_end_date,
@@ -42,7 +43,7 @@ const toOutput = (row) => {
 
     const startDay = toDate(row.request_start_date);
     const createdAt = new Date(String(row.request_created_at).replace(' ', 'T'));
-    const isPending = row.request_status === 'Függőben';
+    const isPending = row.request_status === PENDING;
 
     return {
         id: row.request_id,
@@ -53,6 +54,7 @@ const toOutput = (row) => {
         absenceName: row.absence_name,
         isPaid: Boolean(row.absence_is_paid),
         isOpenEnded: Boolean(row.absence_is_open_ended),
+        needsApproval: Boolean(row.absence_needs_approval),
         isClosable: Boolean(row.absence_is_open_ended) && closable(row),
         category: row.absence_category,
         startDate: row.request_start_date,
@@ -121,7 +123,8 @@ const create = async (req, res) => {
         }
 
         const [absences] = await pool.execute(
-            `SELECT absence_id, absence_name, absence_is_open_ended, absence_status
+            `SELECT absence_id, absence_name, absence_is_open_ended,
+                    absence_needs_approval, absence_status
              FROM Absences WHERE absence_id = ?`,
             [absenceId]
         );
@@ -169,7 +172,7 @@ const create = async (req, res) => {
              FROM Requests r
              JOIN Absences a ON a.absence_id = r.request_absence_id
              WHERE r.request_employee_id = ?
-               AND r.request_status IN ('Függőben', 'Jóváhagyva')
+               AND r.request_status IN (${ACTIVE_SQL})
                AND r.request_start_date <= ?
                AND IF(a.absence_is_open_ended = 1 AND r.request_closed_at IS NULL, CURDATE(), r.request_end_date) >= ?
              LIMIT 1`,
@@ -182,16 +185,28 @@ const create = async (req, res) => {
             });
         }
 
+        const needsApproval = Boolean(absence.absence_needs_approval);
+
         const [result] = await pool.execute(
             `INSERT INTO Requests (
                 request_employee_id, request_absence_id,
-                request_start_date, request_end_date, request_message
-             ) VALUES (?, ?, ?, ?, ?)`,
-            [targetEmployeeId, absenceId, startDate, effectiveEndDate, message || null]
+                request_start_date, request_end_date, request_message,
+                request_status, request_decision_by, request_decision_at
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                targetEmployeeId, absenceId, startDate, effectiveEndDate,
+                message || null,
+                needsApproval ? PENDING : IN_PROGRESS,
+                needsApproval ? null : req.user.userId,
+                needsApproval ? null : new Date()
+            ]
         );
 
         return res.status(201).json({
-            message: 'A kérelem rögzítésre került.',
+            message: needsApproval
+                ? 'A kérelem rögzítésre került.'
+                : 'A távollét folyamatban lévőként rögzítésre került, '
+                  + 'elbírálást nem igényel.',
             id: result.insertId
         });
     } catch (error) {
@@ -230,7 +245,7 @@ const list = async (req, res) => {
         const placeholders = others.map(() => '?').join(', ');
 
         const statusFilter = pendingOnly
-            ? `AND r.request_status = 'Függőben'`
+            ? `AND r.request_status = '${PENDING}'`
             : '';
 
         const [rows] = await pool.execute(
@@ -316,7 +331,7 @@ const close = async (req, res) => {
              JOIN Absences a ON a.absence_id = r.request_absence_id
              WHERE r.request_employee_id = ?
                AND r.request_id <> ?
-               AND r.request_status IN ('Függőben', 'Jóváhagyva')
+               AND r.request_status IN (${ACTIVE_SQL})
                AND r.request_start_date <= ?
                AND IF(a.absence_is_open_ended = 1 AND r.request_closed_at IS NULL, CURDATE(), r.request_end_date) >= ?
              LIMIT 1`,
@@ -333,7 +348,7 @@ const close = async (req, res) => {
         await pool.execute(
             `UPDATE Requests
              SET request_end_date       = ?,
-                 request_status         = 'Jóváhagyva',
+                 request_status         = '${APPROVED}',
                  request_decision_by    = ?,
                  request_decision_at    = NOW(),
                  request_closed_at      = NOW()
@@ -358,7 +373,7 @@ const decide = async (req, res) => {
         return res.status(400).json({ message: 'Érvénytelen azonosító.' });
     }
 
-    if (status !== 'Jóváhagyva' && status !== 'Elutasítva') {
+    if (status !== APPROVED && status !== 'Elutasítva') {
         return res.status(400).json({
             message: 'A döntés csak jóváhagyás vagy elutasítás lehet.'
         });
@@ -384,7 +399,14 @@ const decide = async (req, res) => {
 
         const request = existing[0];
 
-        if (request.request_status !== 'Függőben') {
+        if (request.request_status === IN_PROGRESS) {
+            return res.status(409).json({
+                message: 'A folyamatban lévő távollét elbírálást nem igényel, '
+                    + 'a lezárásával válik véglegessé.'
+            });
+        }
+
+        if (request.request_status !== PENDING) {
             return res.status(409).json({
                 message: `A kérelem már elbírálásra került, jelenlegi állapota: ${request.request_status}.`
             });
@@ -431,7 +453,7 @@ const decide = async (req, res) => {
         );
 
         return res.status(200).json({
-            message: status === 'Jóváhagyva'
+            message: status === APPROVED
                 ? 'A kérelem jóváhagyásra került.'
                 : 'A kérelem elutasításra került.'
         });
@@ -467,9 +489,11 @@ const withdraw = async (req, res) => {
             });
         }
 
-        if (request.request_status !== 'Függőben') {
+        if (request.request_status !== PENDING
+            && request.request_status !== IN_PROGRESS) {
             return res.status(409).json({
-                message: 'Csak függőben lévő kérelem vonható vissza.'
+                message: 'Csak függőben lévő vagy folyamatban lévő kérelem '
+                    + 'vonható vissza.'
             });
         }
 

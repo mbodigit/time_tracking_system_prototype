@@ -58,7 +58,8 @@ CREATE TABLE IF NOT EXISTS Requests (
   request_start_date      DATE         NOT NULL,
   request_end_date        DATE         NOT NULL,
   request_message         VARCHAR(255) NULL,
-  request_status          ENUM('Függőben','Jóváhagyva','Elutasítva','Visszavonva')
+  request_status          ENUM('Függőben','Folyamatban','Jóváhagyva',
+                               'Elutasítva','Visszavonva')
                           NOT NULL DEFAULT 'Függőben',
   request_decision_by     INT          NULL,
   request_decision_at     DATETIME     NULL,

@@ -58,6 +58,7 @@ const readBody = (body) => {
             category,
             body?.isOpenEnded ? 1 : 0,
             recType,
+            body?.needsApproval === false ? 0 : 1,
             body?.status ? 1 : 0,
             sort
         ],
@@ -70,7 +71,8 @@ const list = async (req, res) => {
         const [rows] = await pool.execute(
             `SELECT absence_id, absence_name, absence_payroll_code,
                     absence_is_paid, absence_category, absence_is_open_ended,
-                    absence_rec_type, absence_status, absence_sort
+                    absence_rec_type, absence_needs_approval,
+                    absence_status, absence_sort
              FROM Absences
              ORDER BY absence_sort, absence_name`
         );
@@ -96,6 +98,7 @@ const list = async (req, res) => {
             category: row.absence_category,
             isOpenEnded: Boolean(row.absence_is_open_ended),
             recType: row.absence_rec_type,
+            needsApproval: Boolean(row.absence_needs_approval),
             status: Boolean(row.absence_status),
             sort: row.absence_sort,
             workScheduleIds: links
@@ -151,8 +154,9 @@ const create = async (req, res) => {
             `INSERT INTO Absences (
                 absence_name, absence_payroll_code, absence_is_paid,
                 absence_category, absence_is_open_ended, absence_rec_type,
+                absence_needs_approval,
                 absence_status, absence_sort
-             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             parsed.values
         );
 
@@ -199,7 +203,8 @@ const update = async (req, res) => {
             `UPDATE Absences SET
                 absence_name = ?, absence_payroll_code = ?, absence_is_paid = ?,
                 absence_category = ?, absence_is_open_ended = ?,
-                absence_rec_type = ?, absence_status = ?, absence_sort = ?
+                absence_rec_type = ?, absence_needs_approval = ?,
+                absence_status = ?, absence_sort = ?
              WHERE absence_id = ?`,
             [...parsed.values, absenceId]
         );
