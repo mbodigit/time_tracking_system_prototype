@@ -64,6 +64,7 @@ CREATE TABLE IF NOT EXISTS Requests (
   request_decision_at     DATETIME     NULL,
   request_decision_reason VARCHAR(255) NULL,
   request_created_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  request_closed_at       DATETIME     NULL,
   PRIMARY KEY (request_id),
   KEY idx_request_employee (request_employee_id),
   KEY idx_request_status (request_status),

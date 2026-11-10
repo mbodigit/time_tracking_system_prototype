@@ -4,12 +4,14 @@ import {
   listOwnRequests,
   listManagedRequests,
   decideRequest,
+  closeRequest,
   withdrawRequest,
   setOrdered,
   type AbsenceRequest,
 } from "../../api/requests";
 import { listEmployees, type ScopeEmployee } from "../../api/lookups";
 import { ApiError } from "../../api/client";
+import { getCurrentUser } from "../../utils/auth";
 import { Field } from "../../components/form-field/form-field";
 import { RequestForm } from "./request-form";
 import {
@@ -111,6 +113,11 @@ export const RequestsPage = () => {
   const [rejected, setRejected] = useState<AbsenceRequest | null>(null);
   const [rejectReason, setRejectReason] = useState("");
 
+  const [closed, setClosed] = useState<AbsenceRequest | null>(null);
+  const [closeDate, setCloseDate] = useState("");
+
+  const canClose = ["HR-Bér", "Admin"].includes(getCurrentUser()?.role ?? "");
+
   const [orderEmployeeId, setOrderEmployeeId] = useState(0);
   const [orderDate, setOrderDate] = useState("");
 
@@ -204,6 +211,19 @@ export const RequestsPage = () => {
 
     setRejectReason("");
     setRejected(item);
+  };
+
+  const handleClose = async () => {
+    const item = closed;
+    const date = closeDate;
+
+    if (!item || !date) {
+      return;
+    }
+
+    setClosed(null);
+    setCloseDate("");
+    await runAction(() => closeRequest(item.id, date));
   };
 
   const handleReject = async () => {
@@ -501,6 +521,17 @@ export const RequestsPage = () => {
                             Elutasítás
                           </button>
                         </>
+                      ) : canClose && item.isClosable ? (
+                        <button
+                          className="btn btn-xs"
+                          title="A nyitott végű távollét lezárása az igazolás szerinti utolsó nappal"
+                          onClick={() => {
+                            setCloseDate(item.endDate);
+                            setClosed(item);
+                          }}
+                        >
+                          Lezárás
+                        </button>
                       ) : (
                         <span className="text-sm opacity-60">lezárva</span>
                       )}
@@ -591,6 +622,66 @@ export const RequestsPage = () => {
             load();
           }}
         />
+      )}
+
+      {closed && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-lg p-0">
+            <div className="flex items-start justify-between gap-3 border-b border-base-300 px-6 pb-3 pt-5">
+              <div>
+                <h3 className="text-xl font-bold text-primary">
+                  Távollét lezárása
+                </h3>
+                <p className="mt-0.5 text-xs opacity-60">
+                  {closed.employeeName} — {closed.absenceName}, kezdete{" "}
+                  {closed.startDate}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="btn btn-sm btn-ghost btn-circle"
+                onClick={() => setClosed(null)}
+                aria-label="Bezárás"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-2 px-6 py-5">
+              <span className="text-sm font-medium opacity-80">
+                A távollét utolsó napja
+              </span>
+              <input
+                type="date"
+                className="input input-sm input-bordered w-full"
+                autoFocus
+                min={closed.startDate}
+                value={closeDate}
+                onChange={(event) => setCloseDate(event.target.value)}
+              />
+              <p className="text-xs opacity-60">
+                Az orvosi igazolás szerinti utolsó nap, amely a múltban is lehet.
+                A lezárás végleges: utána a távollét időszaka nem módosítható.
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-2 border-t border-base-300 px-6 pb-5 pt-3">
+              <button
+                className="btn btn-sm btn-ghost"
+                onClick={() => setClosed(null)}
+              >
+                Mégse
+              </button>
+              <button
+                className="btn btn-sm btn-primary"
+                disabled={!closeDate}
+                onClick={handleClose}
+              >
+                Lezárás
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {rejected && (

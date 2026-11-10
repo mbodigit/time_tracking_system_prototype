@@ -1,0 +1,30 @@
+info:
+  name: lezaras korabbi datummal
+  type: http
+  seq: 203
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/requests/{{betegKerelemId}}/close"
+  body:
+    type: json
+    data: |-
+      {
+        "endDate": "2030-03-01"
+      }
+  auth:
+    type: bearer
+    token: "{{hrToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "400"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

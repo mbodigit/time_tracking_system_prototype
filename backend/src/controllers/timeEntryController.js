@@ -133,7 +133,7 @@ const create = async (req, res) => {
              WHERE r.request_employee_id = ?
                AND r.request_status = 'Jóváhagyva'
                AND a.absence_rec_type = 0
-               AND ? BETWEEN r.request_start_date AND r.request_end_date
+               AND ? BETWEEN r.request_start_date AND IF(a.absence_is_open_ended = 1 AND r.request_closed_at IS NULL, CURDATE(), r.request_end_date)
              LIMIT 1`,
             [targetEmployeeId, workingDate]
         );
@@ -627,7 +627,7 @@ const listDaily = async (req, res) => {
              FROM Requests r
              JOIN Absences a ON a.absence_id = r.request_absence_id
              WHERE r.request_status IN ('Függőben', 'Jóváhagyva')
-               AND r.request_start_date <= ? AND r.request_end_date >= ?
+               AND r.request_start_date <= ? AND IF(a.absence_is_open_ended = 1 AND r.request_closed_at IS NULL, CURDATE(), r.request_end_date) >= ?
                AND r.request_employee_id IN (${placeholders})`,
             [date, date, ...ids]
         );

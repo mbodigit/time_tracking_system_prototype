@@ -121,7 +121,8 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
     const contractedMinutes = (employee.working_hour_num || 0) * 60;
 
     const [requestRows] = await pool.execute(
-        `SELECT r.request_start_date, r.request_end_date, r.request_status,
+        `SELECT r.request_start_date, r.request_status,
+                IF(a.absence_is_open_ended = 1 AND r.request_closed_at IS NULL, CURDATE(), r.request_end_date) AS request_end_date,
                 a.absence_id, a.absence_name, a.absence_is_paid,
                 a.absence_rec_type, a.absence_payroll_code
          FROM Requests r
@@ -129,7 +130,7 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
          WHERE r.request_employee_id = ?
            AND r.request_status IN ('Függőben', 'Jóváhagyva')
            AND r.request_start_date <= ?
-           AND r.request_end_date   >= ?`,
+           AND IF(a.absence_is_open_ended = 1 AND r.request_closed_at IS NULL, CURDATE(), r.request_end_date) >= ?`,
         [employeeId, lastDay, firstDay]
     );
 

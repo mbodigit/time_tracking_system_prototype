@@ -19,6 +19,9 @@ export interface AbsenceRequest {
   decisionReason: string | null;
   decisionBy: string | null;
   createdAt: string;
+  closedAt: string | null;
+  isOpenEnded: boolean;
+  isClosable: boolean;
   isUrgent: boolean;
   isBackdated: boolean;
   isExpired: boolean;
@@ -35,6 +38,9 @@ export const createRequest = (payload: Record<string, unknown>) =>
 
 export const decideRequest = (id: number, status: RequestStatus, reason?: string) =>
   apiPatch<{ message: string }>(`/requests/${id}`, { status, reason });
+
+export const closeRequest = (id: number, endDate: string) =>
+  apiPatch<{ message: string }>(`/requests/${id}/close`, { endDate });
 
 export const withdrawRequest = (id: number) =>
   apiPatch<{ message: string }>(`/requests/${id}/withdraw`, {});
