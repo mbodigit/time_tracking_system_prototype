@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { serverError } = require('../utils/apiResponse');
 const bcrypt = require ("bcryptjs");
 const jwt = require ('jsonwebtoken');
 
@@ -98,8 +99,7 @@ const login = async (req, res) => {
         });
     }
     catch (error){
-        console.error('Bejelentkezési hiba:', error);
-        return res.status(500).json({message: 'Szerver hiba.'})
+        return serverError(res, 'Bejelentkezési hiba', error);
     }
 }
 module.exports = {login};

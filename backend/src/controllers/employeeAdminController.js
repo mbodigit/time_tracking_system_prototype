@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const pool = require('../config/db');
 const { coreHourLength } = require('../services/dateHelpers');
+const { employeeNotFound, serverError } = require('../utils/apiResponse');
 
 const PASSWORD_ALPHABET =
     'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
@@ -111,8 +112,7 @@ const list = async (req, res) => {
 
         return res.status(200).json({ employees, systemAccounts });
     } catch (error) {
-        console.error('Dolgozói lista hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Dolgozói lista hiba', error);
     }
 };
 
@@ -208,8 +208,7 @@ const options = async (req, res) => {
             }))
         });
     } catch (error) {
-        console.error('Dolgozói törzsadat hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Dolgozói törzsadat hiba', error);
     }
 };
 
@@ -349,8 +348,7 @@ const create = async (req, res) => {
         });
     } catch (error) {
         await connection.rollback();
-        console.error('Dolgozó felvételi hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Dolgozó felvételi hiba', error);
     } finally {
         connection.release();
     }
@@ -386,13 +384,12 @@ const update = async (req, res) => {
         );
 
         if (result.affectedRows === 0) {
-            return res.status(404).json({ message: 'A dolgozó nem található.' });
+            return employeeNotFound(res);
         }
 
         return res.status(200).json({ message: 'A dolgozó adatai módosításra kerültek.' });
     } catch (error) {
-        console.error('Dolgozó módosítási hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Dolgozó módosítási hiba', error);
     }
 };
 
@@ -410,7 +407,7 @@ const remove = async (req, res) => {
         );
 
         if (employees.length === 0) {
-            return res.status(404).json({ message: 'A dolgozó nem található.' });
+            return employeeNotFound(res);
         }
 
         const [blockers] = await pool.execute(
@@ -459,8 +456,7 @@ const remove = async (req, res) => {
 
         return res.status(200).json({ message: 'A dolgozó törlésre került.' });
     } catch (error) {
-        console.error('Dolgozó törlési hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Dolgozó törlési hiba', error);
     }
 };
 
@@ -482,7 +478,7 @@ const createUser = async (req, res) => {
         );
 
         if (employees.length === 0) {
-            return res.status(404).json({ message: 'A dolgozó nem található.' });
+            return employeeNotFound(res);
         }
 
         if (!employees[0].employee_work_email) {
@@ -525,8 +521,7 @@ const createUser = async (req, res) => {
             return res.status(409).json({ message: 'Ez a felhasználónév már foglalt.' });
         }
 
-        console.error('Fiók létrehozási hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Fiók létrehozási hiba', error);
     }
 };
 
@@ -634,8 +629,7 @@ const updateUser = async (req, res) => {
 
         return res.status(400).json({ message: 'Nincs végrehajtható művelet a kérésben.' });
     } catch (error) {
-        console.error('Fiók módosítási hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Fiók módosítási hiba', error);
     }
 };
 
@@ -734,8 +728,7 @@ const removeUser = async (req, res) => {
 
         return res.status(200).json({ message: 'A felhasználói fiók törlésre került.' });
     } catch (error) {
-        console.error('Fiók törlési hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Fiók törlési hiba', error);
     }
 };
 

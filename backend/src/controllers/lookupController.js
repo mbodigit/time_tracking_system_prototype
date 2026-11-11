@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { getAccessibleEmployeeIds, canAccessEmployee } = require('../services/employeeScope');
+const { employeeAccessDenied, serverError } = require('../utils/apiResponse');
 
 const listEmployees = async (req, res) => {
     try {
@@ -35,8 +36,7 @@ const listEmployees = async (req, res) => {
             }))
         });
     } catch (error) {
-        console.error('Dolgozói lista hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Dolgozói lista hiba', error);
     }
 };
 
@@ -50,7 +50,7 @@ const listAbsences = async (req, res) => {
             );
 
             if (!hasAccess) {
-                return res.status(403).json({ message: 'Ehhez a dolgozóhoz nincs hozzáférése.' });
+                return employeeAccessDenied(res);
             }
         }
 
@@ -76,8 +76,7 @@ const listAbsences = async (req, res) => {
             }))
         });
     } catch (error) {
-        console.error('Jogcímlista hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Jogcímlista hiba', error);
     }
 };
 

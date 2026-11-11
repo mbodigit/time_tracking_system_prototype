@@ -1,20 +1,6 @@
 const pool = require('../config/db');
-
-const toIsoDate = (value) => {
-    if (!value) {
-        return null;
-    }
-
-    if (typeof value === 'string') {
-        return value.slice(0, 10);
-    }
-
-    const year = value.getFullYear();
-    const month = String(value.getMonth() + 1).padStart(2, '0');
-    const day = String(value.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-};
-const { coreHourLength } = require('../services/dateHelpers');
+const { coreHourLength, toIsoDate } = require('../services/dateHelpers');
+const { serverError } = require('../utils/apiResponse');
 
 const list = async (req, res) => {
     try {
@@ -80,8 +66,7 @@ const list = async (req, res) => {
 
         return res.status(200).json({ groups });
     } catch (error) {
-        console.error('Csoport lekérdezési hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Csoport lekérdezési hiba', error);
     }
 };
 
@@ -164,8 +149,7 @@ const options = async (req, res) => {
             }))
         });
     } catch (error) {
-        console.error('Csoport törzsadat hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Csoport törzsadat hiba', error);
     }
 };
 
@@ -393,8 +377,7 @@ const create = async (req, res) => {
             });
         }
 
-        console.error('Csoport létrehozási hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Csoport létrehozási hiba', error);
     }
 };
 
@@ -437,8 +420,7 @@ const update = async (req, res) => {
             });
         }
 
-        console.error('Csoport módosítási hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Csoport módosítási hiba', error);
     }
 };
 
@@ -471,8 +453,7 @@ const listAssignable = async (req, res) => {
             }))
         });
     } catch (error) {
-        console.error('Csoporttag lista hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Csoporttag lista hiba', error);
     }
 };
 
@@ -505,8 +486,7 @@ const updateMembers = async (req, res) => {
             return res.status(404).json({ message: 'A csoport nem található.' });
         }
     } catch (error) {
-        console.error('Csoport ellenőrzési hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Csoport ellenőrzési hiba', error);
     }
 
     const connection = await pool.getConnection();
@@ -541,8 +521,7 @@ const updateMembers = async (req, res) => {
         });
     } catch (error) {
         await connection.rollback();
-        console.error('Csoporttagság módosítási hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Csoporttagság módosítási hiba', error);
     } finally {
         connection.release();
     }
@@ -582,8 +561,7 @@ const remove = async (req, res) => {
 
         return res.status(200).json({ message: 'A csoport törlésre került.' });
     } catch (error) {
-        console.error('Csoport törlési hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Csoport törlési hiba', error);
     }
 };
 

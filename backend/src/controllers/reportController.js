@@ -1,6 +1,7 @@
 const pool = require('../config/db');
 const { getAccessibleEmployeeIds } = require('../services/employeeScope');
 const { buildMonthlyReport } = require('../services/monthlyReport');
+const { invalidYearMonth, serverError } = require('../utils/apiResponse');
 
 const parsePeriod = (query) => {
     const yearNumber = Number(query.year);
@@ -183,7 +184,7 @@ const monthly = async (req, res) => {
     const period = parsePeriod(req.query);
 
     if (!period) {
-        return res.status(400).json({ message: 'Érvényes évet és hónapot kell megadni.' });
+        return invalidYearMonth(res);
     }
 
     try {
@@ -228,8 +229,7 @@ const monthly = async (req, res) => {
             totals
         });
     } catch (error) {
-        console.error('Riport hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Riport hiba', error);
     }
 };
 
@@ -239,7 +239,7 @@ const payroll = async (req, res) => {
     const period = parsePeriod(req.query);
 
     if (!period) {
-        return res.status(400).json({ message: 'Érvényes évet és hónapot kell megadni.' });
+        return invalidYearMonth(res);
     }
 
     try {
@@ -299,8 +299,7 @@ const payroll = async (req, res) => {
 
         return res.status(200).send(`\uFEFF${lines.join('\r\n')}\r\n`);
     } catch (error) {
-        console.error('Bérfeladási export hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Bérfeladási export hiba', error);
     }
 };
 
@@ -308,7 +307,7 @@ const statistics = async (req, res) => {
     const period = parsePeriod(req.query);
 
     if (!period) {
-        return res.status(400).json({ message: 'Érvényes évet és hónapot kell megadni.' });
+        return invalidYearMonth(res);
     }
 
     const dimension = String(req.query.dimension || 'workSchedule');
@@ -425,8 +424,7 @@ const statistics = async (req, res) => {
             rows
         });
     } catch (error) {
-        console.error('Statisztika hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Statisztika hiba', error);
     }
 };
 

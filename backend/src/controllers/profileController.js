@@ -1,6 +1,7 @@
 const pool = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { serverError } = require('../utils/apiResponse');
 
 const getMe = (req, res) => {
     return res.status(200).json({ user: req.user });
@@ -65,8 +66,7 @@ const changePassword = async (req, res) => {
         });
     }
     catch (error){
-        console.error('Jelszócsere hiba:' ,error);
-        return res.status(500).json({message: 'Szerver hiba.'})
+        return serverError(res, 'Jelszócsere hiba', error);
     }
 };
 

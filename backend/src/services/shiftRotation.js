@@ -1,21 +1,7 @@
 const pool = require('../config/db');
+const { toIsoDate } = require('./dateHelpers');
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
-const toIsoDate = (value) => {
-    if (!value) {
-        return null;
-    }
-
-    if (typeof value === 'string') {
-        return value.slice(0, 10);
-    }
-
-    const year = value.getFullYear();
-    const month = String(value.getMonth() + 1).padStart(2, '0');
-    const day = String(value.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-};
 
 const mondayOf = (isoDate) => {
     const date = new Date(`${isoDate}T00:00:00Z`);

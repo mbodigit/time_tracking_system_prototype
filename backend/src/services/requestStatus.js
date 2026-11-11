@@ -18,10 +18,6 @@ module.exports = {
     PENDING,
     IN_PROGRESS,
     APPROVED,
-    REJECTED,
-    WITHDRAWN,
-    COVERING,
-    ACTIVE,
     COVERING_SQL,
     ACTIVE_SQL,
     isCovering

@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { serverError } = require('../utils/apiResponse');
 
 const DAY_TYPES = [
     'Munkaszüneti nap',
@@ -33,8 +34,7 @@ const list = async (req, res) => {
 
         return res.status(200).json({ year: yearNumber, dayTypes: DAY_TYPES, days });
     } catch (error) {
-        console.error('Naptár lekérdezési hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Naptár lekérdezési hiba', error);
     }
 };
 
@@ -65,8 +65,7 @@ const save = async (req, res) => {
                 : 'A naptári nap rögzítésre került.'
         });
     } catch (error) {
-        console.error('Naptár rögzítési hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Naptár rögzítési hiba', error);
     }
 };
 
@@ -89,8 +88,7 @@ const remove = async (req, res) => {
 
         return res.status(200).json({ message: 'A naptári nap törlésre került.' });
     } catch (error) {
-        console.error('Naptár törlési hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Naptár törlési hiba', error);
     }
 };
 

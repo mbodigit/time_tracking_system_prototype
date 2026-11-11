@@ -7,13 +7,11 @@ const DAY_TYPE_MAP = {
 
 const toSqlDateTime = (value) => String(value).replace('T', ' ').slice(0, 19);
 
-const daysSince = (dateString) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const day = new Date(dateString);
-    day.setHours(0, 0, 0, 0);
-    return Math.round((today - day) / (1000 * 60 * 60 * 24));
-};
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
+const daysSince = (dateString) => Math.round(
+    (today() - startOfDay(dateString)) / MS_PER_DAY
+);
 
 const addDays = (dateString, count) => {
     const date = new Date(`${dateString}T00:00:00`);
@@ -24,13 +22,43 @@ const addDays = (dateString, count) => {
     return `${year}-${month}-${day}`;
 };
 
-const toDate = (value) => new Date(String(value).replace(' ', 'T'));
+const isIsoDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value);
 
-const minutesBetween = (from, to) => Math.round((toDate(to) - toDate(from)) / (1000 * 60));
+const toIsoDate = (value) => {
+    if (!value) {
+        return null;
+    }
+
+    if (typeof value === 'string') {
+        return value.slice(0, 10);
+    }
+
+    const year = value.getFullYear();
+    const month = String(value.getMonth() + 1).padStart(2, '0');
+    const day = String(value.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+};
+
+const parseDateTime = (value) => new Date(String(value).replace(' ', 'T'));
+
+const startOfDay = (value) => new Date(`${String(value).slice(0, 10)}T00:00:00`);
+
+const today = () => {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    return date;
+};
+
+const minutesBetween = (from, to) => Math.round(
+    (parseDateTime(to) - parseDateTime(from)) / (1000 * 60)
+);
+
+const hoursBetween = (from, to) => (to.getTime() - from.getTime()) / (1000 * 60 * 60);
 
 const overlapMinutes = (fromA, toA, fromB, toB) => {
-    const start = Math.max(toDate(fromA).getTime(), toDate(fromB).getTime());
-    const end = Math.min(toDate(toA).getTime(), toDate(toB).getTime());
+    const start = Math.max(parseDateTime(fromA).getTime(), parseDateTime(fromB).getTime());
+    const end = Math.min(parseDateTime(toA).getTime(), parseDateTime(toB).getTime());
     return end > start ? Math.round((end - start) / (1000 * 60)) : 0;
 };
 
@@ -50,8 +78,13 @@ module.exports = {
     toSqlDateTime,
     daysSince,
     addDays,
-    toDate,
+    isIsoDate,
+    toIsoDate,
+    parseDateTime,
+    startOfDay,
+    today,
     minutesBetween,
+    hoursBetween,
     overlapMinutes,
     coreHourLength
 };

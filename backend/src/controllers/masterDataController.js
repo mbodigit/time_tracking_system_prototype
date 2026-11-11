@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { invalidId, serverError, unknownMasterData } = require('../utils/apiResponse');
 
 const ENTITIES = {
     'work-schedules': {
@@ -130,7 +131,7 @@ const list = async (req, res) => {
     const entity = resolveEntity(req.params.entity);
 
     if (!entity) {
-        return res.status(400).json({ message: 'Ismeretlen törzsadat.' });
+        return unknownMasterData(res);
     }
 
     try {
@@ -158,8 +159,7 @@ const list = async (req, res) => {
 
         return res.status(200).json({ items });
     } catch (error) {
-        console.error('Törzsadat lekérdezési hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Törzsadat lekérdezési hiba', error);
     }
 };
 
@@ -167,7 +167,7 @@ const create = async (req, res) => {
     const entity = resolveEntity(req.params.entity);
 
     if (!entity) {
-        return res.status(400).json({ message: 'Ismeretlen törzsadat.' });
+        return unknownMasterData(res);
     }
 
     const parsed = readValues(entity, req.body);
@@ -197,8 +197,7 @@ const create = async (req, res) => {
             });
         }
 
-        console.error('Törzsadat létrehozási hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Törzsadat létrehozási hiba', error);
     }
 };
 
@@ -206,13 +205,13 @@ const update = async (req, res) => {
     const entity = resolveEntity(req.params.entity);
 
     if (!entity) {
-        return res.status(400).json({ message: 'Ismeretlen törzsadat.' });
+        return unknownMasterData(res);
     }
 
     const id = Number(req.params.id);
 
     if (!id) {
-        return res.status(400).json({ message: 'Érvénytelen azonosító.' });
+        return invalidId(res);
     }
 
     const parsed = readValues(entity, req.body);
@@ -246,8 +245,7 @@ const update = async (req, res) => {
             });
         }
 
-        console.error('Törzsadat módosítási hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Törzsadat módosítási hiba', error);
     }
 };
 
@@ -255,13 +253,13 @@ const remove = async (req, res) => {
     const entity = resolveEntity(req.params.entity);
 
     if (!entity) {
-        return res.status(400).json({ message: 'Ismeretlen törzsadat.' });
+        return unknownMasterData(res);
     }
 
     const id = Number(req.params.id);
 
     if (!id) {
-        return res.status(400).json({ message: 'Érvénytelen azonosító.' });
+        return invalidId(res);
     }
 
     try {
@@ -304,8 +302,7 @@ const remove = async (req, res) => {
             message: `A ${entity.label} törlésre került.`
         });
     } catch (error) {
-        console.error('Törzsadat törlési hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Törzsadat törlési hiba', error);
     }
 };
 

@@ -23,6 +23,7 @@ import {
 interface MenuItem {
   to: string;
   label: string;
+  shortLabel?: string;
   icon: React.FC<{ className?: string }>;
   roles?: string[];
   needsEmployee?: boolean;
@@ -36,6 +37,84 @@ interface MenuSection {
 const APPLICATION_NAME = "Munkaidő-nyilvántartó rendszer";
 const SIDEBAR_STORAGE_KEY = "sidebarOpen";
 const DESKTOP_QUERY = "(min-width: 1024px)";
+
+const MENU_SECTIONS: MenuSection[] = [
+  {
+    title: "Saját pult",
+    items: [
+      {
+        to: "/dashboard",
+        label: "Áttekintő",
+        icon: IconDashboard,
+        needsEmployee: true,
+      },
+    ],
+  },
+  {
+    title: "Rögzítés",
+    items: [
+      {
+        to: "/time-log",
+        label: "Munkaidő rögzítése",
+        shortLabel: "Munkaidő",
+        icon: IconClock,
+        needsEmployee: true,
+      },
+      {
+        to: "/requests",
+        label: "Kérelmek és elrendelések",
+        shortLabel: "Kérelmek",
+        icon: IconInbox,
+        needsEmployee: true,
+      },
+    ],
+  },
+  {
+    title: "Kimutatások",
+    items: [
+      {
+        to: "/reports",
+        label: "Riport és export",
+        shortLabel: "Riport",
+        icon: IconChart,
+        roles: ["Vezető", "HR-Bér"],
+        needsEmployee: true,
+      },
+    ],
+  },
+  {
+    title: "Rendszer",
+    items: [
+      {
+        to: "/admin-employees",
+        label: "Dolgozók és fiókok",
+        icon: IconUserCog,
+        roles: ["HR-Bér"],
+      },
+      {
+        to: "/admin-org-structure",
+        label: "Szervezet és csoportok",
+        icon: IconOrgChart,
+        roles: ["HR-Bér"],
+      },
+      {
+        to: "/admin-master-data",
+        label: "Törzsadatok",
+        icon: IconKey,
+        roles: ["Admin"],
+      },
+      {
+        to: "/admin-calendar",
+        label: "Központi naptár",
+        icon: IconCalendar,
+        roles: ["HR-Bér"],
+        needsEmployee: true,
+      },
+    ],
+  },
+];
+
+const HEADER_ROUTES = ["/dashboard", "/time-log", "/requests", "/reports"];
 
 export const Layout: React.FC = () => {
   const location = useLocation();
@@ -127,110 +206,16 @@ export const Layout: React.FC = () => {
     return !item.roles || role === "Admin" || item.roles.includes(role);
   };
 
-  const allMenuSections: MenuSection[] = [
-    {
-      title: "Saját pult",
-      items: [
-        {
-          to: "/dashboard",
-          label: "Áttekintő",
-          icon: IconDashboard,
-          needsEmployee: true,
-        },
-      ],
-    },
-    {
-      title: "Rögzítés",
-      items: [
-        {
-          to: "/time-log",
-          label: "Munkaidő rögzítése",
-          icon: IconClock,
-          needsEmployee: true,
-        },
-        {
-          to: "/requests",
-          label: "Kérelmek és elrendelések",
-          icon: IconInbox,
-          needsEmployee: true,
-        },
-      ],
-    },
-    {
-      title: "Kimutatások",
-      items: [
-        {
-          to: "/reports",
-          label: "Riport és export",
-          icon: IconChart,
-          roles: ["Vezető", "HR-Bér"],
-          needsEmployee: true,
-        },
-      ],
-    },
-    {
-      title: "Rendszer",
-      items: [
-        {
-          to: "/admin-employees",
-          label: "Dolgozók és fiókok",
-          icon: IconUserCog,
-          roles: ["HR-Bér"],
-        },
-        {
-          to: "/admin-org-structure",
-          label: "Szervezet és csoportok",
-          icon: IconOrgChart,
-          roles: ["HR-Bér"],
-        },
-        {
-          to: "/admin-master-data",
-          label: "Törzsadatok",
-          icon: IconKey,
-          roles: [],
-        },
-        {
-          to: "/admin-calendar",
-          label: "Központi naptár",
-          icon: IconCalendar,
-          roles: ["HR-Bér"],
-          needsEmployee: true,
-        },
-      ],
-    },
-  ];
+  const menuSections = MENU_SECTIONS.map((section) => ({
+    ...section,
+    items: section.items.filter((item) => canSee(item)),
+  })).filter((section) => section.items.length > 0);
 
-  const menuSections = allMenuSections
-    .map((section) => ({
-      ...section,
-      items: section.items.filter((item) => canSee(item)),
-    }))
-    .filter((section) => section.items.length > 0);
+  const visibleItems = menuSections.flatMap((section) => section.items);
 
-  const headerItems: MenuItem[] = [
-    {
-      to: "/dashboard",
-      label: "Áttekintő",
-      icon: IconDashboard,
-      needsEmployee: true,
-    },
-    { to: "/time-log", label: "Munkaidő", icon: IconClock, needsEmployee: true },
-    {
-      to: "/requests",
-      label: "Kérelmek",
-      icon: IconInbox,
-      needsEmployee: true,
-    },
-    {
-      to: "/reports",
-      label: "Riport",
-      icon: IconChart,
-      roles: ["Vezető", "HR-Bér"],
-      needsEmployee: true,
-    },
-  ];
-
-  const headerNav = headerItems.filter((item) => canSee(item));
+  const headerNav = HEADER_ROUTES.map((route) =>
+    visibleItems.find((item) => item.to === route),
+  ).filter((item): item is MenuItem => item !== undefined);
 
   return (
     <div className="h-screen overflow-hidden bg-base-100 flex flex-col">
@@ -258,12 +243,13 @@ export const Layout: React.FC = () => {
           {headerNav.map((item) => {
             const Icon = item.icon;
             const active = location.pathname === item.to;
+            const headerLabel = item.shortLabel ?? item.label;
             return (
               <Link
                 key={item.to}
                 to={item.to}
-                title={item.label}
-                aria-label={item.label}
+                title={headerLabel}
+                aria-label={headerLabel}
                 className={`flex items-center justify-center xl:justify-start gap-2 rounded-lg text-sm font-medium transition-colors
                   w-10 h-10 xl:w-auto xl:h-auto xl:px-3 xl:py-2 ${
                     active
@@ -272,7 +258,7 @@ export const Layout: React.FC = () => {
                   }`}
               >
                 <Icon className="w-5.5 h-5.5 xl:w-4.5 xl:h-4.5" />
-                <span className="hidden xl:inline">{item.label}</span>
+                <span className="hidden xl:inline">{headerLabel}</span>
               </Link>
             );
           })}
