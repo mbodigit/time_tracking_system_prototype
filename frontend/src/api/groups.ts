@@ -26,12 +26,12 @@ export interface Group {
   activeEmployees: number;
 }
 
-export interface Option {
+interface Option {
   id: number;
   name: string;
 }
 
-export interface DependentOption extends Option {
+interface DependentOption extends Option {
   areaId?: number;
   departmentId?: number;
 }

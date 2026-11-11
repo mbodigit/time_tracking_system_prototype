@@ -1,5 +1,5 @@
 const pool = require('../config/db');
-const { coreHourLength, toIsoDate } = require('../services/dateHelpers');
+const { coreHourLength, toIsoDate } = require('../utils/dateHelpers');
 const { serverError } = require('../utils/apiResponse');
 
 const list = async (req, res) => {

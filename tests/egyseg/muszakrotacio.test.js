@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { resolveRotation, weekIndex } = require('./shiftRotation');
+const { resolveRotation, weekIndex } = require('../../backend/src/services/shiftRotation');
 
 const SLOTS = [
     { start: '06:00:00', end: '14:00:00' },

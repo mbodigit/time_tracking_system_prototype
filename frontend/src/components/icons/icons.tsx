@@ -46,15 +46,6 @@ export const IconInbox: React.FC<IconProps> = (p) => (
   </Svg>
 );
 
-export const IconUsers: React.FC<IconProps> = (p) => (
-  <Svg {...p}>
-    <path d="M16 19v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-    <circle cx="9" cy="7" r="4" />
-    <path d="M22 19v-2a4 4 0 0 0-3-3.87" />
-    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-  </Svg>
-);
-
 export const IconChart: React.FC<IconProps> = (p) => (
   <Svg {...p}>
     <path d="M3 3v18h18" />
@@ -93,13 +84,6 @@ export const IconKey: React.FC<IconProps> = (p) => (
   <Svg {...p}>
     <circle cx="7.5" cy="15.5" r="4.5" />
     <path d="M10.7 12.3 21 2m-4 4 2 2m-5 1 2 2" />
-  </Svg>
-);
-
-export const IconUser: React.FC<IconProps> = (p) => (
-  <Svg {...p}>
-    <circle cx="12" cy="8" r="4" />
-    <path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1" />
   </Svg>
 );
 

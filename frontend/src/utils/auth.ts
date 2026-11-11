@@ -30,10 +30,6 @@ export const saveCurrentUser = (user: CurrentUser): void => {
 export const getLandingPath = (user: CurrentUser): string =>
   user.employeeId ? "/dashboard" : "/admin-employees";
 
-export const isLoggedIn = (): boolean => {
-  return Boolean(getToken()) && getCurrentUser() !== null;
-};
-
 export const clearSession = (): void => {
   localStorage.removeItem("token");
   localStorage.removeItem("user");

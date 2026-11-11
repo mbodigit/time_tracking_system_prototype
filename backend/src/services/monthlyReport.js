@@ -4,7 +4,7 @@ const { loadRotationSlots, resolveRotation } = require('./shiftRotation');
 const { calculateAllowances } = require('./allowanceCalculator');
 const {
     DAY_TYPE_MAP, addDays, parseDateTime, minutesBetween, overlapMinutes
-} = require('./dateHelpers');
+} = require('../utils/dateHelpers');
 const { buildLeaveBalance } = require('./leaveBalance');
 
 const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {

@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { calculateAllowances } = require('./allowanceCalculator')
+const { calculateAllowances } = require('../../backend/src/services/allowanceCalculator')
 
 test('hétköznapi nappali műszak, nincs pótlék', () => {
     const result = calculateAllowances({

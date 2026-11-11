@@ -53,7 +53,7 @@ export interface AdminOption {
   hours?: number;
 }
 
-export interface ManagerOption extends AdminOption {
+interface ManagerOption extends AdminOption {
   managedGroupId: number | null;
   managedGroupName: string | null;
 }

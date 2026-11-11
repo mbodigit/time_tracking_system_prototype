@@ -1,6 +1,6 @@
 import { apiGet, apiPost, apiPatch, apiPut } from "./client";
 
-export type RequestStatus =
+type RequestStatus =
   | "Függőben"
   | "Folyamatban"
   | "Jóváhagyva"
