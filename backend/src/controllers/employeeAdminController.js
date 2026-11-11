@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const pool = require('../config/db');
-const { coreHourLength } = require('../services/dateHelpers');
+const { coreHourLength } = require('../utils/dateHelpers');
 const { employeeNotFound, serverError } = require('../utils/apiResponse');
 
 const PASSWORD_ALPHABET =

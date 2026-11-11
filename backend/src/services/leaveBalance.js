@@ -1,5 +1,5 @@
 const pool = require('./../config/db');
-const { addDays, DAY_TYPE_MAP } = require('./dateHelpers');
+const { addDays, DAY_TYPE_MAP } = require('../utils/dateHelpers');
 const { COVERING_SQL } = require('./requestStatus');
 
 const ANNUAL_LEAVE_ABSENCE = 'Fizetett szabadság';

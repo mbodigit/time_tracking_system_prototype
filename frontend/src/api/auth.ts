@@ -1,7 +1,7 @@
 import { apiPost, apiPatch, apiGet } from "./client";
 import type { CurrentUser } from "../utils/auth";
 
-export interface LoginResponse {
+interface LoginResponse {
   message: string;
   token: string;
   user: CurrentUser;

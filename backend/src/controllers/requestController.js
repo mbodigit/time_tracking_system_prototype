@@ -4,7 +4,7 @@ const { canAccessEmployee, getAccessibleEmployeeIds } = require('../services/emp
 const { employeeAccessDenied, invalidId, serverError } = require('../utils/apiResponse');
 const {
     isIsoDate, parseDateTime, startOfDay, today, daysSince, hoursBetween
-} = require('../services/dateHelpers');
+} = require('../utils/dateHelpers');
 
 const URGENT_HOURS = 24;
 

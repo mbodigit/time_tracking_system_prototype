@@ -1,7 +1,7 @@
 import { apiGet } from "./client";
 import type { AllowanceType } from "./timeEntries";
 
-export interface DashboardSummary {
+interface DashboardSummary {
   workedMinutes: number;
   settledMinutes: number;
   absenceMinutes: number;

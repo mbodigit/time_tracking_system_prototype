@@ -1,9 +1,9 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { PAGE_SIZES, ALL_ROWS, DEFAULT_PAGE_SIZE } from "./data-table-config";
 
-export type SortDirection = "asc" | "desc";
+type SortDirection = "asc" | "desc";
 
-export interface DataTableOptions<T> {
+interface DataTableOptions<T> {
   rows: T[];
   searchText: (row: T) => string;
   sortValue: (row: T, key: string) => number | string;
@@ -12,7 +12,7 @@ export interface DataTableOptions<T> {
   initialPageSize?: number;
 }
 
-export interface DataTableState<T> {
+interface DataTableState<T> {
   rows: T[];
   allRows: T[];
   total: number;

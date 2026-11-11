@@ -1,6 +1,6 @@
 import { apiGet, apiPost, apiPatch, apiDelete } from "./client";
 
-export type DayType = "workday" | "restday" | "holiday" | "transferred";
+type DayType = "workday" | "restday" | "holiday" | "transferred";
 
 export interface TimeEntryDay {
   id: number | null;
@@ -128,7 +128,7 @@ export interface DailyEmployee {
   isSelf: boolean;
 }
 
-export interface DailyLog {
+interface DailyLog {
   date: string;
   dayType: DayType;
   employees: DailyEmployee[];

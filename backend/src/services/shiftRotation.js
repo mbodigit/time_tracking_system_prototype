@@ -1,5 +1,5 @@
 const pool = require('../config/db');
-const { toIsoDate } = require('./dateHelpers');
+const { toIsoDate } = require('../utils/dateHelpers');
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 

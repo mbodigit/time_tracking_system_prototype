@@ -9,7 +9,7 @@ import { ApiError } from "../../api/client";
 import { Field } from "../../components/form-field/form-field";
 import { getCurrentUser } from "../../utils/auth";
 
-export interface FormDefaults {
+interface FormDefaults {
   coreStart: string | null;
   coreEnd: string | null;
   breakStart: string | null;

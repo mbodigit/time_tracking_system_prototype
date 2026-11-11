@@ -1,6 +1,6 @@
 import { apiGet, apiPost, apiDelete } from "./client";
 
-export interface CalendarDay {
+interface CalendarDay {
   id: number;
   date: string;
   dayType: string;
