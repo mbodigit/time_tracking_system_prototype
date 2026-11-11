@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { syncGroupManagers } = require('../services/groupManagerSync');
+const { invalidId, serverError } = require('../utils/apiResponse');
 
 const ENTITIES = {
     areas: {
@@ -199,8 +200,7 @@ const tree = async (req, res) => {
 
         return res.status(200).json({ areas, managers });
     } catch (error) {
-        console.error('Szervezet lekérdezési hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Szervezet lekérdezési hiba', error);
     }
 };
 
@@ -316,8 +316,7 @@ const create = async (req, res) => {
             });
         }
 
-        console.error('Szervezet létrehozási hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Szervezet létrehozási hiba', error);
     }
 };
 
@@ -337,7 +336,7 @@ const update = async (req, res) => {
     const parentId = hasParent ? (Number(req.body.parentId) || null) : null;
 
     if (!id) {
-        return res.status(400).json({ message: 'Érvénytelen azonosító.' });
+        return invalidId(res);
     }
 
     if (!name) {
@@ -427,8 +426,7 @@ const update = async (req, res) => {
             });
         }
 
-        console.error('Szervezet módosítási hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Szervezet módosítási hiba', error);
     }
 };
 
@@ -442,7 +440,7 @@ const remove = async (req, res) => {
     const id = Number(req.params.id);
 
     if (!id) {
-        return res.status(400).json({ message: 'Érvénytelen azonosító.' });
+        return invalidId(res);
     }
 
     try {
@@ -465,8 +463,7 @@ const remove = async (req, res) => {
             });
         }
 
-        console.error('Szervezet törlési hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Szervezet törlési hiba', error);
     }
 };
 

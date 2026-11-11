@@ -1,10 +1,14 @@
 const pool = require('../config/db');
 const { canAccessEmployee, getAccessibleEmployeeIds } = require('../services/employeeScope');
-const { calculateAllowances } = require('../services/allowanceCalculator');
 const { buildMonthlyReport } = require('../services/monthlyReport');
-const { DAY_TYPE_MAP, toSqlDateTime, daysSince, addDays, toDate } = require('../services/dateHelpers');
+const {
+    DAY_TYPE_MAP, toSqlDateTime, daysSince, addDays, parseDateTime
+} = require('../services/dateHelpers');
 const { loadRotationSlots, resolveRotation } = require('../services/shiftRotation');
 const { ACTIVE_SQL, COVERING_SQL, isCovering } = require('../services/requestStatus');
+const {
+    employeeAccessDenied, employeeNotFound, invalidId, invalidYearMonth, serverError
+} = require('../utils/apiResponse');
 
 const MAX_DAILY_MINUTES = 12 * 60;
 const BACKDATE_LIMIT_DAYS = 3;
@@ -13,7 +17,7 @@ const BREAK_LATEST_MINUTES = 6 * 60;
 
 const breakTimingError = (workStart, breakStart) => {
     const offset = Math.round(
-        (toDate(breakStart).getTime() - toDate(workStart).getTime()) / (1000 * 60)
+        (parseDateTime(breakStart).getTime() - parseDateTime(workStart).getTime()) / (1000 * 60)
     );
 
     if (offset < BREAK_EARLIEST_MINUTES || offset > BREAK_LATEST_MINUTES) {
@@ -107,7 +111,7 @@ const create = async (req, res) => {
             );
 
             if (!hasAccess) {
-                return res.status(403).json({message: 'Ehhez a dolgozóhoz nincs hozzáférése.'});
+                return employeeAccessDenied(res);
             }
         }
 
@@ -214,8 +218,7 @@ const create = async (req, res) => {
 
         return res.status(201).json({message: 'A munkaidő rögzítésre került.', id: result.insertId});
     } catch (error) {
-        console.error('Munkaidő rögzítési hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Munkaidő rögzítési hiba', error);
     }
 };
 
@@ -226,7 +229,7 @@ const list = async (req, res) => {
     const monthNumber = Number(month);
 
     if (!yearNumber || !monthNumber || monthNumber < 1 || monthNumber > 12) {
-        return res.status(400).json({ message: 'Érvényes évet és hónapot kell megadni.' });
+        return invalidYearMonth(res);
     }
 
     const targetEmployeeId = Number(employeeId) || req.user.employeeId;
@@ -239,20 +242,19 @@ const list = async (req, res) => {
             );
 
             if (!hasAccess) {
-                return res.status(403).json({ message: 'Ehhez a dolgozóhoz nincs hozzáférése.' });
+                return employeeAccessDenied(res);
             }
         }
 
         const report = await buildMonthlyReport(targetEmployeeId, yearNumber, monthNumber);
 
         if (!report) {
-            return res.status(404).json({ message: 'A dolgozó nem található.' });
+            return employeeNotFound(res);
         }
 
         return res.status(200).json(report);
     } catch (error) {
-        console.error('Munkaidő lekérdezési hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Munkaidő lekérdezési hiba', error);
     }
 };
 
@@ -260,7 +262,7 @@ const update = async (req, res) => {
     const entryId = Number(req.params.id);
 
     if (!entryId) {
-        return res.status(400).json({ message: 'Érvénytelen azonosító.' });
+        return invalidId(res);
     }
 
     const { note } = req.body || {};
@@ -287,7 +289,7 @@ const update = async (req, res) => {
             );
 
             if (!hasAccess) {
-                return res.status(403).json({ message: 'Ehhez a dolgozóhoz nincs hozzáférése.' });
+                return employeeAccessDenied(res);
             }
         }
 
@@ -344,8 +346,8 @@ const update = async (req, res) => {
             ? req.body.workEnd : entry.wtt_working_end;
 
         if (newStart && newEnd) {
-            const start = toDate(newStart);
-            const end = toDate(newEnd);
+            const start = parseDateTime(newStart);
+            const end = parseDateTime(newEnd);
 
             if (end <= start) {
                 return res.status(400).json({
@@ -377,8 +379,7 @@ const update = async (req, res) => {
 
         return res.status(200).json({ message: 'A munkaidő módosításra került.' });
     } catch (error) {
-        console.error('Munkaidő módosítási hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Munkaidő módosítási hiba', error);
     }
 };
 
@@ -386,7 +387,7 @@ const remove = async (req, res) => {
     const entryId = Number(req.params.id);
 
     if (!entryId) {
-        return res.status(400).json({ message: 'Érvénytelen azonosító.' });
+        return invalidId(res);
     }
 
     try {
@@ -410,7 +411,7 @@ const remove = async (req, res) => {
             );
 
             if (!hasAccess) {
-                return res.status(403).json({ message: 'Ehhez a dolgozóhoz nincs hozzáférése.' });
+                return employeeAccessDenied(res);
             }
         }
 
@@ -452,8 +453,7 @@ const remove = async (req, res) => {
 
         return res.status(200).json({ message: 'A nap rögzítése törlésre került.' });
     } catch (error) {
-        console.error('Munkaidő törlési hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Munkaidő törlési hiba', error);
     }
 };
 
@@ -494,7 +494,7 @@ const setOrdered = async (req, res) => {
         );
 
         if (!hasAccess) {
-            return res.status(403).json({ message: 'Ehhez a dolgozóhoz nincs hozzáférése.' });
+            return employeeAccessDenied(res);
         }
 
         const [covered] = await pool.execute(
@@ -555,8 +555,7 @@ const setOrdered = async (req, res) => {
             id: result.insertId
         });
     } catch (error) {
-        console.error('Elrendelési hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Elrendelési hiba', error);
     }
 };
 
@@ -706,8 +705,7 @@ const listDaily = async (req, res) => {
 
         return res.status(200).json({ date, dayType, employees });
     } catch (error) {
-        console.error('Napi lista hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Napi lista hiba', error);
     }
 };
 
@@ -893,8 +891,7 @@ const createBulk = async (req, res) => {
             results
         });
     } catch (error) {
-        console.error('Csoportos rögzítési hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Csoportos rögzítési hiba', error);
     }
 };
 

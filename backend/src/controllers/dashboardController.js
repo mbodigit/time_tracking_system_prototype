@@ -1,8 +1,8 @@
 const pool = require('../config/db');
 const { getAccessibleEmployeeIds } = require('../services/employeeScope');
 const { buildMonthlyReport } = require('../services/monthlyReport');
-const { addDays, DAY_TYPE_MAP } = require('../services/dateHelpers');
 const { buildLeaveBalance } = require('../services/leaveBalance');
+const { employeeNotFound, invalidYearMonth, serverError } = require('../utils/apiResponse');
 
 const APPROVER_ROLES = ['Vezető', 'HR-Bér', 'Admin'];
 
@@ -106,7 +106,7 @@ const overview = async (req, res) => {
     const monthNumber = Number(req.query.month);
 
     if (!yearNumber || !monthNumber || monthNumber < 1 || monthNumber > 12) {
-        return res.status(400).json({ message: 'Érvényes évet és hónapot kell megadni.' });
+        return invalidYearMonth(res);
     }
 
     try {
@@ -116,7 +116,7 @@ const overview = async (req, res) => {
         const currentReport = await buildMonthlyReport(employeeId, yearNumber, monthNumber);
 
         if (!currentReport) {
-            return res.status(404).json({ message: 'A dolgozó nem található.' });
+            return employeeNotFound(res);
         }
 
         const previousDate = new Date(yearNumber, monthNumber - 2, 1);
@@ -147,8 +147,7 @@ const overview = async (req, res) => {
 
         return res.status(200).json(response);
     } catch (error) {
-        console.error('Áttekintő hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Áttekintő hiba', error);
     }
 };
 

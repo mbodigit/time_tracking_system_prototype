@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { serverError } = require('../utils/apiResponse');
 
 const CATEGORIES = ['Szabadság', 'Betegség', 'Munkavégzés', 'Egyéb'];
 
@@ -118,8 +119,7 @@ const list = async (req, res) => {
             }))
         });
     } catch (error) {
-        console.error('Jogcím lekérdezési hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Jogcím lekérdezési hiba', error);
     }
 };
 
@@ -174,8 +174,7 @@ const create = async (req, res) => {
             return res.status(409).json({ message: 'Ilyen nevű jogcím már létezik.' });
         }
 
-        console.error('Jogcím létrehozási hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Jogcím létrehozási hiba', error);
     } finally {
         connection.release();
     }
@@ -225,8 +224,7 @@ const update = async (req, res) => {
             return res.status(409).json({ message: 'Ilyen nevű jogcím már létezik.' });
         }
 
-        console.error('Jogcím módosítási hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Jogcím módosítási hiba', error);
     } finally {
         connection.release();
     }
@@ -265,8 +263,7 @@ const remove = async (req, res) => {
 
         return res.status(200).json({ message: 'A jogcím törlésre került.' });
     } catch (error) {
-        console.error('Jogcím törlési hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Jogcím törlési hiba', error);
     }
 };
 

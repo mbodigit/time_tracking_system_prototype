@@ -3,7 +3,7 @@ const { ACTIVE_SQL, isCovering } = require('./requestStatus');
 const { loadRotationSlots, resolveRotation } = require('./shiftRotation');
 const { calculateAllowances } = require('./allowanceCalculator');
 const {
-    DAY_TYPE_MAP, addDays, toDate, minutesBetween, overlapMinutes
+    DAY_TYPE_MAP, addDays, parseDateTime, minutesBetween, overlapMinutes
 } = require('./dateHelpers');
 const { buildLeaveBalance } = require('./leaveBalance');
 
@@ -422,16 +422,16 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
                 : 0);
 
         const result = calculateAllowances({
-            workStart: toDate(row.wtt_working_start),
-            workEnd: toDate(row.wtt_working_end),
-            scheduleStart: hasSchedule ? toDate(scheduleStart) : null,
-            scheduleEnd: hasSchedule ? toDate(scheduleEnd) : null,
+            workStart: parseDateTime(row.wtt_working_start),
+            workEnd: parseDateTime(row.wtt_working_end),
+            scheduleStart: hasSchedule ? parseDateTime(scheduleStart) : null,
+            scheduleEnd: hasSchedule ? parseDateTime(scheduleEnd) : null,
             dayType,
             nextDayType,
             isShiftWorker,
             isOrdered: Boolean(row.wtt_is_ordered),
-            breakStart: row.wtt_brk_start ? toDate(row.wtt_brk_start) : null,
-            breakEnd: row.wtt_brk_end ? toDate(row.wtt_brk_end) : null,
+            breakStart: row.wtt_brk_start ? parseDateTime(row.wtt_brk_start) : null,
+            breakEnd: row.wtt_brk_end ? parseDateTime(row.wtt_brk_end) : null,
             breakMinutes,
             breakPaid: Boolean(employee.employee_break_paid)
         });

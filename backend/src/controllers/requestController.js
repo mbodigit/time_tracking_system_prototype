@@ -1,6 +1,10 @@
 const pool = require('../config/db');
 const { ACTIVE_SQL, PENDING, IN_PROGRESS, APPROVED } = require('../services/requestStatus');
 const { canAccessEmployee, getAccessibleEmployeeIds } = require('../services/employeeScope');
+const { employeeAccessDenied, invalidId, serverError } = require('../utils/apiResponse');
+const {
+    isIsoDate, parseDateTime, startOfDay, today, daysSince, hoursBetween
+} = require('../services/dateHelpers');
 
 const URGENT_HOURS = 24;
 
@@ -9,12 +13,6 @@ const BACKDATE_LIMIT_DAYS = {
     'Vezető': 3,
     'Admin': 3
 };
-
-const isValidDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value);
-
-const toDate = (value) => new Date(`${String(value).slice(0, 10)}T00:00:00`);
-
-const hoursBetween = (from, to) => (to.getTime() - from.getTime()) / (1000 * 60 * 60);
 
 const SELECT_FIELDS = `
     r.request_id, r.request_employee_id, r.request_absence_id,
@@ -38,11 +36,9 @@ const FROM_CLAUSE = `
 `;
 
 const toOutput = (row) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const startDay = toDate(row.request_start_date);
-    const createdAt = new Date(String(row.request_created_at).replace(' ', 'T'));
+    const currentDay = today();
+    const startDay = startOfDay(row.request_start_date);
+    const createdAt = parseDateTime(row.request_created_at);
     const isPending = row.request_status === PENDING;
 
     return {
@@ -68,7 +64,7 @@ const toOutput = (row) => {
         createdAt: row.request_created_at,
         isUrgent: isPending && hoursBetween(createdAt, startDay) < URGENT_HOURS,
         isBackdated: isPending && createdAt > startDay,
-        isExpired: isPending && startDay < today && createdAt <= startDay
+        isExpired: isPending && startDay < currentDay && createdAt <= startDay
     };
 };
 
@@ -83,21 +79,16 @@ const create = async (req, res) => {
         });
     }
 
-    if (!isValidDate(startDate) || (endDate && !isValidDate(endDate))) {
+    if (!isIsoDate(startDate) || (endDate && !isIsoDate(endDate))) {
         return res.status(400).json({ message: 'A dátum formátuma érvénytelen.' });
     }
 
     const limitDays = BACKDATE_LIMIT_DAYS[req.user.role];
 
     if (limitDays !== undefined) {
-        const ma = new Date();
-        ma.setHours(0, 0, 0, 0);
+        const daysPassed = daysSince(startDate);
 
-        const eltelt = Math.round(
-            (ma.getTime() - toDate(startDate).getTime()) / (1000 * 60 * 60 * 24)
-        );
-
-        if (eltelt > limitDays) {
+        if (daysPassed > limitDays) {
             return res.status(400).json({
                 message: limitDays === 0
                     ? 'A kérelem kezdő napja nem lehet korábbi a mai napnál. '
@@ -118,7 +109,7 @@ const create = async (req, res) => {
             );
 
             if (!hasAccess) {
-                return res.status(403).json({ message: 'Ehhez a dolgozóhoz nincs hozzáférése.' });
+                return employeeAccessDenied(res);
             }
         }
 
@@ -145,7 +136,7 @@ const create = async (req, res) => {
 
         const effectiveEndDate = endDate || startDate;
 
-        if (toDate(effectiveEndDate) < toDate(startDate)) {
+        if (startOfDay(effectiveEndDate) < startOfDay(startDate)) {
             return res.status(400).json({
                 message: 'A távollét vége nem lehet korábbi a kezdeténél.'
             });
@@ -210,8 +201,7 @@ const create = async (req, res) => {
             id: result.insertId
         });
     } catch (error) {
-        console.error('Kérelem rögzítési hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Kérelem rögzítési hiba', error);
     }
 };
 
@@ -258,8 +248,7 @@ const list = async (req, res) => {
 
         return res.status(200).json({ requests: rows.map(toOutput) });
     } catch (error) {
-        console.error('Kérelem lekérdezési hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Kérelem lekérdezési hiba', error);
     }
 };
 
@@ -268,7 +257,7 @@ const close = async (req, res) => {
     const { endDate } = req.body || {};
 
     if (!requestId) {
-        return res.status(400).json({ message: 'Érvénytelen azonosító.' });
+        return invalidId(res);
     }
 
     if (!endDate) {
@@ -319,7 +308,7 @@ const close = async (req, res) => {
             });
         }
 
-        if (toDate(endDate) < toDate(request.request_start_date)) {
+        if (startOfDay(endDate) < startOfDay(request.request_start_date)) {
             return res.status(400).json({
                 message: 'A távollét vége nem lehet korábbi a kezdeténél.'
             });
@@ -360,8 +349,7 @@ const close = async (req, res) => {
             message: 'A távollét lezárásra került.'
         });
     } catch (error) {
-        console.error('Kérelem lezárási hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Kérelem lezárási hiba', error);
     }
 };
 
@@ -370,7 +358,7 @@ const decide = async (req, res) => {
     const { status, reason } = req.body || {};
 
     if (!requestId) {
-        return res.status(400).json({ message: 'Érvénytelen azonosító.' });
+        return invalidId(res);
     }
 
     if (status !== APPROVED && status !== 'Elutasítva') {
@@ -423,19 +411,14 @@ const decide = async (req, res) => {
         );
 
         if (!hasAccess) {
-            return res.status(403).json({ message: 'Ehhez a dolgozóhoz nincs hozzáférése.' });
+            return employeeAccessDenied(res);
         }
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const startDay = toDate(request.request_start_date);
-        const createdAt = new Date(
-            String(request.request_created_at).replace(' ', 'T')
-        );
+        const startDay = startOfDay(request.request_start_date);
+        const createdAt = parseDateTime(request.request_created_at);
         const isBackdated = createdAt > startDay;
 
-        if (startDay < today && !isBackdated && req.user.role !== 'HR-Bér') {
+        if (startDay < today() && !isBackdated && req.user.role !== 'HR-Bér') {
             return res.status(409).json({
                 message: 'A távollét kezdőnapja után a kérelmet már csak a HR '
                     + 'rendezheti, mert a döntési határidő eltelt.'
@@ -458,8 +441,7 @@ const decide = async (req, res) => {
                 : 'A kérelem elutasításra került.'
         });
     } catch (error) {
-        console.error('Kérelem elbírálási hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Kérelem elbírálási hiba', error);
     }
 };
 
@@ -467,7 +449,7 @@ const withdraw = async (req, res) => {
     const requestId = Number(req.params.id);
 
     if (!requestId) {
-        return res.status(400).json({ message: 'Érvénytelen azonosító.' });
+        return invalidId(res);
     }
 
     try {
@@ -504,8 +486,7 @@ const withdraw = async (req, res) => {
 
         return res.status(200).json({ message: 'A kérelem visszavonásra került.' });
     } catch (error) {
-        console.error('Kérelem visszavonási hiba:', error);
-        return res.status(500).json({ message: 'Szerver hiba.' });
+        return serverError(res, 'Kérelem visszavonási hiba', error);
     }
 };
 
