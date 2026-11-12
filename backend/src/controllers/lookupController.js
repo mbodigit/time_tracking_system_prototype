@@ -1,5 +1,7 @@
 const pool = require('../config/db');
-const { getAccessibleEmployeeIds, canAccessEmployee } = require('../services/employeeScope');
+const {
+    getAccessibleEmployeeIds, getAccessibleGroups, canAccessEmployee
+} = require('../services/employeeScope');
 const { employeeAccessDenied, serverError } = require('../utils/apiResponse');
 
 const listEmployees = async (req, res) => {
@@ -17,13 +19,19 @@ const listEmployees = async (req, res) => {
         const [rows] = await pool.execute(
             `SELECT e.employee_id, e.employee_code,
                     e.employee_last_name, e.employee_first_name,
+                    e.employee_user_group_id, g.user_group_name,
                     w.work_schedule_name
              FROM Employees e
              JOIN EmployeeSettings s ON s.employee_id = e.employee_id
              LEFT JOIN WorkSchedules w ON w.work_schedule_id = s.employee_setting_work_schedule_id
+             LEFT JOIN UserGroups g ON g.user_group_id = e.employee_user_group_id
              WHERE e.employee_id IN (${placeholders})
              ORDER BY e.employee_last_name, e.employee_first_name`,
             ids
+        );
+
+        const groups = await getAccessibleGroups(
+            req.user.userId, req.user.employeeId, req.user.role
         );
 
         return res.status(200).json({
@@ -31,8 +39,14 @@ const listEmployees = async (req, res) => {
                 id: row.employee_id,
                 code: row.employee_code,
                 name: `${row.employee_last_name} ${row.employee_first_name}`,
+                groupId: row.employee_user_group_id,
+                groupName: row.user_group_name,
                 workSchedule: row.work_schedule_name,
                 isSelf: row.employee_id === req.user.employeeId
+            })),
+            groups: groups.map((row) => ({
+                id: row.user_group_id,
+                name: row.user_group_name
             }))
         });
     } catch (error) {

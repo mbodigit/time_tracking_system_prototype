@@ -1,5 +1,5 @@
 const pool = require('./../config/db');
-const { addDays, DAY_TYPE_MAP } = require('../utils/dateHelpers');
+const { addDays, DAY_TYPE_MAP, isWorkingDay } = require('../utils/dateHelpers');
 const { COVERING_SQL } = require('./requestStatus');
 
 const ANNUAL_LEAVE_ABSENCE = 'Fizetett szabadság';
@@ -54,13 +54,9 @@ const buildLeaveBalance = async (employeeId, yearNumber) => {
             : request.request_end_date;
 
         while (cursor <= last) {
-            const weekday = new Date(`${cursor}T00:00:00`).getDay();
             const dayType = calendar[cursor] || 'workday';
 
-            const isWorkingDay = dayType === 'transferred'
-                || (dayType === 'workday' && weekday !== 0 && weekday !== 6);
-
-            if (isWorkingDay) {
+            if (isWorkingDay(cursor, dayType)) {
                 usedDates.add(cursor);
             }
 

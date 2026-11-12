@@ -2,6 +2,7 @@ const pool = require('../config/db');
 const { getAccessibleEmployeeIds } = require('../services/employeeScope');
 const { buildMonthlyReport } = require('../services/monthlyReport');
 const { buildLeaveBalance } = require('../services/leaveBalance');
+const { isWorkingDay } = require('../utils/dateHelpers');
 const { employeeNotFound, invalidYearMonth, serverError } = require('../utils/apiResponse');
 
 const APPROVER_ROLES = ['Vezető', 'HR-Bér', 'Admin'];
@@ -46,13 +47,7 @@ const collectMissingRecordDays = (report, currentDate) => {
             continue;
         }
 
-        if (day.dayType !== 'workday') {
-            continue;
-        }
-
-        const weekday = new Date(`${day.date}T00:00:00`).getDay();
-
-        if (weekday === 0 || weekday === 6) {
+        if (!isWorkingDay(day.date, day.dayType)) {
             continue;
         }
 

@@ -2,7 +2,7 @@ const pool = require('../config/db');
 const { canAccessEmployee, getAccessibleEmployeeIds } = require('../services/employeeScope');
 const { buildMonthlyReport } = require('../services/monthlyReport');
 const {
-    DAY_TYPE_MAP, toSqlDateTime, daysSince, addDays, parseDateTime
+    DAY_TYPE_MAP, toSqlDateTime, daysSince, addDays, parseDateTime, isWorkingDay
 } = require('../utils/dateHelpers');
 const { loadRotationSlots, resolveRotation } = require('../services/shiftRotation');
 const { ACTIVE_SQL, COVERING_SQL, isCovering } = require('../services/requestStatus');
@@ -175,10 +175,7 @@ const create = async (req, res) => {
             ? (DAY_TYPE_MAP[dayTypeRows[0].gl_cal_day_type] || 'workday')
             : 'workday';
 
-        const breakWeekday = new Date(`${workingDate}T00:00:00`).getDay();
-        const isBreakWorkingDay = workingDateType === 'transferred'
-            || (workingDateType === 'workday'
-                && breakWeekday !== 0 && breakWeekday !== 6);
+        const isBreakWorkingDay = isWorkingDay(workingDate, workingDateType);
 
         if (!breakStartValue && !breakEndValue && isBreakWorkingDay) {
             const [template] = await pool.execute(
@@ -732,7 +729,6 @@ const createBulk = async (req, res) => {
         });
     }
 
-    const bulkWeekday = new Date(`${workingDate}T00:00:00`).getDay();
     const results = [];
 
     try {
@@ -745,9 +741,8 @@ const createBulk = async (req, res) => {
             ? (DAY_TYPE_MAP[bulkDayTypeRows[0].gl_cal_day_type] || 'workday')
             : 'workday';
 
-        const isBulkWorkingDay = bulkDayType === 'transferred'
-            || (bulkDayType === 'workday'
-                && bulkWeekday !== 0 && bulkWeekday !== 6);
+        const isBulkWorkingDay = isWorkingDay(workingDate, bulkDayType);
+
         for (const item of entries) {
             const employeeId = Number(item.employeeId);
             const { workStart, workEnd, breakStart, breakEnd } = item;

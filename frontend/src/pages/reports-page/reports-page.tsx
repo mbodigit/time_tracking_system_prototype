@@ -18,9 +18,14 @@ import {
   type StatisticsReport,
   type StatisticsRow,
 } from "../../api/reports";
-import { listEmployees, type ScopeEmployee } from "../../api/lookups";
+import {
+  listEmployees,
+  type ScopeEmployee,
+  type ScopeGroup,
+} from "../../api/lookups";
 import { ApiError } from "../../api/client";
 import { Field } from "../../components/form-field/form-field";
+import { EmptyState } from "../../components/empty-state/empty-state";
 import { getCurrentUser } from "../../utils/auth";
 import {
   formatMinutes,
@@ -84,7 +89,7 @@ export const ReportsPage = () => {
   const [report, setReport] = useState<MonthlyReport | null>(null);
   const [statistics, setStatistics] = useState<StatisticsReport | null>(null);
   const [employees, setEmployees] = useState<ScopeEmployee[]>([]);
-  const [groupOptions, setGroupOptions] = useState<[number, string][]>([]);
+  const [groupOptions, setGroupOptions] = useState<ScopeGroup[]>([]);
 
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -120,27 +125,43 @@ export const ReportsPage = () => {
 
   useEffect(() => {
     listEmployees()
-      .then((data) => setEmployees(data.employees))
-      .catch(() => setEmployees([]));
+      .then((data) => {
+        setEmployees(data.employees);
+        setGroupOptions(data.groups);
+      })
+      .catch(() => {
+        setEmployees([]);
+        setGroupOptions([]);
+      });
   }, []);
 
-  useEffect(() => {
-    if (employeeId || groupId) {
-      return;
+  const visibleEmployees = useMemo(
+    () =>
+      groupId === null
+        ? employees
+        : employees.filter((item) => item.groupId === groupId),
+    [employees, groupId],
+  );
+
+  const selectGroup = (nextGroupId: number | null) => {
+    setGroupId(nextGroupId);
+
+    const selected = employees.find((item) => item.id === employeeId);
+
+    if (selected && nextGroupId !== null && selected.groupId !== nextGroupId) {
+      setEmployeeId(null);
     }
+  };
 
-    const seen = new Map<number, string>();
+  const selectEmployee = (nextEmployeeId: number | null) => {
+    setEmployeeId(nextEmployeeId);
 
-    for (const row of report?.employees ?? []) {
-      if (row.employeeGroupId && row.employeeGroup) {
-        seen.set(row.employeeGroupId, row.employeeGroup);
-      }
+    const selected = employees.find((item) => item.id === nextEmployeeId);
+
+    if (selected) {
+      setGroupId(selected.groupId);
     }
-
-    setGroupOptions(
-      [...seen.entries()].sort((a, b) => a[1].localeCompare(b[1], "hu")),
-    );
-  }, [report, employeeId, groupId]);
+  };
 
   useEffect(() => {
     if (tab !== "statistics") {
@@ -244,40 +265,78 @@ export const ReportsPage = () => {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Riport és bérfeladás</h1>
+      <div className="flex items-center gap-4 flex-wrap">
+        <h1 className="text-2xl font-bold">Riport és bérfeladás</h1>
+
+        <div
+          role="tablist"
+          className="tabs tabs-box tabs-sm bg-base-200 p-1 rounded-lg"
+        >
+          <button
+            role="tab"
+            className={`tab ${tab === "employees" ? "tab-active" : ""}`}
+            onClick={() => setTab("employees")}
+          >
+            Dolgozói bontás
+          </button>
+          <button
+            role="tab"
+            className={`tab ${tab === "statistics" ? "tab-active" : ""}`}
+            onClick={() => setTab("statistics")}
+          >
+            Statisztika
+          </button>
+        </div>
+      </div>
 
       <div className="flex items-center gap-3 flex-wrap">
         <select
           className="select select-sm select-bordered"
+          value={groupId ?? ""}
+          onChange={(event) =>
+            selectGroup(event.target.value ? Number(event.target.value) : null)
+          }
+        >
+          <option value="">Minden csoport</option>
+          {groupOptions.map((group) => (
+            <option key={group.id} value={group.id}>
+              {group.name}
+            </option>
+          ))}
+        </select>
+
+        <select
+          className="select select-sm select-bordered"
           value={employeeId ?? ""}
           onChange={(event) =>
-            setEmployeeId(
+            selectEmployee(
               event.target.value ? Number(event.target.value) : null,
             )
           }
         >
-          <option value="">Minden dolgozó</option>
-          {employees.map((item) => (
+          <option value="">
+            {groupId === null
+              ? "Minden dolgozó"
+              : `A csoport minden dolgozója (${visibleEmployees.length})`}
+          </option>
+          {visibleEmployees.map((item) => (
             <option key={item.id} value={item.id}>
               {item.name} ({item.code})
             </option>
           ))}
         </select>
 
-        <select
-          className="select select-sm select-bordered"
-          value={groupId ?? ""}
-          onChange={(event) =>
-            setGroupId(event.target.value ? Number(event.target.value) : null)
-          }
-        >
-          <option value="">Minden csoport</option>
-          {groupOptions.map(([id, name]) => (
-            <option key={id} value={id}>
-              {name}
-            </option>
-          ))}
-        </select>
+        {(groupId !== null || employeeId !== null) && (
+          <button
+            className="btn btn-sm btn-ghost"
+            onClick={() => {
+              setGroupId(null);
+              setEmployeeId(null);
+            }}
+          >
+            Szűrés törlése
+          </button>
+        )}
 
         <div className="join ml-auto">
           <button
@@ -308,23 +367,6 @@ export const ReportsPage = () => {
         )}
       </div>
 
-      <div role="tablist" className="tabs tabs-bordered">
-        <button
-          role="tab"
-          className={`tab ${tab === "employees" ? "tab-active" : ""}`}
-          onClick={() => setTab("employees")}
-        >
-          Dolgozói bontás
-        </button>
-        <button
-          role="tab"
-          className={`tab ${tab === "statistics" ? "tab-active" : ""}`}
-          onClick={() => setTab("statistics")}
-        >
-          Statisztika
-        </button>
-      </div>
-
       {errorMessage && (
         <div className="alert alert-error text-sm py-2">
           <span>{errorMessage}</span>
@@ -333,7 +375,18 @@ export const ReportsPage = () => {
 
       {isLoading && <span className="loading loading-spinner" />}
 
-      {tab === "employees" && report && (
+      {tab === "employees" && report && reportTable.allRows.length === 0 && (
+        <EmptyState
+          message="Ehhez a szűréshez nincs riportadat ebben a hónapban."
+          hint={
+            groupId !== null || employeeId !== null
+              ? "Válassz másik hónapot, vagy töröld a szűrést."
+              : "Válassz másik hónapot."
+          }
+        />
+      )}
+
+      {tab === "employees" && report && reportTable.allRows.length > 0 && (
         <>
           <TableSearch
             table={reportTable}
@@ -457,7 +510,18 @@ export const ReportsPage = () => {
         </>
       )}
 
-      {tab === "statistics" && statistics && (
+      {tab === "statistics" && statistics && statistics.rows.length === 0 && (
+        <EmptyState
+          message="Ehhez a szűréshez nincs statisztikai adat ebben a hónapban."
+          hint={
+            groupId !== null || employeeId !== null
+              ? "Válassz másik hónapot, vagy töröld a szűrést."
+              : "Válassz másik hónapot."
+          }
+        />
+      )}
+
+      {tab === "statistics" && statistics && statistics.rows.length > 0 && (
         <>
           <div className="flex items-center gap-3 flex-wrap">
             <Field label="Bontás">
