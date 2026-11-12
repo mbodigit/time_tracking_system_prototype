@@ -1,13 +1,15 @@
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const pool = require('../config/db');
-const { coreHourLength } = require('../utils/dateHelpers');
+const { coreHourLength, isIsoDate } = require('../utils/dateHelpers');
 const { employeeNotFound, serverError } = require('../utils/apiResponse');
+const { nameColumns, fullName } = require('../utils/employeeName');
 
 const PASSWORD_ALPHABET =
     'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
 const PASSWORD_LENGTH = 12;
 const ADMIN_ROLE = 'Admin';
+const GENDERS = ['Férfi', 'Nő', 'Egyéb'];
 
 const generatePassword = () => {
     let password = '';
@@ -21,8 +23,13 @@ const list = async (req, res) => {
     try {
         const [rows] = await pool.execute(
             `SELECT e.employee_id, e.employee_code,
-                    e.employee_first_name, e.employee_last_name,
-                    e.employee_work_email,
+                    ${nameColumns('e')},
+                    e.employee_birth_date, e.employee_birth_place, e.employee_gender,
+                    e.employee_country, e.employee_postal_code,
+                    e.employee_city, e.employee_address,
+                    e.employee_work_email, e.employee_private_email,
+                    e.employee_work_phone_num, e.employee_private_phone_num,
+                    e.employee_work_location_id, loc.work_location_name,
                     e.employee_user_group_id, g.user_group_name,
                     e.employee_category_id, cat.employee_category_name,
                     e.employee_status_id, st.employee_status_name,
@@ -35,12 +42,12 @@ const list = async (req, res) => {
                     e.employee_break_start, e.employee_break_end,
                     e.employee_annual_leave_days,
                     e.employee_manager_id,
-                    m.employee_last_name  AS manager_last_name,
-                    m.employee_first_name AS manager_first_name,
+                    ${nameColumns('m', 'manager')},
                     u.user_id, u.user_username, u.user_status,
                     u.user_failed_attempts, u.user_locked_at,
                     u.user_role_id, r.user_role_name
              FROM Employees e
+             LEFT JOIN WorkLocations      loc ON loc.work_location_id     = e.employee_work_location_id
              LEFT JOIN UserGroups         g   ON g.user_group_id         = e.employee_user_group_id
              LEFT JOIN EmployeeCategories cat ON cat.employee_category_id = e.employee_category_id
              LEFT JOIN EmployeeStatus     st  ON st.employee_status_id    = e.employee_status_id
@@ -57,9 +64,24 @@ const list = async (req, res) => {
         const employees = rows.map((row) => ({
             id: row.employee_id,
             code: row.employee_code,
+            title: row.employee_title,
             firstName: row.employee_first_name,
+            middleName: row.employee_middle_name,
             lastName: row.employee_last_name,
+            name: fullName(row),
+            birthDate: row.employee_birth_date,
+            birthPlace: row.employee_birth_place,
+            gender: row.employee_gender,
+            country: row.employee_country,
+            postalCode: row.employee_postal_code,
+            city: row.employee_city,
+            address: row.employee_address,
             workEmail: row.employee_work_email,
+            privateEmail: row.employee_private_email,
+            workPhone: row.employee_work_phone_num,
+            privatePhone: row.employee_private_phone_num,
+            workLocationId: row.employee_work_location_id,
+            workLocationName: row.work_location_name,
             groupId: row.employee_user_group_id,
             groupName: row.user_group_name,
             categoryId: row.employee_category_id,
@@ -82,7 +104,7 @@ const list = async (req, res) => {
             annualLeaveDays: row.employee_annual_leave_days,
             managerId: row.employee_manager_id,
             managerName: row.manager_last_name
-                ? `${row.manager_last_name} ${row.manager_first_name}`
+                ? fullName(row, 'manager')
                 : null,
             userId: row.user_id,
             username: row.user_username,
@@ -147,7 +169,7 @@ const options = async (req, res) => {
              FROM CoreHours ORDER BY core_hour_start`
         );
         const [managers] = await pool.execute(
-            `SELECT e.employee_id, e.employee_last_name, e.employee_first_name,
+            `SELECT e.employee_id, ${nameColumns('e')},
                     g.user_group_id, g.user_group_name
              FROM Employees e
              JOIN Users     u ON u.user_employee_id = e.employee_id
@@ -167,8 +189,16 @@ const options = async (req, res) => {
         const [roles] = await pool.execute(
             `SELECT user_role_id, user_role_name FROM UserRoles ORDER BY user_role_id`
         );
+        const [workLocations] = await pool.execute(
+            `SELECT work_location_id, work_location_name
+             FROM WorkLocations ORDER BY work_location_name`
+        );
 
         return res.status(200).json({
+            genders: GENDERS,
+            workLocations: workLocations.map((row) => ({
+                id: row.work_location_id, name: row.work_location_name
+            })),
             groups: groups.map((row) => ({
                 id: row.user_group_id, name: row.user_group_name
             })),
@@ -199,7 +229,7 @@ const options = async (req, res) => {
             })),
             managers: managers.map((row) => ({
                 id: row.employee_id,
-                name: `${row.employee_last_name} ${row.employee_first_name}`,
+                name: fullName(row),
                 managedGroupId: row.user_group_id,
                 managedGroupName: row.user_group_name
             })),
@@ -272,27 +302,63 @@ const validateEmployee = (body) => {
             + 'dolgozó egyetlen vezető hatókörébe sem tartozna.';
     }
 
+    const gender = String(body.gender || '').trim();
+
+    if (gender && !GENDERS.includes(gender)) {
+        return `A nem megadása csak a következők egyike lehet: ${GENDERS.join(', ')}.`;
+    }
+
+    const birthDate = String(body.birthDate || '').trim();
+
+    if (birthDate && !isIsoDate(birthDate)) {
+        return 'A születési dátum formátuma érvénytelen.';
+    }
+
     return null;
 };
 
-const employeeValues = (body) => ([
-    String(body.lastName).trim(),
-    String(body.firstName).trim(),
-    String(body.workEmail || '').trim() || null,
-    Number(body.groupId) || null,
-    Number(body.categoryId),
-    Number(body.statusId),
-    Number(body.costCenterId),
-    Number(body.workScheduleId) || null,
-    Number(body.workingHourId) || null,
-    Number(body.coreHourId) || null,
-    Number(body.breakMinutes) || null,
-    body.breakPaid ? 1 : 0,
-    body.breakStart || null,
-    body.breakEnd || null,
-    Number(body.annualLeaveDays) || null,
-    Number(body.managerId) || null
-]);
+const text = (value) => String(value ?? '').trim() || null;
+const id = (value) => Number(value) || null;
+
+const EMPLOYEE_FIELDS = [
+    { column: 'employee_title', read: (body) => text(body.title) },
+    { column: 'employee_last_name', read: (body) => String(body.lastName).trim() },
+    { column: 'employee_first_name', read: (body) => String(body.firstName).trim() },
+    { column: 'employee_middle_name', read: (body) => text(body.middleName) },
+    { column: 'employee_birth_date', read: (body) => text(body.birthDate) },
+    { column: 'employee_birth_place', read: (body) => text(body.birthPlace) },
+    { column: 'employee_gender', read: (body) => text(body.gender) },
+    { column: 'employee_country', read: (body) => text(body.country) },
+    { column: 'employee_postal_code', read: (body) => text(body.postalCode) },
+    { column: 'employee_city', read: (body) => text(body.city) },
+    { column: 'employee_address', read: (body) => text(body.address) },
+    { column: 'employee_work_email', read: (body) => text(body.workEmail) },
+    { column: 'employee_private_email', read: (body) => text(body.privateEmail) },
+    { column: 'employee_work_phone_num', read: (body) => text(body.workPhone) },
+    { column: 'employee_private_phone_num', read: (body) => text(body.privatePhone) },
+    { column: 'employee_work_location_id', read: (body) => id(body.workLocationId) },
+    { column: 'employee_user_group_id', read: (body) => id(body.groupId) },
+    { column: 'employee_category_id', read: (body) => Number(body.categoryId) },
+    { column: 'employee_status_id', read: (body) => Number(body.statusId) },
+    { column: 'employee_cost_center_id', read: (body) => Number(body.costCenterId) },
+    { column: 'employee_work_schedule_id', read: (body) => id(body.workScheduleId) },
+    { column: 'employee_working_hour_id', read: (body) => id(body.workingHourId) },
+    { column: 'employee_core_hour_id', read: (body) => id(body.coreHourId) },
+    { column: 'employee_break_minutes', read: (body) => id(body.breakMinutes) },
+    { column: 'employee_break_paid', read: (body) => (body.breakPaid ? 1 : 0) },
+    { column: 'employee_break_start', read: (body) => body.breakStart || null },
+    { column: 'employee_break_end', read: (body) => body.breakEnd || null },
+    { column: 'employee_annual_leave_days', read: (body) => id(body.annualLeaveDays) },
+    { column: 'employee_manager_id', read: (body) => id(body.managerId) }
+];
+
+const INSERT_COLUMNS = EMPLOYEE_FIELDS.map((field) => field.column).join(', ');
+const INSERT_PLACEHOLDERS = EMPLOYEE_FIELDS.map(() => '?').join(', ');
+const UPDATE_ASSIGNMENTS = EMPLOYEE_FIELDS
+    .map((field) => `${field.column} = ?`)
+    .join(', ');
+
+const employeeValues = (body) => EMPLOYEE_FIELDS.map((field) => field.read(body));
 
 const create = async (req, res) => {
     const body = req.body || {};
@@ -327,15 +393,8 @@ const create = async (req, res) => {
         );
 
         const [result] = await connection.execute(
-            `INSERT INTO Employees (
-                employee_code, employee_last_name, employee_first_name,
-                employee_work_email, employee_user_group_id,
-                employee_category_id, employee_status_id, employee_cost_center_id,
-                employee_work_schedule_id, employee_working_hour_id,
-                employee_core_hour_id, employee_break_minutes, employee_break_paid,
-                employee_break_start, employee_break_end,
-                employee_annual_leave_days, employee_manager_id
-             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO Employees (employee_code, ${INSERT_COLUMNS})
+             VALUES (?, ${INSERT_PLACEHOLDERS})`,
             [employeeCode, ...employeeValues(body)]
         );
 
@@ -370,16 +429,7 @@ const update = async (req, res) => {
 
     try {
         const [result] = await pool.execute(
-            `UPDATE Employees SET
-                employee_last_name = ?, employee_first_name = ?,
-                employee_work_email = ?, employee_user_group_id = ?,
-                employee_category_id = ?, employee_status_id = ?,
-                employee_cost_center_id = ?, employee_work_schedule_id = ?,
-                employee_working_hour_id = ?, employee_core_hour_id = ?,
-                employee_break_minutes = ?, employee_break_paid = ?,
-                employee_break_start = ?, employee_break_end = ?,
-                employee_annual_leave_days = ?, employee_manager_id = ?
-             WHERE employee_id = ?`,
+            `UPDATE Employees SET ${UPDATE_ASSIGNMENTS} WHERE employee_id = ?`,
             [...employeeValues(body), employeeId]
         );
 

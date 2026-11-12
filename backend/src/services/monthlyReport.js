@@ -6,12 +6,12 @@ const {
     DAY_TYPE_MAP, addDays, parseDateTime, minutesBetween, overlapMinutes, isWorkingDay
 } = require('../utils/dateHelpers');
 const { buildLeaveBalance } = require('./leaveBalance');
+const { nameColumns, fullName } = require('../utils/employeeName');
 
 const toMonthResult = (monthContext, leave, extra) => ({
     employeeId: monthContext.employeeId,
     employeeCode: monthContext.employee.employee_code,
-    employeeName: `${monthContext.employee.employee_last_name} `
-        + `${monthContext.employee.employee_first_name}`,
+    employeeName: fullName(monthContext.employee),
     employeeGroupId: monthContext.employee.employee_user_group_id,
     employeeGroup: monthContext.employee.user_group_name,
     employeeArea: monthContext.employee.area_name,
@@ -378,7 +378,7 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
         `SELECT
             e.employee_break_minutes, e.employee_break_paid,
             e.employee_core_start, e.employee_core_end,
-            e.employee_code, e.employee_first_name, e.employee_last_name,
+            e.employee_code, ${nameColumns('e')},
             e.employee_user_group_id,
             e.employee_break_start, e.employee_break_end,
             e.employee_annual_leave_days,
@@ -422,7 +422,7 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
 
     const employeeProfile = {
         code: employee.employee_code,
-        name: `${employee.employee_last_name} ${employee.employee_first_name}`,
+        name: fullName(employee),
         workScheduleName: employee.work_schedule_name,
         workingHourNum: employee.working_hour_num,
         coreStart: templateStart,

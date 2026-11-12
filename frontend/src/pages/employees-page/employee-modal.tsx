@@ -11,10 +11,30 @@ import {
 import { ApiError } from "../../api/client";
 import { Field, FormGrid } from "../../components/form-field/form-field";
 
+const SECTIONS = [
+  "Személyes adatok",
+  "Elérhetőségek",
+  "Munkaviszony",
+  "Munkaidő",
+];
+
 const EMPTY_FORM: EmployeePayload = {
+  title: "",
   lastName: "",
   firstName: "",
+  middleName: "",
+  birthDate: "",
+  birthPlace: "",
+  gender: "",
+  country: "",
+  postalCode: "",
+  city: "",
+  address: "",
   workEmail: "",
+  privateEmail: "",
+  workPhone: "",
+  privatePhone: "",
+  workLocationId: null,
   groupId: null,
   categoryId: null,
   statusId: null,
@@ -37,9 +57,22 @@ const toTime = (value: string | null): string =>
   value ? String(value).slice(0, 5) : "";
 
 const toForm = (employee: AdminEmployee): EmployeePayload => ({
+  title: employee.title ?? "",
   lastName: employee.lastName,
   firstName: employee.firstName,
+  middleName: employee.middleName ?? "",
+  birthDate: employee.birthDate ?? "",
+  birthPlace: employee.birthPlace ?? "",
+  gender: employee.gender ?? "",
+  country: employee.country ?? "",
+  postalCode: employee.postalCode ?? "",
+  city: employee.city ?? "",
+  address: employee.address ?? "",
   workEmail: employee.workEmail ?? "",
+  privateEmail: employee.privateEmail ?? "",
+  workPhone: employee.workPhone ?? "",
+  privatePhone: employee.privatePhone ?? "",
+  workLocationId: employee.workLocationId,
   groupId: employee.groupId,
   categoryId: employee.categoryId,
   statusId: employee.statusId,
@@ -107,6 +140,7 @@ export const EmployeeModal = ({
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [askDelete, setAskDelete] = useState(false);
+  const [section, setSection] = useState(0);
   const [isSuggestionDismissed, setIsSuggestionDismissed] = useState(false);
 
   const isBusy = isSaving || isDeleting;
@@ -198,7 +232,7 @@ export const EmployeeModal = ({
             </h3>
             {employee && (
               <p className="mt-0.5 text-xs opacity-60">
-                {employee.code} — {employee.lastName} {employee.firstName}
+                {employee.code} — {employee.name}
               </p>
             )}
           </div>
@@ -213,12 +247,36 @@ export const EmployeeModal = ({
           </button>
         </div>
 
-        <div className="space-y-3 overflow-y-auto px-6 py-4">
-          <div className="space-y-2">
-            <h4 className="text-sm font-semibold">Kötelező adatok</h4>
+        <div role="tablist" className="tabs tabs-bordered px-6 pt-3">
+          {SECTIONS.map((name, index) => (
+            <button
+              key={name}
+              role="tab"
+              className={`tab ${section === index ? "tab-active" : ""}`}
+              onClick={() => setSection(index)}
+            >
+              {name}
+            </button>
+          ))}
+        </div>
 
+        <div className="space-y-3 overflow-y-auto px-6 py-4">
+          {section === 0 && (
             <FormGrid columns={3}>
-              <Field label="Vezetéknév">
+              <p className="text-xs opacity-60 md:col-span-3">
+                A csillaggal jelölt mezők kitöltése kötelező.
+              </p>
+
+              <Field label="Megszólítás">
+                <input
+                  type="text"
+                  className="input input-sm input-bordered"
+                  value={form.title}
+                  onChange={(event) => patch({ title: event.target.value })}
+                />
+              </Field>
+
+              <Field label="Vezetéknév *">
                 <input
                   type="text"
                   className="input input-sm input-bordered"
@@ -227,7 +285,7 @@ export const EmployeeModal = ({
                 />
               </Field>
 
-              <Field label="Keresztnév">
+              <Field label="Keresztnév *">
                 <input
                   type="text"
                   className="input input-sm input-bordered"
@@ -236,7 +294,142 @@ export const EmployeeModal = ({
                 />
               </Field>
 
-              <Field label="Éves szabadságkeret (nap)">
+              <Field label="Második keresztnév">
+                <input
+                  type="text"
+                  className="input input-sm input-bordered"
+                  value={form.middleName}
+                  onChange={(event) => patch({ middleName: event.target.value })}
+                />
+              </Field>
+
+              <Field
+                label="Születési dátum"
+                hint="A korcsoport szerinti statisztika ebből számol."
+              >
+                <input
+                  type="date"
+                  className="input input-sm input-bordered"
+                  value={form.birthDate}
+                  onChange={(event) => patch({ birthDate: event.target.value })}
+                />
+              </Field>
+
+              <Field label="Születési hely">
+                <input
+                  type="text"
+                  className="input input-sm input-bordered"
+                  value={form.birthPlace}
+                  onChange={(event) => patch({ birthPlace: event.target.value })}
+                />
+              </Field>
+
+              <Field label="Nem">
+                <select
+                  className="select select-sm select-bordered"
+                  value={form.gender}
+                  onChange={(event) => patch({ gender: event.target.value })}
+                >
+                  <option value="">Nincs megadva</option>
+                  {options.genders.map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            </FormGrid>
+          )}
+
+          {section === 1 && (
+            <FormGrid columns={3}>
+              <Field label="Ország">
+                <input
+                  type="text"
+                  className="input input-sm input-bordered"
+                  value={form.country}
+                  onChange={(event) => patch({ country: event.target.value })}
+                />
+              </Field>
+
+              <Field label="Irányítószám">
+                <input
+                  type="text"
+                  className="input input-sm input-bordered"
+                  value={form.postalCode}
+                  onChange={(event) => patch({ postalCode: event.target.value })}
+                />
+              </Field>
+
+              <Field label="Település">
+                <input
+                  type="text"
+                  className="input input-sm input-bordered"
+                  value={form.city}
+                  onChange={(event) => patch({ city: event.target.value })}
+                />
+              </Field>
+
+              <Field label="Cím" span={3}>
+                <input
+                  type="text"
+                  className="input input-sm input-bordered"
+                  value={form.address}
+                  onChange={(event) => patch({ address: event.target.value })}
+                />
+              </Field>
+
+              <Field
+                label="Vállalati e-mail cím"
+                hint="Felhasználói fiók csak e-mail címmel rendelkező dolgozóhoz hozható létre."
+              >
+                <input
+                  type="email"
+                  className="input input-sm input-bordered"
+                  value={form.workEmail}
+                  onChange={(event) => patch({ workEmail: event.target.value })}
+                />
+              </Field>
+
+              <Field label="Magán e-mail cím">
+                <input
+                  type="email"
+                  className="input input-sm input-bordered"
+                  value={form.privateEmail}
+                  onChange={(event) =>
+                    patch({ privateEmail: event.target.value })
+                  }
+                />
+              </Field>
+
+              <span />
+
+              <Field label="Munkahelyi telefonszám">
+                <input
+                  type="tel"
+                  className="input input-sm input-bordered"
+                  value={form.workPhone}
+                  onChange={(event) => patch({ workPhone: event.target.value })}
+                />
+              </Field>
+
+              <Field label="Magán telefonszám">
+                <input
+                  type="tel"
+                  className="input input-sm input-bordered"
+                  value={form.privatePhone}
+                  onChange={(event) =>
+                    patch({ privatePhone: event.target.value })
+                  }
+                />
+              </Field>
+            </FormGrid>
+          )}
+
+          {section === 2 && (
+          <div className="space-y-2">
+            <FormGrid columns={3}>
+              <Field label="Éves szabadságkeret (nap) *">
                 <input
                   type="number"
                   className="input input-sm input-bordered"
@@ -248,7 +441,7 @@ export const EmployeeModal = ({
               </Field>
 
               <SelectField
-                label="Költséghely"
+                label="Költséghely *"
                 value={form.costCenterId}
                 items={options.costCenters}
                 placeholder="Válassz"
@@ -256,7 +449,15 @@ export const EmployeeModal = ({
               />
 
               <SelectField
-                label="Állománycsoport"
+                label="Telephely"
+                value={form.workLocationId}
+                items={options.workLocations}
+                placeholder="Nincs"
+                onChange={(workLocationId) => patch({ workLocationId })}
+              />
+
+              <SelectField
+                label="Állománycsoport *"
                 value={form.categoryId}
                 items={options.categories}
                 placeholder="Válassz"
@@ -264,34 +465,12 @@ export const EmployeeModal = ({
               />
 
               <SelectField
-                label="Státusz"
+                label="Státusz *"
                 value={form.statusId}
                 items={options.statuses}
                 placeholder="Válassz"
                 onChange={(statusId) => patch({ statusId })}
               />
-
-              <SelectField
-                label="Munkarend"
-                value={form.workScheduleId}
-                items={options.workSchedules}
-                placeholder={inheritsFromGroup ? "A csoporté" : "Válassz"}
-                hint={inheritsFromGroup ? undefined : "Csoport nélkül kötelező."}
-                onChange={(workScheduleId) => patch({ workScheduleId })}
-              />
-
-              <SelectField
-                label="Napi munkaidő"
-                value={form.workingHourId}
-                items={options.workingHours}
-                placeholder={inheritsFromGroup ? "A csoporté" : "Válassz"}
-                hint={inheritsFromGroup ? undefined : "Csoport nélkül kötelező."}
-                onChange={(workingHourId) =>
-                  patch({ workingHourId, coreHourId: null })
-                }
-              />
-
-              <span />
 
               <SelectField
                 label="Csoport"
@@ -361,19 +540,29 @@ export const EmployeeModal = ({
               valamelyikén keresztül látja a vezető a dolgozó adatait.
             </p>
           </div>
+          )}
 
-          <div className="space-y-2 border-t border-base-300 pt-4">
-            <h4 className="text-sm font-semibold">Elhagyható adatok</h4>
-
+          {section === 3 && (
             <FormGrid columns={3}>
-              <Field label="Vállalati e-mail cím" span={2}>
-                <input
-                  type="email"
-                  className="input input-sm input-bordered"
-                  value={form.workEmail}
-                  onChange={(event) => patch({ workEmail: event.target.value })}
-                />
-              </Field>
+              <SelectField
+                label="Munkarend"
+                value={form.workScheduleId}
+                items={options.workSchedules}
+                placeholder={inheritsFromGroup ? "A csoporté" : "Válassz"}
+                hint={inheritsFromGroup ? undefined : "Csoport nélkül kötelező."}
+                onChange={(workScheduleId) => patch({ workScheduleId })}
+              />
+
+              <SelectField
+                label="Napi munkaidő"
+                value={form.workingHourId}
+                items={options.workingHours}
+                placeholder={inheritsFromGroup ? "A csoporté" : "Válassz"}
+                hint={inheritsFromGroup ? undefined : "Csoport nélkül kötelező."}
+                onChange={(workingHourId) =>
+                  patch({ workingHourId, coreHourId: null })
+                }
+              />
 
               <SelectField
                 label="Törzsidő"
@@ -431,7 +620,7 @@ export const EmployeeModal = ({
                 <span className="text-sm">A szünet munkaidőnek számít</span>
               </label>
             </FormGrid>
-          </div>
+          )}
 
           {isNew && (
             <p className="text-sm opacity-70">

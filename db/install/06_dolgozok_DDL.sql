@@ -12,15 +12,12 @@ CREATE TABLE IF NOT EXISTS Employees (
   employee_last_name         VARCHAR(30)  NOT NULL,
   employee_birth_date        DATE         NULL,
   employee_birth_place       VARCHAR(100) NULL,
-  employee_gender            VARCHAR(10)  NULL,
-  employee_children_count    INT          NOT NULL DEFAULT 0,
+  employee_gender            ENUM('Férfi','Nő','Egyéb') NULL,
 
-  employee_address_line1     VARCHAR(150) NULL,
-  employee_address_line2     VARCHAR(150) NULL,
+  employee_country           VARCHAR(100) NULL,
   employee_postal_code       VARCHAR(10)  NULL,
   employee_city              VARCHAR(100) NULL,
-  employee_province          VARCHAR(100) NULL,
-  employee_country           VARCHAR(100) NULL,
+  employee_address           VARCHAR(150) NULL,
 
   employee_work_email        VARCHAR(100) NULL,
   employee_private_email     VARCHAR(100) NULL,

@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { serverError } = require('../utils/apiResponse');
+const { nameColumns, fullName } = require('../utils/employeeName');
 const bcrypt = require ("bcryptjs");
 const jwt = require ('jsonwebtoken');
 
@@ -21,7 +22,7 @@ const login = async (req, res) => {
                 u.user_id, u.user_username, u.user_password_hash, u.user_status, u.user_must_change_password,
                 u.user_failed_attempts, u.user_locked_at,
                 r.user_role_name,
-                e.employee_id, e.employee_first_name, e.employee_last_name,
+                e.employee_id, ${nameColumns('e')},
                 s.employee_status_is_active
             FROM Users u
             JOIN UserRoles r ON r.user_role_id = u.user_role_id
@@ -84,7 +85,7 @@ const login = async (req, res) => {
             role: user.user_role_name,
             employeeId: user.employee_id ?? null,
             fullName: user.employee_id
-                ? `${user.employee_last_name} ${user.employee_first_name}`
+                ? fullName(user)
                 : user.user_username,
             mustChangePassword: Boolean(user.user_must_change_password)
         }

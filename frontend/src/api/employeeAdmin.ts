@@ -3,9 +3,24 @@ import { apiGet, apiPost, apiPatch, apiDelete } from "./client";
 export interface AdminEmployee {
   id: number;
   code: string;
+  title: string | null;
   firstName: string;
+  middleName: string | null;
   lastName: string;
+  name: string;
+  birthDate: string | null;
+  birthPlace: string | null;
+  gender: string | null;
+  country: string | null;
+  postalCode: string | null;
+  city: string | null;
+  address: string | null;
   workEmail: string | null;
+  privateEmail: string | null;
+  workPhone: string | null;
+  privatePhone: string | null;
+  workLocationId: number | null;
+  workLocationName: string | null;
   groupId: number | null;
   groupName: string | null;
   categoryId: number | null;
@@ -59,6 +74,8 @@ interface ManagerOption extends AdminOption {
 }
 
 export interface EmployeeOptions {
+  genders: string[];
+  workLocations: AdminOption[];
   groups: AdminOption[];
   categories: AdminOption[];
   statuses: AdminOption[];
@@ -71,9 +88,22 @@ export interface EmployeeOptions {
 }
 
 export interface EmployeePayload {
+  title: string;
   lastName: string;
   firstName: string;
+  middleName: string;
+  birthDate: string;
+  birthPlace: string;
+  gender: string;
+  country: string;
+  postalCode: string;
+  city: string;
+  address: string;
   workEmail: string;
+  privateEmail: string;
+  workPhone: string;
+  privatePhone: string;
+  workLocationId: number | null;
   groupId: number | null;
   categoryId: number | null;
   statusId: number | null;
