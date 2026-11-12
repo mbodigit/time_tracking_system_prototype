@@ -75,7 +75,7 @@ const hasPermission = async (role, permissionKey) => {
     return rows.length > 0;
 };
 
-const authorizeAnyPermission = (...permissionKeys) => {
+const authorizePermission = (permissionKey) => {
     return async (req, res, next) => {
         if (!req.user || !req.user.role) {
             return res.status(401).json({
@@ -84,22 +84,18 @@ const authorizeAnyPermission = (...permissionKeys) => {
         }
 
         try {
-            for (const permissionKey of permissionKeys) {
-                if (await hasPermission(req.user.role, permissionKey)) {
-                    return next();
-                }
+            if (await hasPermission(req.user.role, permissionKey)) {
+                return next();
             }
         } catch (error) {
             console.error('Jogosultság-ellenőrzési hiba:', error);
             return res.status(500).json({ message: 'Szerver hiba.' });
         }
 
-        console.warn(`Megtagadva: ${req.user.role} / ${permissionKeys.join(' vagy ')}`);
+        console.warn(`Megtagadva: ${req.user.role} / ${permissionKey}`);
         return res.status(403).json({ message: 'Nincs jogosultsága ehhez a művelethez.' });
     };
 };
-
-const authorizePermission = (permissionKey) => authorizeAnyPermission(permissionKey);
 
 const requireEmployee = (req, res, next) => {
     if (!req.user || !req.user.employeeId) {
@@ -116,6 +112,5 @@ const requireEmployee = (req, res, next) => {
 module.exports = {
     authenticateToken,
     authorizePermission,
-    authorizeAnyPermission,
     requireEmployee
 };

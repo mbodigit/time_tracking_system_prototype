@@ -5,25 +5,25 @@ const { authenticateToken, authorizePermission } = require('../middlewares/authM
 
 router.get('/admin/absences',
     authenticateToken,
-    authorizePermission('admin.absences'),
+    authorizePermission('master_data.absences'),
     absenceAdminController.list
 );
 
 router.post('/admin/absences',
     authenticateToken,
-    authorizePermission('admin.absences'),
+    authorizePermission('master_data.absences'),
     absenceAdminController.create
 );
 
 router.patch('/admin/absences/:id',
     authenticateToken,
-    authorizePermission('admin.absences'),
+    authorizePermission('master_data.absences'),
     absenceAdminController.update
 );
 
 router.delete('/admin/absences/:id',
     authenticateToken,
-    authorizePermission('admin.absences'),
+    authorizePermission('master_data.absences'),
     absenceAdminController.remove
 );
 

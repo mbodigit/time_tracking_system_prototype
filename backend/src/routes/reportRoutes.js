@@ -5,19 +5,19 @@ const { authenticateToken, authorizePermission } = require('../middlewares/authM
 
 router.get('/reports/monthly',
     authenticateToken,
-    authorizePermission('reports.view'),
+    authorizePermission('reports.employees'),
     reportController.monthly
 );
 
 router.get('/reports/payroll',
     authenticateToken,
-    authorizePermission('reports.export'),
+    authorizePermission('reports.employees'),
     reportController.payroll
 );
 
 router.get('/reports/statistics',
     authenticateToken,
-    authorizePermission('reports.view'),
+    authorizePermission('reports.statistics'),
     reportController.statistics
 );
 

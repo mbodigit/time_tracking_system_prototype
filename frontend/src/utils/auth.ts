@@ -5,6 +5,7 @@ export interface CurrentUser {
   employeeId: number | null;
   fullName: string;
   mustChangePassword: boolean;
+  permissions: string[];
 }
 
 export const getToken = (): string | null => {

@@ -25,7 +25,7 @@ import {
 import { ApiError } from "../../api/client";
 import { GroupModal, type GroupNode } from "./group-modal";
 import { UnitModal, type DerivedGroup, type UnitDraft } from "./unit-modal";
-import { getCurrentUser } from "../../utils/auth";
+import { currentPermissions, hasPermission } from "../../utils/access";
 
 interface UnitModalState {
   entity: OrgEntity;
@@ -47,7 +47,7 @@ const toDerived = (group: OrgGroup | null): DerivedGroup[] =>
   group ? [{ name: group.name, activeEmployees: group.activeEmployees }] : [];
 
 export const OrgPage = () => {
-  const canEdit = getCurrentUser()?.role === "Admin";
+  const canEdit = hasPermission(currentPermissions(), "organisation");
 
   const [tree, setTree] = useState<OrgTree | null>(null);
   const [groups, setGroups] = useState<Group[]>([]);

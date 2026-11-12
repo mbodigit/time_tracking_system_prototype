@@ -2,6 +2,17 @@ import { useState } from "react";
 import { MasterDataSection, type EntityDef } from "./master-data-section";
 import { AbsencesSection } from "./absences-section";
 import { AllowancesSection } from "./allowances-section";
+import { currentPermissions, hasPermission } from "../../utils/access";
+
+const TAB_PERMISSION: Record<string, string> = {
+  Bérkódok: "master_data.payroll_codes",
+  Munkarendek: "master_data.work_schedules",
+  "Napi munkaidők": "master_data.working_hours",
+  Törzsidők: "master_data.core_hours",
+  Költséghelyek: "master_data.cost_centers",
+  "Távolléti jogcímek": "master_data.absences",
+  Pótlékok: "master_data.allowances",
+};
 
 const ENTITIES: EntityDef[] = [
   {
@@ -66,7 +77,15 @@ const ABSENCES_TAB = "Távolléti jogcímek";
 const ALLOWANCES_TAB = "Pótlékok";
 
 export const MasterDataPage = () => {
-  const [tab, setTab] = useState<string>(ENTITIES[0].tab);
+  const permissions = currentPermissions();
+
+  const visibleTabs = [
+    ...ENTITIES.map((item) => item.tab),
+    ABSENCES_TAB,
+    ALLOWANCES_TAB,
+  ].filter((name) => hasPermission(permissions, TAB_PERMISSION[name]));
+
+  const [tab, setTab] = useState<string>(visibleTabs[0] ?? "");
 
   const entity = ENTITIES.find((item) => item.tab === tab) ?? null;
 
@@ -75,7 +94,7 @@ export const MasterDataPage = () => {
       <h1 className="text-2xl font-bold">Törzsadatok</h1>
 
       <div role="tablist" className="tabs tabs-bordered">
-        {[...ENTITIES.map((item) => item.tab), ABSENCES_TAB, ALLOWANCES_TAB].map(
+        {visibleTabs.map(
           (name) => (
             <button
               key={name}

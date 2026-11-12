@@ -2,9 +2,18 @@ const pool = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { serverError } = require('../utils/apiResponse');
+const { listRoleKeys } = require('../services/permissions');
 
-const getMe = (req, res) => {
-    return res.status(200).json({ user: req.user });
+const getMe = async (req, res) => {
+    try {
+        const permissions = await listRoleKeys(req.user.role);
+
+        return res.status(200).json({
+            user: { ...req.user, permissions }
+        });
+    } catch (error) {
+        return serverError(res, 'Profil lekérdezési hiba', error);
+    }
 };
 
 const changePassword = async (req, res) => {

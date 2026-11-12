@@ -19,7 +19,6 @@ CREATE TABLE IF NOT EXISTS Permissions (
   permission_name      VARCHAR(100) NOT NULL,
   permission_parent_id INT          NULL,
   permission_is_group  BOOLEAN      NOT NULL DEFAULT 0,
-  permission_route     VARCHAR(100) NULL,
   permission_sort      INT          NOT NULL DEFAULT 0,
   PRIMARY KEY (permission_id),
   UNIQUE KEY uq_permission_key (permission_key),

@@ -11,7 +11,7 @@ import {
 } from "../../api/requests";
 import { listEmployees, type ScopeEmployee } from "../../api/lookups";
 import { ApiError } from "../../api/client";
-import { getCurrentUser } from "../../utils/auth";
+import { currentPermissions, hasPermission } from "../../utils/access";
 import { Field } from "../../components/form-field/form-field";
 import { RequestForm } from "./request-form";
 import {
@@ -118,7 +118,10 @@ export const RequestsPage = () => {
   const [closed, setClosed] = useState<AbsenceRequest | null>(null);
   const [closeDate, setCloseDate] = useState("");
 
-  const canClose = ["HR-Bér", "Admin"].includes(getCurrentUser()?.role ?? "");
+  const permissions = currentPermissions();
+  const canApprove = hasPermission(permissions, "requests.approval");
+  const canOrder = hasPermission(permissions, "requests.ordered");
+  const canClose = hasPermission(permissions, "employees.list");
 
   const [orderEmployeeId, setOrderEmployeeId] = useState(0);
   const [orderDate, setOrderDate] = useState("");
@@ -252,7 +255,7 @@ export const RequestsPage = () => {
         >
           Kérelmeim
         </button>
-        {hasSubordinates && (
+        {hasSubordinates && canApprove && (
           <button
             role="tab"
             className={`tab ${tab === "pending" ? "tab-active" : ""}`}
@@ -266,7 +269,7 @@ export const RequestsPage = () => {
             )}
           </button>
         )}
-        {hasSubordinates && (
+        {hasSubordinates && canOrder && (
           <button
             role="tab"
             className={`tab ${tab === "ordered" ? "tab-active" : ""}`}

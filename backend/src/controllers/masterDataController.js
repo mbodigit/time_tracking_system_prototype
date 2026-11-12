@@ -3,7 +3,7 @@ const { invalidId, serverError, unknownMasterData } = require('../utils/apiRespo
 
 const ENTITIES = {
     'work-schedules': {
-        permission: 'admin.working_time',
+        permission: 'master_data.work_schedules',
         table: 'WorkSchedules',
         idColumn: 'work_schedule_id',
         orderBy: 'work_schedule_name',
@@ -20,7 +20,7 @@ const ENTITIES = {
         ]
     },
     'working-hours': {
-        permission: 'admin.working_time',
+        permission: 'master_data.working_hours',
         table: 'WorkingHours',
         idColumn: 'working_hour_id',
         orderBy: 'working_hour_num',
@@ -35,7 +35,7 @@ const ENTITIES = {
         ]
     },
     'core-hours': {
-        permission: 'admin.core_hours',
+        permission: 'master_data.core_hours',
         table: 'CoreHours',
         idColumn: 'core_hour_id',
         orderBy: 'core_hour_start',
@@ -51,7 +51,7 @@ const ENTITIES = {
         ]
     },
     'cost-centers': {
-        permission: 'admin.cost_centers',
+        permission: 'master_data.cost_centers',
         table: 'CostCenters',
         idColumn: 'cost_center_id',
         orderBy: 'cost_center_name',
@@ -66,7 +66,7 @@ const ENTITIES = {
         ]
     },
     'payroll-codes': {
-        permission: 'admin.absences',
+        permission: 'master_data.payroll_codes',
         table: 'PayrollCodes',
         idColumn: 'payroll_code_id',
         orderBy: 'payroll_code',
@@ -86,7 +86,7 @@ const ENTITIES = {
         }
     },
     'work-locations': {
-        permission: 'admin.company',
+        permission: 'company.locations',
         table: 'WorkLocations',
         idColumn: 'work_location_id',
         orderBy: 'work_location_name',

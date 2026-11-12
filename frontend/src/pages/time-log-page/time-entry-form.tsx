@@ -7,7 +7,7 @@ import {
 } from "../../api/timeEntries";
 import { ApiError } from "../../api/client";
 import { Field } from "../../components/form-field/form-field";
-import { getCurrentUser } from "../../utils/auth";
+import { currentPermissions, hasPermission } from "../../utils/access";
 
 interface FormDefaults {
   coreStart: string | null;
@@ -85,6 +85,9 @@ const firstTime = (...values: (string | null | undefined)[]): string => {
   return "";
 };
 
+const formatTimestamp = (value: string | null | undefined): string =>
+  value ? String(value).slice(0, 16).replace("T", " ") : "—";
+
 export const TimeEntryForm = ({
   day,
   employeeId,
@@ -140,8 +143,9 @@ export const TimeEntryForm = ({
   const [isDeleting, setIsDeleting] = useState(false);
 
   const noteRequired = isBackdated(day.date);
-  const canSetSchedule = ["Vezető", "HR-Bér", "Admin"].includes(
-    getCurrentUser()?.role ?? "",
+  const canSetSchedule = hasPermission(
+    currentPermissions(),
+    "time_log.group",
   );
 
   const changeBreakStart = (value: string) => {
@@ -398,6 +402,15 @@ export const TimeEntryForm = ({
             onChange={(event) => setNote(event.target.value)}
           />
         </Field>
+
+        {day.id && (day.createdAt || day.updatedAt) && (
+          <p className="text-xs opacity-60">
+            Rögzítve: {formatTimestamp(day.createdAt)}
+            {day.updatedAt && day.updatedAt !== day.createdAt && (
+              <> · Módosítva: {formatTimestamp(day.updatedAt)}</>
+            )}
+          </p>
+        )}
 
         <div className="modal-action">
           {day.id && (

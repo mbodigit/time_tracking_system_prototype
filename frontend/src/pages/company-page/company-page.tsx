@@ -4,6 +4,7 @@ import {
   MasterDataSection,
   type EntityDef,
 } from "../master-data-page/master-data-section";
+import { currentPermissions, hasPermission } from "../../utils/access";
 
 const WORK_LOCATIONS: EntityDef = {
   key: "work-locations",
@@ -23,8 +24,19 @@ const WORK_LOCATIONS: EntityDef = {
 
 const COMPANY_TAB = "Cégadatok";
 
+const TAB_PERMISSION: Record<string, string> = {
+  [COMPANY_TAB]: "company.settings",
+  [WORK_LOCATIONS.tab]: "company.locations",
+};
+
 export const CompanyPage = () => {
-  const [tab, setTab] = useState(COMPANY_TAB);
+  const permissions = currentPermissions();
+
+  const visibleTabs = [COMPANY_TAB, WORK_LOCATIONS.tab].filter((name) =>
+    hasPermission(permissions, TAB_PERMISSION[name]),
+  );
+
+  const [tab, setTab] = useState(visibleTabs[0] ?? "");
 
   return (
     <div className="space-y-4">
@@ -35,7 +47,7 @@ export const CompanyPage = () => {
           role="tablist"
           className="tabs tabs-box tabs-sm bg-base-200 p-1 rounded-lg"
         >
-          {[COMPANY_TAB, WORK_LOCATIONS.tab].map((name) => (
+          {visibleTabs.map((name) => (
             <button
               key={name}
               role="tab"

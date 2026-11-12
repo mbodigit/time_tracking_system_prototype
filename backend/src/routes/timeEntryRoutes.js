@@ -6,49 +6,49 @@ const { authenticateToken, authorizePermission, requireEmployee } = require('../
 router.post('/time-entries',
     authenticateToken,
     requireEmployee,
-    authorizePermission('monthly_log.record'),
+    authorizePermission('time_log.own'),
     timeEntryController.create
 );
 
 router.get('/time-entries',
     authenticateToken,
     requireEmployee,
-    authorizePermission('monthly_log.record'),
+    authorizePermission('time_log.own'),
     timeEntryController.list
 );
 
 router.patch('/time-entries/:id',
     authenticateToken,
     requireEmployee,
-    authorizePermission('monthly_log.record'),
+    authorizePermission('time_log.own'),
     timeEntryController.update
 );
 
 router.delete('/time-entries/:id',
     authenticateToken,
     requireEmployee,
-    authorizePermission('monthly_log.record'),
+    authorizePermission('time_log.own'),
     timeEntryController.remove
 );
 
 router.put('/time-entries/ordered',
     authenticateToken,
     requireEmployee,
-    authorizePermission('monthly_log.edit_past'),
+    authorizePermission('requests.ordered'),
     timeEntryController.setOrdered
 );
 
 router.get('/time-entries/daily',
     authenticateToken,
     requireEmployee,
-    authorizePermission('group_log.record'),
+    authorizePermission('time_log.group'),
     timeEntryController.listDaily
 );
 
 router.post('/time-entries/bulk',
     authenticateToken,
     requireEmployee,
-    authorizePermission('group_log.record'),
+    authorizePermission('time_log.group'),
     timeEntryController.createBulk
 );
 

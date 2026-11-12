@@ -6,7 +6,7 @@ const { authenticateToken, authorizePermission, requireEmployee } = require('../
 router.get('/dashboard',
     authenticateToken,
     requireEmployee,
-    authorizePermission('dashboard.view'),
+    authorizePermission('dashboard'),
     dashboardController.overview
 );
 

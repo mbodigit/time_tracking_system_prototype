@@ -1,16 +1,13 @@
 import type { ReactNode } from "react";
-import { getCurrentUser } from "../../utils/auth";
+import { currentPermissions, hasAnyPermission } from "../../utils/access";
 
 interface Props {
-  roles: string[];
+  permission: string;
   children: ReactNode;
 }
 
-export const RequireRole = ({ roles, children }: Props) => {
-  const user = getCurrentUser();
-  const role = user?.role ?? "";
-
-  if (role !== "Admin" && !roles.includes(role)) {
+export const RequirePermission = ({ permission, children }: Props) => {
+  if (!hasAnyPermission(currentPermissions(), permission)) {
     return (
       <div className="alert alert-error">
         <span>Ehhez az oldalhoz nincs jogosultsága.</span>

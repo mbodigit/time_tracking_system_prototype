@@ -5,13 +5,13 @@ const { authenticateToken, authorizePermission } = require('../middlewares/authM
 
 router.get('/admin/company',
     authenticateToken,
-    authorizePermission('admin.company'),
+    authorizePermission('company.settings'),
     companyController.get
 );
 
 router.patch('/admin/company',
     authenticateToken,
-    authorizePermission('admin.company'),
+    authorizePermission('company.settings'),
     companyController.update
 );
 

@@ -6,6 +6,8 @@ export interface TimeEntryDay {
   id: number | null;
   date: string;
   dayType: DayType;
+  createdAt?: string | null;
+  updatedAt?: string | null;
   workStart: string | null;
   workEnd: string | null;
     absence: {
