@@ -65,9 +65,9 @@ WHERE NOT EXISTS (
 );
 
 INSERT INTO CompanySettings (
-  company_settings_id, company_base_payroll_code, company_next_employee_code
+  company_settings_id, company_next_employee_code
 )
-SELECT 1, 'ALAP', 1
+SELECT 1, 1
 WHERE NOT EXISTS (
   SELECT 1 FROM CompanySettings WHERE company_settings_id = 1
 );

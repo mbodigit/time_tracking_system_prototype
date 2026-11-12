@@ -16,7 +16,6 @@ import { AbsenceModal } from "./absence-modal";
 const searchText = (absence: AdminAbsence) =>
   [
     absence.name,
-    absence.category,
     absence.payrollCode,
     ...absence.workScheduleNames,
   ]
@@ -26,10 +25,8 @@ const searchText = (absence: AdminAbsence) =>
 const sortValue = (absence: AdminAbsence, key: string): number | string => {
   if (key === "sort") return absence.sort;
   if (key === "name") return absence.name;
-  if (key === "category") return absence.category;
   if (key === "payrollCode") return absence.payrollCode ?? "";
   if (key === "isPaid") return absence.isPaid ? 1 : 0;
-  if (key === "recType") return absence.recType;
   if (key === "status") return absence.status ? 1 : 0;
   return "";
 };
@@ -121,16 +118,10 @@ export const AbsencesSection = () => {
               <SortableHeader table={table} field="name" label="Megnevezés" />
               <SortableHeader
                 table={table}
-                field="category"
-                label="Kategória"
-              />
-              <SortableHeader
-                table={table}
                 field="payrollCode"
                 label="Bérkód"
               />
               <SortableHeader table={table} field="isPaid" label="Fizetett" />
-              <SortableHeader table={table} field="recType" label="Rögzítés" />
               <th>Munkarendek</th>
               <SortableHeader table={table} field="status" label="Állapot" />
               <th />
@@ -148,12 +139,8 @@ export const AbsencesSection = () => {
                     </span>
                   )}
                 </td>
-                <td>{absence.category}</td>
                 <td>{absence.payrollCode ?? "-"}</td>
                 <td>{absence.isPaid ? "igen" : "nem"}</td>
-                <td className="text-sm">
-                  {absence.recType === 1 ? "munkaidővel" : "teljes nap"}
-                </td>
                 <td className="text-sm">
                   {absence.workScheduleNames.join(", ") || "-"}
                 </td>
@@ -196,7 +183,7 @@ export const AbsencesSection = () => {
       {modal && data && (
         <AbsenceModal
           absence={modal.absence}
-          categories={data.categories}
+          payrollCodes={data.payrollCodes}
           workSchedules={data.workSchedules}
           onClose={() => setModal(null)}
           onSaved={handleSaved}

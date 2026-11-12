@@ -14,6 +14,7 @@ const routeModules = [
     require('./employeeAdminRoutes'),
     require('./masterDataRoutes'),
     require('./absenceAdminRoutes'),
+    require('./allowanceAdminRoutes'),
     require('./companyRoutes')
 ];
 

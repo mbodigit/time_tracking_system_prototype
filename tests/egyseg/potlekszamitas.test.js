@@ -2,6 +2,8 @@ const test = require('node:test');
 const assert = require('node:assert');
 const { calculateAllowances } = require('../../backend/src/services/allowanceCalculator')
 
+const SHIFT_PREMIUM_RANGE = { startHour: 18, endHour: 6 };
+
 test('hétköznapi nappali műszak, nincs pótlék', () => {
     const result = calculateAllowances({
         workStart:     new Date('2026-09-28T08:00:00'),
@@ -13,7 +15,8 @@ test('hétköznapi nappali műszak, nincs pótlék', () => {
         isShiftWorker: false,
         isOrdered:     false,
         breakMinutes:  30,
-        breakPaid:     false
+        breakPaid:     false,
+        shiftPremiumRange: SHIFT_PREMIUM_RANGE
     });
 
     assert.deepStrictEqual(result, {
@@ -34,7 +37,8 @@ test('éjszakás műszak, a következő nap munkaszüneti nap', () => {
         isShiftWorker: true,
         isOrdered:     true,
         breakMinutes:  0,
-        breakPaid:     false
+        breakPaid:     false,
+        shiftPremiumRange: SHIFT_PREMIUM_RANGE
     });
 
     assert.deepStrictEqual(result, {
@@ -55,7 +59,8 @@ test('pénteki éjszakás műszak, a túlóra szombatra esik', () => {
         isShiftWorker: true,
         isOrdered:     true,
         breakMinutes:  0,
-        breakPaid:     false
+        breakPaid:     false,
+        shiftPremiumRange: SHIFT_PREMIUM_RANGE
     });
 
     assert.deepStrictEqual(result, {
@@ -76,7 +81,8 @@ test('szombati éjszakás műszak, a túlóra vasárnapra esik', () => {
         isShiftWorker: true,
         isOrdered:     true,
         breakMinutes:  0,
-        breakPaid:     false
+        breakPaid:     false,
+        shiftPremiumRange: SHIFT_PREMIUM_RANGE
     });
 
     assert.deepStrictEqual(result, {
@@ -97,7 +103,8 @@ test('délutános műszak egy órás elrendelt túlórával', () => {
         isShiftWorker: true,
         isOrdered:     true,
         breakMinutes:  0,
-        breakPaid:     false
+        breakPaid:     false,
+        shiftPremiumRange: SHIFT_PREMIUM_RANGE
     });
 
     assert.deepStrictEqual(result, {
@@ -118,7 +125,8 @@ test('éjszakás műszak egy órával korábbi, elrendelt kezdéssel', () => {
         isShiftWorker: true,
         isOrdered:     true,
         breakMinutes:  0,
-        breakPaid:     false
+        breakPaid:     false,
+        shiftPremiumRange: SHIFT_PREMIUM_RANGE
     });
 
     assert.deepStrictEqual(result, {
@@ -139,7 +147,8 @@ test('pihenőnapon végzett munka', () => {
         isShiftWorker: true,
         isOrdered:     true,
         breakMinutes:  0,
-        breakPaid:     false
+        breakPaid:     false,
+        shiftPremiumRange: SHIFT_PREMIUM_RANGE
     });
 
     assert.deepStrictEqual(result, {
@@ -160,7 +169,8 @@ test('munkaszüneti napon végzett munka', () => {
         isShiftWorker: true,
         isOrdered:     true,
         breakMinutes:  0,
-        breakPaid:     false
+        breakPaid:     false,
+        shiftPremiumRange: SHIFT_PREMIUM_RANGE
     });
 
     assert.deepStrictEqual(result, {
@@ -181,7 +191,8 @@ test('vasárnapi munkavégzés', () => {
         isShiftWorker: true,
         isOrdered:     true,
         breakMinutes:  0,
-        breakPaid:     false
+        breakPaid:     false,
+        shiftPremiumRange: SHIFT_PREMIUM_RANGE
     });
 
     assert.deepStrictEqual(result, {
@@ -202,7 +213,8 @@ test('nem műszakos dolgozó a délutáni sávban, pótlék nélkül', () => {
         isShiftWorker: false,
         isOrdered:     false,
         breakMinutes:  0,
-        breakPaid:     false
+        breakPaid:     false,
+        shiftPremiumRange: SHIFT_PREMIUM_RANGE
     });
 
     assert.deepStrictEqual(result, {
@@ -223,7 +235,8 @@ test('fizetett szünet, a ledolgozott időbe beleszámít', () => {
         isShiftWorker: false,
         isOrdered:     false,
         breakMinutes:  30,
-        breakPaid:     true
+        breakPaid:     true,
+        shiftPremiumRange: SHIFT_PREMIUM_RANGE
     });
 
     assert.deepStrictEqual(result, {
@@ -244,7 +257,8 @@ test('beosztáson kívüli munkavégzés elrendelés nélkül, nincs pótlék', 
         isShiftWorker: false,
         isOrdered:     false,
         breakMinutes:  0,
-        breakPaid:     false
+        breakPaid:     false,
+        shiftPremiumRange: SHIFT_PREMIUM_RANGE
     });
 
     assert.deepStrictEqual(result, {
@@ -265,7 +279,8 @@ test('ugyanaz a munkavégzés elrendelve, hétköznapi túlóra', () => {
         isShiftWorker: false,
         isOrdered:     true,
         breakMinutes:  0,
-        breakPaid:     false
+        breakPaid:     false,
+        shiftPremiumRange: SHIFT_PREMIUM_RANGE
     });
 
     assert.deepStrictEqual(result, {
@@ -286,7 +301,8 @@ test('nem műszakos dolgozónál a szombat éjfélkor kezdődik', () => {
         isShiftWorker: false,
         isOrdered:     false,
         breakMinutes:  0,
-        breakPaid:     false
+        breakPaid:     false,
+        shiftPremiumRange: SHIFT_PREMIUM_RANGE
     });
 
     assert.deepStrictEqual(result, {
@@ -309,7 +325,8 @@ test('időponttal megadott szünet a pótlékból is kimarad', () => {
         breakStart:    new Date('2026-09-29T02:00:00'),
         breakEnd:      new Date('2026-09-29T02:30:00'),
         breakMinutes:  30,
-        breakPaid:     false
+        breakPaid:     false,
+        shiftPremiumRange: SHIFT_PREMIUM_RANGE
     });
 
     assert.deepStrictEqual(result, {
@@ -332,7 +349,8 @@ test('fizetett szünet időponttal is beleszámít a pótlékba', () => {
         breakStart:    new Date('2026-09-29T02:00:00'),
         breakEnd:      new Date('2026-09-29T02:30:00'),
         breakMinutes:  30,
-        breakPaid:     true
+        breakPaid:     true,
+        shiftPremiumRange: SHIFT_PREMIUM_RANGE
     });
 
     assert.deepStrictEqual(result, {
@@ -353,7 +371,8 @@ test('áthelyezett munkanapra eső szombat rendes munkanapként minősül', () =
         isShiftWorker: true,
         isOrdered:     false,
         breakMinutes:  0,
-        breakPaid:     false
+        breakPaid:     false,
+        shiftPremiumRange: SHIFT_PREMIUM_RANGE
     });
 
     assert.deepStrictEqual(result, {
@@ -374,7 +393,8 @@ test('áthelyezett munkanapon a beosztáson túli óra elrendelve túlóra', () 
         isShiftWorker: true,
         isOrdered:     true,
         breakMinutes:  0,
-        breakPaid:     false
+        breakPaid:     false,
+        shiftPremiumRange: SHIFT_PREMIUM_RANGE
     });
 
     assert.deepStrictEqual(result, {
@@ -382,4 +402,49 @@ test('áthelyezett munkanapon a beosztáson túli óra elrendelve túlóra', () 
         premiumOutsideMinutes: 120,
         allowances: { tulora: 120 }
     });
+});
+test('a műszakpótlék sávja a törzsadatból jön, nem a kódból', () => {
+    const input = {
+        workStart:     new Date('2026-09-28T14:00:00'),
+        workEnd:       new Date('2026-09-28T22:00:00'),
+        scheduleStart: new Date('2026-09-28T14:00:00'),
+        scheduleEnd:   new Date('2026-09-28T22:00:00'),
+        dayType:       'workday',
+        nextDayType:   'workday',
+        isShiftWorker: true,
+        isOrdered:     false,
+        breakMinutes:  0,
+        breakPaid:     false
+    };
+
+    const alapertelmezett = calculateAllowances({
+        ...input,
+        shiftPremiumRange: { startHour: 18, endHour: 6 }
+    });
+
+    const korabbiKezdes = calculateAllowances({
+        ...input,
+        shiftPremiumRange: { startHour: 14, endHour: 6 }
+    });
+
+    assert.strictEqual(alapertelmezett.allowances.muszak, 240);
+    assert.strictEqual(korabbiKezdes.allowances.muszak, 480);
+});
+
+test('műszakpótlék nélkül nincs pótlékkulcs', () => {
+    const result = calculateAllowances({
+        workStart:     new Date('2026-09-28T22:00:00'),
+        workEnd:       new Date('2026-09-29T06:00:00'),
+        scheduleStart: new Date('2026-09-28T22:00:00'),
+        scheduleEnd:   new Date('2026-09-29T06:00:00'),
+        dayType:       'workday',
+        nextDayType:   'workday',
+        isShiftWorker: true,
+        isOrdered:     false,
+        breakMinutes:  0,
+        breakPaid:     false,
+        shiftPremiumRange: null
+    });
+
+    assert.deepStrictEqual(result.allowances, {});
 });

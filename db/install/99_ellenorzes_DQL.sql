@@ -33,15 +33,19 @@ LEFT JOIN RolePermissions rp ON rp.user_role_id = r.user_role_id
 GROUP BY r.user_role_id, r.user_role_name
 ORDER BY jogosultsagok DESC;
 
-SELECT a.absence_name AS jogcim, a.absence_payroll_code AS berkod,
+SELECT a.absence_name AS jogcim, pc.payroll_code AS berkod,
        GROUP_CONCAT(w.work_schedule_name ORDER BY w.work_schedule_name
                     SEPARATOR ', ') AS munkarendek
 FROM Absences a
+LEFT JOIN PayrollCodes pc ON pc.payroll_code_id = a.absence_payroll_code_id
 JOIN AbsenceWorkSchedules aws ON aws.absence_id = a.absence_id
 JOIN WorkSchedules w ON w.work_schedule_id = aws.work_schedule_id
-GROUP BY a.absence_id, a.absence_name, a.absence_payroll_code, a.absence_sort
+GROUP BY a.absence_id, a.absence_name, pc.payroll_code, a.absence_sort
 ORDER BY a.absence_sort;
 
-SELECT allowance_code AS kod, allowance_name AS jogcim,
-       allowance_percent AS szazalek, allowance_payroll_code AS berkod
-FROM Allowances ORDER BY allowance_percent, allowance_name;
+SELECT a.allowance_code AS kod, a.allowance_name AS jogcim,
+       a.allowance_percent AS szazalek, pc.payroll_code AS berkod,
+       a.allowance_start_hour AS sav_kezdete, a.allowance_end_hour AS sav_vege
+FROM Allowances a
+LEFT JOIN PayrollCodes pc ON pc.payroll_code_id = a.allowance_payroll_code_id
+ORDER BY a.allowance_percent, a.allowance_name;

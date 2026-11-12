@@ -1,9 +1,3 @@
--- A Bruno futtatások előtti és utáni takarítás.
--- Törli a Bruno által létrehozott adatokat, és felszabadítja azokat a napokat,
--- amelyekre a tesztek rögzíteni fognak. A demo előzményadatait nem bántja.
---
--- Előfeltétel: a db/install és a db/demo fájljai lefutottak.
-
 USE time_tracking_db_prototype;
 
 SET NAMES utf8mb4;
@@ -72,6 +66,13 @@ DELETE FROM WorkSchedules WHERE work_schedule_name LIKE 'Bruno%';
 DELETE FROM WorkingHours  WHERE working_hour_name  LIKE 'Bruno%';
 DELETE FROM CoreHours     WHERE core_hour_name     LIKE 'Bruno%';
 DELETE FROM CostCenters   WHERE cost_center_code   = 'BRUNO';
+DELETE FROM PayrollCodes  WHERE payroll_code        = 'BRJ';
+
+INSERT INTO PayrollCodes (payroll_code, payroll_code_name, payroll_code_is_base)
+SELECT 'BRJ', 'Bruno teszt bérkód', 0
+WHERE NOT EXISTS (
+  SELECT 1 FROM PayrollCodes WHERE payroll_code = 'BRJ'
+);
 
 SET @muszakos_dolgozo := (
   SELECT user_employee_id FROM Users WHERE user_username = 'demo.muszakos'
@@ -91,7 +92,8 @@ SELECT 'Bruno maradek' AS ellenorzes,
        (SELECT COUNT(*) FROM Employees WHERE employee_last_name = 'Bruno') AS dolgozo,
        (SELECT COUNT(*) FROM Absences WHERE absence_name LIKE 'Bruno%')    AS jogcim,
        (SELECT COUNT(*) FROM CoreHours WHERE core_hour_name LIKE 'Bruno%') AS torzsido,
-       (SELECT COUNT(*) FROM Areas WHERE area_name LIKE 'Bruno%')          AS terulet;
+       (SELECT COUNT(*) FROM Areas WHERE area_name LIKE 'Bruno%')          AS terulet,
+       (SELECT COUNT(*) FROM PayrollCodes WHERE payroll_code = 'BRJ')       AS szabad_berkod;
 
 SELECT wtt_id, wtt_employee_id, wtt_working_date
 FROM WorkingTimeTracking WHERE wtt_id = 900001;

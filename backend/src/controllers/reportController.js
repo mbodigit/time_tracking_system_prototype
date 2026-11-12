@@ -2,6 +2,7 @@ const pool = require('../config/db');
 const { getAccessibleEmployeeIds } = require('../services/employeeScope');
 const { buildMonthlyReport } = require('../services/monthlyReport');
 const { invalidYearMonth, serverError } = require('../utils/apiResponse');
+const { baseCode: basePayrollCode } = require('../services/payrollCodes');
 
 const parsePeriod = (query) => {
     const yearNumber = Number(query.year);
@@ -248,13 +249,14 @@ const payroll = async (req, res) => {
             ids, period.yearNumber, period.monthNumber
         );
 
-        const [settings] = await pool.execute(
-            `SELECT company_base_payroll_code FROM CompanySettings WHERE company_settings_id = 1`
-        );
+        const baseCode = await basePayrollCode();
 
-        const baseCode = (settings.length > 0 && settings[0].company_base_payroll_code)
-            ? settings[0].company_base_payroll_code
-            : 'ALAP';
+        if (!baseCode) {
+            return res.status(409).json({
+                message: 'Nincs megjelölve a ledolgozott órák bérkódja, '
+                    + 'ezért a bérfeladási fájl nem állítható elő.'
+            });
+        }
 
         const payrollCodeByAllowance = {};
         for (const allowanceType of allowanceTypes) {

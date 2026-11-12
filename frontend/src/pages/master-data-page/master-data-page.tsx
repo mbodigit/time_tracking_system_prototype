@@ -1,8 +1,20 @@
 import { useState } from "react";
 import { MasterDataSection, type EntityDef } from "./master-data-section";
 import { AbsencesSection } from "./absences-section";
+import { AllowancesSection } from "./allowances-section";
 
 const ENTITIES: EntityDef[] = [
+  {
+    key: "payroll-codes",
+    tab: "Bérkódok",
+    title: "Bérkód",
+    description:
+      "A bérszámfejtő szoftver kódjai. Egy bérkód egyetlen távolléti jogcímhez vagy pótlékhoz rendelhető, a ledolgozott órák kódja pedig fenntartott.",
+    fields: [
+      { key: "code", label: "Kód", type: "text", required: true },
+      { key: "name", label: "Megnevezés", type: "text", required: true },
+    ],
+  },
   {
     key: "work-schedules",
     tab: "Munkarendek",
@@ -51,6 +63,7 @@ const ENTITIES: EntityDef[] = [
 ];
 
 const ABSENCES_TAB = "Távolléti jogcímek";
+const ALLOWANCES_TAB = "Pótlékok";
 
 export const MasterDataPage = () => {
   const [tab, setTab] = useState<string>(ENTITIES[0].tab);
@@ -62,23 +75,23 @@ export const MasterDataPage = () => {
       <h1 className="text-2xl font-bold">Törzsadatok</h1>
 
       <div role="tablist" className="tabs tabs-bordered">
-        {[...ENTITIES.map((item) => item.tab), ABSENCES_TAB].map((name) => (
-          <button
-            key={name}
-            role="tab"
-            className={`tab ${name === tab ? "tab-active" : ""}`}
-            onClick={() => setTab(name)}
-          >
-            {name}
-          </button>
-        ))}
+        {[...ENTITIES.map((item) => item.tab), ABSENCES_TAB, ALLOWANCES_TAB].map(
+          (name) => (
+            <button
+              key={name}
+              role="tab"
+              className={`tab ${name === tab ? "tab-active" : ""}`}
+              onClick={() => setTab(name)}
+            >
+              {name}
+            </button>
+          ),
+        )}
       </div>
 
-      {entity ? (
-        <MasterDataSection key={entity.key} entity={entity} />
-      ) : (
-        <AbsencesSection />
-      )}
+      {entity && <MasterDataSection key={entity.key} entity={entity} />}
+      {!entity && tab === ABSENCES_TAB && <AbsencesSection />}
+      {!entity && tab === ALLOWANCES_TAB && <AllowancesSection />}
     </div>
   );
 };
