@@ -6,14 +6,14 @@ const { authenticateToken, authorizePermission, requireEmployee } = require('../
 router.get('/employees',
     authenticateToken,
     requireEmployee,
-    authorizePermission('monthly_log.record'),
+    authorizePermission('time_log.own'),
     lookupController.listEmployees
 );
 
 router.get('/absences',
     authenticateToken,
     requireEmployee,
-    authorizePermission('requests.submit'),
+    authorizePermission('requests.own'),
     lookupController.listAbsences
 );
 

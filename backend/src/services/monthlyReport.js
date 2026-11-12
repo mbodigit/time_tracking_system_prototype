@@ -330,6 +330,8 @@ const buildRecordedMonth = async (monthContext) => {
             id: row.wtt_id,
             date,
             dayType,
+            createdAt: row.wtt_created_at,
+            updatedAt: row.wtt_updated_at,
             workStart: row.wtt_working_start,
             workEnd: row.wtt_working_end,
             absence: absenceInfo,
@@ -453,7 +455,8 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
             wtt_id, wtt_working_date, wtt_working_start, wtt_working_end,
             wtt_schedule_start, wtt_schedule_end,
             wtt_brk_start, wtt_brk_end,
-            wtt_absence_id, wtt_is_ordered, wtt_note
+            wtt_absence_id, wtt_is_ordered, wtt_note,
+            wtt_created_at, wtt_updated_at
          FROM WorkingTimeTracking
          WHERE wtt_employee_id = ?
            AND wtt_working_date BETWEEN ? AND ?

@@ -6,21 +6,21 @@ const { authenticateToken, authorizePermission, requireEmployee } = require('../
 router.get('/calendar',
     authenticateToken,
     requireEmployee,
-    authorizePermission('admin.calendar'),
+    authorizePermission('calendar'),
     calendarController.list
 );
 
 router.post('/calendar',
     authenticateToken,
     requireEmployee,
-    authorizePermission('admin.calendar'),
+    authorizePermission('calendar'),
     calendarController.save
 );
 
 router.delete('/calendar/:date',
     authenticateToken,
     requireEmployee,
-    authorizePermission('admin.calendar'),
+    authorizePermission('calendar'),
     calendarController.remove
 );
 

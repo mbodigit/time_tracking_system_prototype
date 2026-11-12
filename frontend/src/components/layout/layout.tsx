@@ -7,6 +7,7 @@ import {
   saveCurrentUser,
 } from "../../utils/auth";
 import { getMe } from "../../api/auth";
+import { canOpenPage } from "../../utils/access";
 import {
   IconDashboard,
   IconClock,
@@ -17,6 +18,7 @@ import {
   IconCalendar,
   IconKey,
   IconBuilding,
+  IconShield,
   IconLogout,
   IconMenu,
 } from "../icons/icons";
@@ -26,7 +28,6 @@ interface MenuItem {
   label: string;
   shortLabel?: string;
   icon: React.FC<{ className?: string }>;
-  roles?: string[];
   needsEmployee?: boolean;
 }
 
@@ -78,7 +79,6 @@ const MENU_SECTIONS: MenuSection[] = [
         label: "Riport és export",
         shortLabel: "Riport",
         icon: IconChart,
-        roles: ["Vezető", "HR-Bér"],
         needsEmployee: true,
       },
     ],
@@ -90,32 +90,32 @@ const MENU_SECTIONS: MenuSection[] = [
         to: "/admin-employees",
         label: "Dolgozók és fiókok",
         icon: IconUserCog,
-        roles: ["HR-Bér"],
       },
       {
         to: "/admin-org-structure",
         label: "Szervezet és csoportok",
         icon: IconOrgChart,
-        roles: ["HR-Bér"],
       },
       {
         to: "/admin-master-data",
         label: "Törzsadatok",
         icon: IconKey,
-        roles: ["Admin"],
       },
       {
         to: "/admin-calendar",
         label: "Központi naptár",
         icon: IconCalendar,
-        roles: ["HR-Bér"],
         needsEmployee: true,
       },
       {
         to: "/admin-company",
         label: "Vállalati adatok",
         icon: IconBuilding,
-        roles: ["HR-Bér"],
+      },
+      {
+        to: "/admin-permissions",
+        label: "Jogosultságok",
+        icon: IconShield,
       },
     ],
   },
@@ -208,9 +208,11 @@ export const Layout: React.FC = () => {
 
   const hasEmployee = Boolean(currentUser?.employeeId);
 
+  const permissions = currentUser?.permissions ?? [];
+
   const canSee = (item: MenuItem) => {
     if (item.needsEmployee && !hasEmployee) return false;
-    return !item.roles || role === "Admin" || item.roles.includes(role);
+    return canOpenPage(permissions, item.to);
   };
 
   const menuSections = MENU_SECTIONS.map((section) => ({

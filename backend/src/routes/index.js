@@ -15,7 +15,8 @@ const routeModules = [
     require('./masterDataRoutes'),
     require('./absenceAdminRoutes'),
     require('./allowanceAdminRoutes'),
-    require('./companyRoutes')
+    require('./companyRoutes'),
+    require('./permissionRoutes')
 ];
 
 const router = express.Router();

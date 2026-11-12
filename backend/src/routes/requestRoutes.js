@@ -6,35 +6,35 @@ const { authenticateToken, authorizePermission, requireEmployee } = require('../
 router.post('/requests',
     authenticateToken,
     requireEmployee,
-    authorizePermission('requests.submit'),
+    authorizePermission('requests.own'),
     requestController.create
 );
 
 router.get('/requests',
     authenticateToken,
     requireEmployee,
-    authorizePermission('requests.submit'),
+    authorizePermission('requests.own'),
     requestController.list
 );
 
 router.patch('/requests/:id',
     authenticateToken,
     requireEmployee,
-    authorizePermission('requests.approve'),
+    authorizePermission('requests.approval'),
     requestController.decide
 );
 
 router.patch('/requests/:id/close',
     authenticateToken,
     requireEmployee,
-    authorizePermission('requests.approve'),
+    authorizePermission('requests.approval'),
     requestController.close
 );
 
 router.patch('/requests/:id/withdraw',
     authenticateToken,
     requireEmployee,
-    authorizePermission('requests.submit'),
+    authorizePermission('requests.own'),
     requestController.withdraw
 );
 

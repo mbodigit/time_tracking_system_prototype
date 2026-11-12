@@ -5,13 +5,13 @@ const { authenticateToken, authorizePermission } = require('../middlewares/authM
 
 router.get('/admin/allowances',
     authenticateToken,
-    authorizePermission('admin.absences'),
+    authorizePermission('master_data.allowances'),
     allowanceAdminController.list
 );
 
 router.patch('/admin/allowances/:id',
     authenticateToken,
-    authorizePermission('admin.absences'),
+    authorizePermission('master_data.allowances'),
     allowanceAdminController.update
 );
 

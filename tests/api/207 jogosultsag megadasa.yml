@@ -1,0 +1,32 @@
+info:
+  name: jogosultsag megadasa
+  type: http
+  seq: 207
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/admin/permissions"
+  body:
+    type: json
+    data: |-
+      {
+        "roleId": {{dolgozoRoleId}},
+        "permissionId": {{tesztPermissionId}},
+        "granted": true
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

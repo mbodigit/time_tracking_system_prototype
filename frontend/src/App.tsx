@@ -8,13 +8,14 @@ import { TimeLogPage } from "./pages/time-log-page/time-log-page";
 import { RequestsPage } from "./pages/requests-page/requests-page";
 import { ReportsPage } from "./pages/reports-page/reports-page";
 import { CalendarPage } from "./pages/calendar-page/calendar-page";
-import { RequireRole } from "./components/require-role/require-role";
+import { RequirePermission } from "./components/require-permission/require-permission";
 import { RequireEmployee } from "./components/require-employee/require-employee";
 import { OrgPage } from "./pages/org-page/org-page";
 import { EmployeesPage } from "./pages/employees-page/employees-page";
 import { ConnectionGuard } from "./components/connection-guard/connection-guard";
 import { MasterDataPage } from "./pages/master-data-page/master-data-page";
 import { CompanyPage } from "./pages/company-page/company-page";
+import { PermissionsPage } from "./pages/permissions-page/permissions-page";
 
 const App = () => {
   return (
@@ -58,53 +59,61 @@ const App = () => {
             <Route
               path="/reports"
               element={
-                <RequireRole roles={["Vezető", "HR-Bér"]}>
+                <RequirePermission permission="reports">
                   <RequireEmployee>
                     <ReportsPage />
                   </RequireEmployee>
-                </RequireRole>
+                </RequirePermission>
               }
             />
             <Route
               path="/admin-calendar"
               element={
-                <RequireRole roles={["HR-Bér"]}>
+                <RequirePermission permission="calendar">
                   <RequireEmployee>
                     <CalendarPage />
                   </RequireEmployee>
-                </RequireRole>
+                </RequirePermission>
               }
             />
             <Route
               path="/admin-org-structure"
               element={
-                <RequireRole roles={["HR-Bér"]}>
+                <RequirePermission permission="organisation">
                   <OrgPage />
-                </RequireRole>
+                </RequirePermission>
               }
             />
             <Route
               path="/admin-employees"
               element={
-                <RequireRole roles={["HR-Bér"]}>
+                <RequirePermission permission="employees">
                   <EmployeesPage />
-                </RequireRole>
+                </RequirePermission>
               }
             />
             <Route
               path="/admin-master-data"
               element={
-                <RequireRole roles={["Admin"]}>
+                <RequirePermission permission="master_data">
                   <MasterDataPage />
-                </RequireRole>
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="/admin-permissions"
+              element={
+                <RequirePermission permission="permissions">
+                  <PermissionsPage />
+                </RequirePermission>
               }
             />
             <Route
               path="/admin-company"
               element={
-                <RequireRole roles={["HR-Bér"]}>
+                <RequirePermission permission="company">
                   <CompanyPage />
-                </RequireRole>
+                </RequirePermission>
               }
             />
           </Route>

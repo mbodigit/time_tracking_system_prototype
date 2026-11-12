@@ -1,17 +1,15 @@
 import { useEffect, useState } from "react";
 import { listEmployees } from "../../api/lookups";
-import { getCurrentUser } from "../../utils/auth";
+import { currentPermissions, hasPermission } from "../../utils/access";
 import { MonthlyLogTab } from "./monthly-log-tab";
 import { GroupLogTab } from "./group-log-tab";
-
-const GROUP_LOG_ROLES = ["Vezető", "Admin"];
 
 export const TimeLogPage = () => {
   const [tab, setTab] = useState<"own" | "group">("own");
   const [hasSubordinates, setHasSubordinates] = useState(false);
 
-  const role = getCurrentUser()?.role ?? "";
-  const canGroupLog = GROUP_LOG_ROLES.includes(role) && hasSubordinates;
+  const canGroupLog =
+    hasPermission(currentPermissions(), "time_log.group") && hasSubordinates;
 
   useEffect(() => {
     listEmployees()

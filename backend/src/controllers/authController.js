@@ -1,6 +1,7 @@
 const pool = require('../config/db');
 const { serverError } = require('../utils/apiResponse');
 const { nameColumns, fullName } = require('../utils/employeeName');
+const { listRoleKeys } = require('../services/permissions');
 const bcrypt = require ("bcryptjs");
 const jwt = require ('jsonwebtoken');
 
@@ -91,12 +92,14 @@ const login = async (req, res) => {
         }
 
         const token = jwt.sign(payload, process.env.JWT_SECRET, {expiresIn: '8h'});
+        const permissions = await listRoleKeys(payload.role);
+
         return res.status(200).json({
             message: payload.mustChangePassword
                 ? "Sikeres bejelentkezés. Az alapértelmezett jelszót meg kell változtatnod a folytatáshoz."
                 : "Sikeres bejelentkezés!",
             token: token,
-            user: payload
+            user: { ...payload, permissions }
         });
     }
     catch (error){

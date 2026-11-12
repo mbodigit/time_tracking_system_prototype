@@ -1,47 +1,47 @@
 const express = require('express');
 const router = express.Router();
 const groupController = require('../controllers/groupController');
-const { authenticateToken, authorizePermission, authorizeAnyPermission } = require('../middlewares/authMiddleware');
+const { authenticateToken, authorizePermission } = require('../middlewares/authMiddleware');
 
 router.get('/groups',
     authenticateToken,
-    authorizeAnyPermission('admin.groups', 'admin.structure.view'),
+    authorizePermission('organisation'),
     groupController.list
 );
 
 router.get('/groups/options',
     authenticateToken,
-    authorizePermission('admin.groups'),
+    authorizePermission('organisation'),
     groupController.options
 );
 
 router.get('/groups/members',
     authenticateToken,
-    authorizeAnyPermission('admin.groups', 'admin.structure.view'),
+    authorizePermission('organisation'),
     groupController.listAssignable
 );
 
 router.patch('/groups/:id/members',
     authenticateToken,
-    authorizePermission('admin.groups'),
+    authorizePermission('organisation'),
     groupController.updateMembers
 );
 
 router.post('/groups',
     authenticateToken,
-    authorizePermission('admin.groups'),
+    authorizePermission('organisation'),
     groupController.create
 );
 
 router.patch('/groups/:id',
     authenticateToken,
-    authorizePermission('admin.groups'),
+    authorizePermission('organisation'),
     groupController.update
 );
 
 router.delete('/groups/:id',
     authenticateToken,
-    authorizePermission('admin.groups'),
+    authorizePermission('organisation'),
     groupController.remove
 );
 

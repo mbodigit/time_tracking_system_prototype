@@ -26,7 +26,7 @@ import {
 import { ApiError } from "../../api/client";
 import { Field } from "../../components/form-field/form-field";
 import { EmptyState } from "../../components/empty-state/empty-state";
-import { getCurrentUser } from "../../utils/auth";
+import { currentPermissions, hasPermission } from "../../utils/access";
 import {
   formatMinutes,
   formatSignedMinutes,
@@ -41,8 +41,6 @@ import {
   SortableHeader,
   TablePager,
 } from "../../components/data-table/data-table";
-
-const EXPORT_ROLES = ["Vezető", "HR-Bér", "Admin"];
 
 const MEASURES: {
   key: keyof StatisticsRow;
@@ -95,8 +93,7 @@ export const ReportsPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
-  const user = getCurrentUser();
-  const canExport = EXPORT_ROLES.includes(user?.role ?? "");
+  const canExport = hasPermission(currentPermissions(), "reports.employees");
 
   const load = useCallback(async () => {
     setIsLoading(true);

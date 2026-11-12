@@ -5,49 +5,49 @@ const { authenticateToken, authorizePermission } = require('../middlewares/authM
 
 router.get('/admin/employees/options',
     authenticateToken,
-    authorizePermission('admin.employees'),
+    authorizePermission('employees.list'),
     employeeAdminController.options
 );
 
 router.get('/admin/employees',
     authenticateToken,
-    authorizePermission('admin.employees'),
+    authorizePermission('employees.list'),
     employeeAdminController.list
 );
 
 router.post('/admin/employees',
     authenticateToken,
-    authorizePermission('admin.employees'),
+    authorizePermission('employees.list'),
     employeeAdminController.create
 );
 
 router.patch('/admin/employees/:id',
     authenticateToken,
-    authorizePermission('admin.employees'),
+    authorizePermission('employees.list'),
     employeeAdminController.update
 );
 
 router.delete('/admin/employees/:id',
     authenticateToken,
-    authorizePermission('admin.employees'),
+    authorizePermission('employees.list'),
     employeeAdminController.remove
 );
 
 router.post('/admin/employees/:id/user',
     authenticateToken,
-    authorizePermission('admin.users'),
+    authorizePermission('employees.accounts'),
     employeeAdminController.createUser
 );
 
 router.patch('/admin/users/:id',
     authenticateToken,
-    authorizePermission('admin.users'),
+    authorizePermission('employees.accounts'),
     employeeAdminController.updateUser
 );
 
 router.delete('/admin/users/:id',
     authenticateToken,
-    authorizePermission('admin.users'),
+    authorizePermission('employees.accounts'),
     employeeAdminController.removeUser
 );
 
