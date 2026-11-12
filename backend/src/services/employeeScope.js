@@ -38,6 +38,39 @@ const getAccessibleEmployeeIds = async (userId, employeeId, role) => {
     return rows.map((row) => row.employee_id);
 };
 
+const getAccessibleGroups = async (userId, employeeId, role) => {
+    if (PRIVILEGED_ROLES.includes(role)) {
+        const [all] = await pool.execute(
+            `SELECT user_group_id, user_group_name
+             FROM UserGroups
+             ORDER BY user_group_name`
+        );
+
+        return all;
+    }
+
+    const [rows] = await pool.execute(
+        `${MANAGED_AREAS}
+         SELECT g.user_group_id, g.user_group_name
+         FROM UserGroups  g
+         LEFT JOIN Departments d ON d.department_id = g.user_group_department_id
+         LEFT JOIN Shifts      s ON s.shift_id      = g.user_group_shift_id
+         WHERE g.user_group_manager_id = ?
+            OR g.user_group_area_id IN (SELECT area_id FROM managed_areas)
+            OR d.department_manager_id = ?
+            OR s.shift_manager_id      = ?
+            OR g.user_group_id IN (
+                 SELECT e.employee_user_group_id
+                 FROM Employees e
+                 WHERE e.employee_manager_id = ?
+               )
+         ORDER BY g.user_group_name`,
+        [userId, userId, userId, userId, employeeId]
+    );
+
+    return rows;
+};
+
 const canAccessEmployee = async (userId, employeeId, targetEmployeeId, role) => {
     if (targetEmployeeId === employeeId) {
         return true;
@@ -67,4 +100,8 @@ const canAccessEmployee = async (userId, employeeId, targetEmployeeId, role) => 
     return rows.length > 0;
 };
 
-module.exports = { getAccessibleEmployeeIds, canAccessEmployee };
+module.exports = {
+    getAccessibleEmployeeIds,
+    getAccessibleGroups,
+    canAccessEmployee
+};

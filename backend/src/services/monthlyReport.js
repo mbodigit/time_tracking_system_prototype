@@ -3,9 +3,375 @@ const { ACTIVE_SQL, isCovering } = require('./requestStatus');
 const { loadRotationSlots, resolveRotation } = require('./shiftRotation');
 const { calculateAllowances } = require('./allowanceCalculator');
 const {
-    DAY_TYPE_MAP, addDays, parseDateTime, minutesBetween, overlapMinutes
+    DAY_TYPE_MAP, addDays, parseDateTime, minutesBetween, overlapMinutes, isWorkingDay
 } = require('../utils/dateHelpers');
 const { buildLeaveBalance } = require('./leaveBalance');
+
+const toMonthResult = (monthContext, leave, extra) => ({
+    employeeId: monthContext.employeeId,
+    employeeCode: monthContext.employee.employee_code,
+    employeeName: `${monthContext.employee.employee_last_name} `
+        + `${monthContext.employee.employee_first_name}`,
+    employeeGroupId: monthContext.employee.employee_user_group_id,
+    employeeGroup: monthContext.employee.user_group_name,
+    employeeArea: monthContext.employee.area_name,
+    employeeWorkLocation: monthContext.employee.work_location_name,
+    leave,
+    employeeProfile: monthContext.employeeProfile,
+    year: monthContext.yearNumber,
+    month: monthContext.monthNumber,
+    allowanceTypes: monthContext.allowanceTypes,
+    ...extra
+});
+
+const buildFlexibleMonth = async (monthContext) => {
+    const {
+        employeeId, yearNumber, monthPrefix, lastDayNumber,
+        calendar, contractedMinutes, absenceByDate
+    } = monthContext;
+
+    const flexibleDays = [];
+    const flexibleAbsences = {};
+    let flexibleWorkedMinutes = 0;
+    let flexibleAbsenceMinutes = 0;
+    let workingDayCount = 0;
+
+    for (let dayNumber = 1; dayNumber <= lastDayNumber; dayNumber++) {
+        const date = `${monthPrefix}-${String(dayNumber).padStart(2, '0')}`;
+        const dayType = calendar[date] || 'workday';
+        const isWorkDay = isWorkingDay(date, dayType);
+
+        const absence = absenceByDate[date];
+        const coversDay = Boolean(absence)
+            && isCovering(absence.request_status)
+            && absence.absence_rec_type === 0
+            && isWorkDay;
+
+        const absenceInfo = absence
+            ? {
+                id: absence.absence_id,
+                name: absence.absence_name,
+                isPaid: Boolean(absence.absence_is_paid),
+                status: absence.request_status,
+                coversDay
+              }
+            : null;
+
+        if (!isWorkDay) {
+            flexibleDays.push({
+                id: null,
+                date,
+                dayType,
+                workStart: null,
+                workEnd: null,
+                absence: absenceInfo,
+                absenceMinutes: 0,
+                isOrdered: false,
+                presenceMinutes: 0,
+                breakMinutes: 0,
+                scheduledMinutes: null,
+                balanceMinutes: null,
+                workedMinutes: 0,
+                settledMinutes: 0,
+                allowances: {}
+            });
+            continue;
+        }
+
+        workingDayCount++;
+
+        const absenceMinutes = coversDay ? contractedMinutes : 0;
+        const workedMinutes = coversDay ? 0 : contractedMinutes;
+
+        flexibleAbsenceMinutes += absenceMinutes;
+        flexibleWorkedMinutes += workedMinutes;
+
+        if (absenceMinutes > 0) {
+            const name = absence.absence_name;
+            const current = flexibleAbsences[name]
+                || { minutes: 0, payrollCode: absence.absence_payroll_code };
+
+            current.minutes += absenceMinutes;
+            flexibleAbsences[name] = current;
+        }
+
+        flexibleDays.push({
+            id: null,
+            date,
+            dayType,
+            workStart: null,
+            workEnd: null,
+            absence: absenceInfo,
+            absenceMinutes,
+            isOrdered: false,
+            presenceMinutes: 0,
+            breakMinutes: 0,
+            scheduledMinutes: contractedMinutes,
+            balanceMinutes: 0,
+            workedMinutes,
+            settledMinutes: contractedMinutes,
+            allowances: {}
+        });
+    }
+
+    return toMonthResult(
+        monthContext,
+        await buildLeaveBalance(employeeId, yearNumber),
+        {
+            isFlexible: true,
+            days: flexibleDays,
+            summary: {
+                recordedDays: 0,
+                workedMinutes: flexibleWorkedMinutes,
+                presenceMinutes: 0,
+                breakMinutes: 0,
+                balanceMinutes: 0,
+                absenceMinutes: flexibleAbsenceMinutes,
+                settledMinutes: flexibleWorkedMinutes + flexibleAbsenceMinutes,
+                frameMinutes: contractedMinutes * workingDayCount,
+                requiredMinutes: contractedMinutes * workingDayCount,
+                allowances: {},
+                absences: flexibleAbsences
+            }
+        }
+    );
+};
+
+const buildRecordedMonth = async (monthContext) => {
+    const {
+        employeeId, yearNumber, employee, templateStart, templateEnd,
+        usesRotation, rotationSlots, isShiftWorker, monthPrefix, lastDayNumber,
+        calendar, contractedMinutes, absenceByDate, rows
+    } = monthContext;
+
+    const rowsByDate = {};
+    for (const row of rows) {
+        rowsByDate[row.wtt_working_date] = row;
+    }
+
+    const days = [];
+    const summaryAllowances = {};
+    const summaryAbsences = {};
+    let summaryWorkedMinutes = 0;
+    let summaryPresenceMinutes = 0;
+    let summaryBreakMinutes = 0;
+    let summaryBalanceMinutes = 0;
+    let summaryAbsenceMinutes = 0;
+    let recordedDays = 0;
+
+    for (let dayNumber = 1; dayNumber <= lastDayNumber; dayNumber++) {
+        const date = `${monthPrefix}-${String(dayNumber).padStart(2, '0')}`;
+        const dayType = calendar[date] || 'workday';
+        const nextDayType = calendar[addDays(date, 1)] || 'workday';
+        const row = rowsByDate[date];
+        const absence = absenceByDate[date];
+        const isApprovedAbsence = Boolean(absence) && isCovering(absence.request_status);
+        const isWorkingDayForAbsence = isWorkingDay(date, dayType);
+
+        const absenceMinutes =
+            (isApprovedAbsence && absence.absence_rec_type === 0 && isWorkingDayForAbsence)
+                ? contractedMinutes
+                : 0;
+
+        summaryAbsenceMinutes += absenceMinutes;
+
+        if (absenceMinutes > 0) {
+            const name = absence.absence_name;
+            const current = summaryAbsences[name]
+                || { minutes: 0, payrollCode: absence.absence_payroll_code };
+
+            current.minutes += absenceMinutes;
+            summaryAbsences[name] = current;
+        }
+
+        const absenceInfo = absence
+            ? {
+                id: absence.absence_id,
+                name: absence.absence_name,
+                isPaid: Boolean(absence.absence_is_paid),
+                status: absence.request_status,
+                coversDay: absenceMinutes > 0
+              }
+            : null;
+
+        const isWorkDay = isWorkingDay(date, dayType);
+
+        const rotated = usesRotation
+            ? resolveRotation(
+                date,
+                employee.user_group_rotation_position,
+                employee.user_group_rotation_start,
+                rotationSlots
+              )
+            : null;
+
+        const dayStart = rotated ? rotated.start : templateStart;
+        const dayEnd = rotated ? rotated.end : templateEnd;
+
+        const defaultScheduleStart = (isWorkDay && dayStart && dayEnd)
+            ? `${date} ${dayStart}`
+            : null;
+        const defaultScheduleEnd = (isWorkDay && dayStart && dayEnd)
+            ? (dayEnd > dayStart ? `${date} ${dayEnd}` : `${addDays(date, 1)} ${dayEnd}`)
+            : null;
+
+        if (!row) {
+            days.push({
+                id: null,
+                date,
+                dayType,
+                workStart: null,
+                workEnd: null,
+                absence: absenceInfo,
+                absenceMinutes,
+                isOrdered: false,
+                presenceMinutes: 0,
+                breakMinutes: 0,
+                breakStart: null,
+                breakEnd: null,
+                scheduleStart: defaultScheduleStart,
+                scheduleEnd: defaultScheduleEnd,
+                scheduleFromEntry: false,
+                scheduledMinutes: null,
+                balanceMinutes: absenceMinutes > 0 ? 0 : null,
+                workedMinutes: 0,
+                settledMinutes: absenceMinutes,
+                allowances: {}
+            });
+            continue;
+        }
+
+        recordedDays++;
+
+        if (!row.wtt_working_start || !row.wtt_working_end) {
+            days.push({
+                id: row.wtt_id,
+                date,
+                dayType,
+                workStart: null,
+                workEnd: null,
+                absence: absenceInfo,
+                absenceMinutes,
+                isOrdered: Boolean(row.wtt_is_ordered),
+                presenceMinutes: 0,
+                breakMinutes: 0,
+                breakStart: row.wtt_brk_start,
+                breakEnd: row.wtt_brk_end,
+                scheduleStart: row.wtt_schedule_start || defaultScheduleStart,
+                scheduleEnd: row.wtt_schedule_end || defaultScheduleEnd,
+                scheduleFromEntry: Boolean(row.wtt_schedule_start),
+                scheduledMinutes: null,
+                balanceMinutes: absenceMinutes > 0 ? 0 : null,
+                workedMinutes: 0,
+                settledMinutes: absenceMinutes,
+                allowances: {}
+            });
+            continue;
+        }
+
+        let scheduleStart = row.wtt_schedule_start || defaultScheduleStart;
+        let scheduleEnd = row.wtt_schedule_end || defaultScheduleEnd;
+
+        const hasSchedule = Boolean(scheduleStart) && Boolean(scheduleEnd);
+        const scheduleMissing = isWorkDay && !hasSchedule;
+
+        const breakMinutes = (row.wtt_brk_start && row.wtt_brk_end)
+            ? overlapMinutes(
+                row.wtt_brk_start, row.wtt_brk_end,
+                row.wtt_working_start, row.wtt_working_end
+              )
+            : (hasSchedule ? (employee.employee_break_minutes || 0) : 0);
+
+        const breakDeduction = employee.employee_break_paid ? 0 : breakMinutes;
+
+        const scheduledMinutes = scheduleMissing
+            ? null
+            : (hasSchedule
+                ? minutesBetween(scheduleStart, scheduleEnd) - breakDeduction
+                : 0);
+
+        const result = calculateAllowances({
+            workStart: parseDateTime(row.wtt_working_start),
+            workEnd: parseDateTime(row.wtt_working_end),
+            scheduleStart: hasSchedule ? parseDateTime(scheduleStart) : null,
+            scheduleEnd: hasSchedule ? parseDateTime(scheduleEnd) : null,
+            dayType,
+            nextDayType,
+            isShiftWorker,
+            isOrdered: Boolean(row.wtt_is_ordered),
+            breakStart: row.wtt_brk_start ? parseDateTime(row.wtt_brk_start) : null,
+            breakEnd: row.wtt_brk_end ? parseDateTime(row.wtt_brk_end) : null,
+            breakMinutes,
+            breakPaid: Boolean(employee.employee_break_paid)
+        });
+
+        const presenceMinutes = minutesBetween(
+            row.wtt_working_start, row.wtt_working_end
+        );
+
+        const balanceMinutes = scheduledMinutes === null
+            ? null
+            : (absenceMinutes > 0
+                ? 0
+                : result.workedMinutes - scheduledMinutes - result.premiumOutsideMinutes);
+
+        summaryWorkedMinutes += result.workedMinutes;
+        summaryPresenceMinutes += presenceMinutes;
+        summaryBreakMinutes += breakDeduction;
+        summaryBalanceMinutes += balanceMinutes || 0;
+
+        for (const [key, value] of Object.entries(result.allowances)) {
+            summaryAllowances[key] = (summaryAllowances[key] || 0) + value;
+        }
+
+        days.push({
+            id: row.wtt_id,
+            date,
+            dayType,
+            workStart: row.wtt_working_start,
+            workEnd: row.wtt_working_end,
+            absence: absenceInfo,
+            absenceMinutes,
+            isOrdered: Boolean(row.wtt_is_ordered),
+            presenceMinutes,
+            breakMinutes: breakDeduction,
+            breakStart: row.wtt_brk_start,
+            breakEnd: row.wtt_brk_end,
+            scheduleStart: hasSchedule ? scheduleStart : null,
+            scheduleEnd: hasSchedule ? scheduleEnd : null,
+            scheduleFromEntry: Boolean(row.wtt_schedule_start),
+            scheduledMinutes,
+            balanceMinutes,
+            scheduleMissing,
+            workedMinutes: result.workedMinutes,
+            settledMinutes: result.workedMinutes + absenceMinutes,
+            allowances: result.allowances
+        });
+    }
+
+    return toMonthResult(
+        monthContext,
+        await buildLeaveBalance(employeeId, yearNumber),
+        {
+            isFlexible: false,
+            days,
+            summary: {
+                recordedDays,
+                workedMinutes: summaryWorkedMinutes,
+                presenceMinutes: summaryPresenceMinutes,
+                breakMinutes: summaryBreakMinutes,
+                balanceMinutes: summaryBalanceMinutes,
+                absenceMinutes: summaryAbsenceMinutes,
+                settledMinutes: summaryWorkedMinutes + summaryAbsenceMinutes,
+                allowances: summaryAllowances,
+                requiredMinutes: days.reduce(
+                    (sum, day) => sum + (day.scheduledMinutes || 0), 0
+                ),
+                absences: summaryAbsences
+            }
+        }
+    );
+};
 
 const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
     const [employees] = await pool.execute(
@@ -155,361 +521,29 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
         }
     }
 
-    if (isFlexible) {
-        const flexibleDays = [];
-        const flexibleAbsences = {};
-        let flexibleWorkedMinutes = 0;
-        let flexibleAbsenceMinutes = 0;
-        let workingDayCount = 0;
-
-        for (let dayNumber = 1; dayNumber <= lastDayNumber; dayNumber++) {
-            const date = `${monthPrefix}-${String(dayNumber).padStart(2, '0')}`;
-            const dayType = calendar[date] || 'workday';
-            const weekdayNumber = new Date(`${date}T00:00:00`).getDay();
-            const isWorkingDay = dayType === 'transferred'
-                || (dayType === 'workday' && weekdayNumber !== 0 && weekdayNumber !== 6);
-
-            const absence = absenceByDate[date];
-            const coversDay = Boolean(absence)
-                && isCovering(absence.request_status)
-                && absence.absence_rec_type === 0
-                && isWorkingDay;
-
-            const absenceInfo = absence
-                ? {
-                    id: absence.absence_id,
-                    name: absence.absence_name,
-                    isPaid: Boolean(absence.absence_is_paid),
-                    status: absence.request_status,
-                    coversDay
-                  }
-                : null;
-
-            if (!isWorkingDay) {
-                flexibleDays.push({
-                    id: null,
-                    date,
-                    dayType,
-                    workStart: null,
-                    workEnd: null,
-                    absence: absenceInfo,
-                    absenceMinutes: 0,
-                    isOrdered: false,
-                    presenceMinutes: 0,
-                    breakMinutes: 0,
-                    scheduledMinutes: null,
-                    balanceMinutes: null,
-                    workedMinutes: 0,
-                    settledMinutes: 0,
-                    allowances: {}
-                });
-                continue;
-            }
-
-            workingDayCount++;
-
-            const absenceMinutes = coversDay ? contractedMinutes : 0;
-            const workedMinutes = coversDay ? 0 : contractedMinutes;
-
-            flexibleAbsenceMinutes += absenceMinutes;
-            flexibleWorkedMinutes += workedMinutes;
-
-            if (absenceMinutes > 0) {
-                const name = absence.absence_name;
-                const current = flexibleAbsences[name]
-                    || { minutes: 0, payrollCode: absence.absence_payroll_code };
-
-                current.minutes += absenceMinutes;
-                flexibleAbsences[name] = current;
-            }
-
-            flexibleDays.push({
-                id: null,
-                date,
-                dayType,
-                workStart: null,
-                workEnd: null,
-                absence: absenceInfo,
-                absenceMinutes,
-                isOrdered: false,
-                presenceMinutes: 0,
-                breakMinutes: 0,
-                scheduledMinutes: contractedMinutes,
-                balanceMinutes: 0,
-                workedMinutes,
-                settledMinutes: contractedMinutes,
-                allowances: {}
-            });
-        }
-
-        return {
-            employeeId,
-            employeeCode: employee.employee_code,
-            employeeName: `${employee.employee_last_name} ${employee.employee_first_name}`,
-            employeeArea: employee.area_name,
-            employeeWorkLocation: employee.work_location_name,
-            leave: await buildLeaveBalance(employeeId, yearNumber),            
-            employeeProfile,
-            year: yearNumber,
-            month: monthNumber,
-            isFlexible: true,
-            allowanceTypes,
-            days: flexibleDays,
-            summary: {
-                recordedDays: 0,
-                workedMinutes: flexibleWorkedMinutes,
-                presenceMinutes: 0,
-                breakMinutes: 0,
-                balanceMinutes: 0,
-                absenceMinutes: flexibleAbsenceMinutes,
-                settledMinutes: flexibleWorkedMinutes + flexibleAbsenceMinutes,
-                frameMinutes: contractedMinutes * workingDayCount,
-                requiredMinutes: contractedMinutes * workingDayCount,                
-                allowances: {},
-                absences: flexibleAbsences
-            }
-        };
-    }
-
-    const rowsByDate = {};
-    for (const row of rows) {
-        rowsByDate[row.wtt_working_date] = row;
-    }
-
-    const days = [];
-    const summaryAllowances = {};
-    const summaryAbsences = {};
-    let summaryWorkedMinutes = 0;
-    let summaryPresenceMinutes = 0;
-    let summaryBreakMinutes = 0;
-    let summaryBalanceMinutes = 0;
-    let summaryAbsenceMinutes = 0;
-    let recordedDays = 0;
-
-    for (let dayNumber = 1; dayNumber <= lastDayNumber; dayNumber++) {
-        const date = `${monthPrefix}-${String(dayNumber).padStart(2, '0')}`;
-        const dayType = calendar[date] || 'workday';
-        const nextDayType = calendar[addDays(date, 1)] || 'workday';
-        const row = rowsByDate[date];
-        const absence = absenceByDate[date];
-        const isApprovedAbsence = Boolean(absence) && isCovering(absence.request_status);
-        const weekdayNumber = new Date(`${date}T00:00:00`).getDay();
-        const isWorkingDayForAbsence = dayType === 'transferred'
-            || (dayType === 'workday' && weekdayNumber !== 0 && weekdayNumber !== 6);
-
-        const absenceMinutes =
-            (isApprovedAbsence && absence.absence_rec_type === 0 && isWorkingDayForAbsence)
-                ? contractedMinutes
-                : 0;
-
-        summaryAbsenceMinutes += absenceMinutes;
-
-        if (absenceMinutes > 0) {
-            const name = absence.absence_name;
-            const current = summaryAbsences[name]
-                || { minutes: 0, payrollCode: absence.absence_payroll_code };
-
-            current.minutes += absenceMinutes;
-            summaryAbsences[name] = current;
-        }
-
-        const absenceInfo = absence
-            ? {
-                id: absence.absence_id,
-                name: absence.absence_name,
-                isPaid: Boolean(absence.absence_is_paid),
-                status: absence.request_status,
-                coversDay: absenceMinutes > 0
-              }
-            : null;
-
-        const weekday = new Date(`${date}T00:00:00`).getDay();
-        const isWorkingDay = dayType === 'transferred'
-            || (dayType === 'workday' && weekday !== 0 && weekday !== 6);
-
-        const rotated = usesRotation
-            ? resolveRotation(
-                date,
-                employee.user_group_rotation_position,
-                employee.user_group_rotation_start,
-                rotationSlots
-              )
-            : null;
-
-        const dayStart = rotated ? rotated.start : templateStart;
-        const dayEnd = rotated ? rotated.end : templateEnd;
-
-        const defaultScheduleStart = (isWorkingDay && dayStart && dayEnd)
-            ? `${date} ${dayStart}`
-            : null;
-        const defaultScheduleEnd = (isWorkingDay && dayStart && dayEnd)
-            ? (dayEnd > dayStart ? `${date} ${dayEnd}` : `${addDays(date, 1)} ${dayEnd}`)
-            : null;
-
-        if (!row) {
-            days.push({
-                id: null,
-                date,
-                dayType,
-                workStart: null,
-                workEnd: null,
-                absence: absenceInfo,
-                absenceMinutes,
-                isOrdered: false,
-                presenceMinutes: 0,
-                breakMinutes: 0,
-                breakStart: null,
-                breakEnd: null,
-                scheduleStart: defaultScheduleStart,
-                scheduleEnd: defaultScheduleEnd,
-                scheduleFromEntry: false,
-                scheduledMinutes: null,
-                balanceMinutes: absenceMinutes > 0 ? 0 : null,
-                workedMinutes: 0,
-                settledMinutes: absenceMinutes,
-                allowances: {}
-            });
-            continue;
-        }
-
-        recordedDays++;
-
-        if (!row.wtt_working_start || !row.wtt_working_end) {
-            days.push({
-                id: row.wtt_id,
-                date,
-                dayType,
-                workStart: null,
-                workEnd: null,
-                absence: absenceInfo,
-                absenceMinutes,
-                isOrdered: Boolean(row.wtt_is_ordered),
-                presenceMinutes: 0,
-                breakMinutes: 0,
-                breakStart: row.wtt_brk_start,
-                breakEnd: row.wtt_brk_end,
-                scheduleStart: row.wtt_schedule_start || defaultScheduleStart,
-                scheduleEnd: row.wtt_schedule_end || defaultScheduleEnd,
-                scheduleFromEntry: Boolean(row.wtt_schedule_start),
-                scheduledMinutes: null,
-                balanceMinutes: absenceMinutes > 0 ? 0 : null,
-                workedMinutes: 0,
-                settledMinutes: absenceMinutes,
-                allowances: {}
-            });
-            continue;
-        }
-
-        let scheduleStart = row.wtt_schedule_start || defaultScheduleStart;
-        let scheduleEnd = row.wtt_schedule_end || defaultScheduleEnd;
-
-        const hasSchedule = Boolean(scheduleStart) && Boolean(scheduleEnd);
-        const scheduleMissing = isWorkingDay && !hasSchedule;
-
-        const breakMinutes = (row.wtt_brk_start && row.wtt_brk_end)
-            ? overlapMinutes(
-                row.wtt_brk_start, row.wtt_brk_end,
-                row.wtt_working_start, row.wtt_working_end
-              )
-            : (hasSchedule ? (employee.employee_break_minutes || 0) : 0);
-
-        const breakDeduction = employee.employee_break_paid ? 0 : breakMinutes;
-
-        const scheduledMinutes = scheduleMissing
-            ? null
-            : (hasSchedule
-                ? minutesBetween(scheduleStart, scheduleEnd) - breakDeduction
-                : 0);
-
-        const result = calculateAllowances({
-            workStart: parseDateTime(row.wtt_working_start),
-            workEnd: parseDateTime(row.wtt_working_end),
-            scheduleStart: hasSchedule ? parseDateTime(scheduleStart) : null,
-            scheduleEnd: hasSchedule ? parseDateTime(scheduleEnd) : null,
-            dayType,
-            nextDayType,
-            isShiftWorker,
-            isOrdered: Boolean(row.wtt_is_ordered),
-            breakStart: row.wtt_brk_start ? parseDateTime(row.wtt_brk_start) : null,
-            breakEnd: row.wtt_brk_end ? parseDateTime(row.wtt_brk_end) : null,
-            breakMinutes,
-            breakPaid: Boolean(employee.employee_break_paid)
-        });
-
-        const presenceMinutes = minutesBetween(
-            row.wtt_working_start, row.wtt_working_end
-        );
-
-        const balanceMinutes = scheduledMinutes === null
-            ? null
-            : (absenceMinutes > 0
-                ? 0
-                : result.workedMinutes - scheduledMinutes - result.premiumOutsideMinutes);
-
-        summaryWorkedMinutes += result.workedMinutes;
-        summaryPresenceMinutes += presenceMinutes;
-        summaryBreakMinutes += breakDeduction;
-        summaryBalanceMinutes += balanceMinutes || 0;
-
-        for (const [key, value] of Object.entries(result.allowances)) {
-            summaryAllowances[key] = (summaryAllowances[key] || 0) + value;
-        }
-
-        days.push({
-            id: row.wtt_id,
-            date,
-            dayType,
-            workStart: row.wtt_working_start,
-            workEnd: row.wtt_working_end,
-            absence: absenceInfo,
-            absenceMinutes,
-            isOrdered: Boolean(row.wtt_is_ordered),
-            presenceMinutes,
-            breakMinutes: breakDeduction,
-            breakStart: row.wtt_brk_start,
-            breakEnd: row.wtt_brk_end,
-            scheduleStart: hasSchedule ? scheduleStart : null,
-            scheduleEnd: hasSchedule ? scheduleEnd : null,
-            scheduleFromEntry: Boolean(row.wtt_schedule_start),
-            scheduledMinutes,
-            balanceMinutes,
-            scheduleMissing,
-            workedMinutes: result.workedMinutes,
-            settledMinutes: result.workedMinutes + absenceMinutes,
-            allowances: result.allowances
-        });
-    }
-
-    return {
+    const monthContext = {
         employeeId,
-        employeeCode: employee.employee_code,
-        employeeName: `${employee.employee_last_name} ${employee.employee_first_name}`,
-        employeeGroupId: employee.employee_user_group_id,
-        employeeGroup: employee.user_group_name,
-        employeeArea: employee.area_name,
-        employeeWorkLocation: employee.work_location_name,
-        leave: await buildLeaveBalance(employeeId, yearNumber),        
+        yearNumber,
+        monthNumber,
+        employee,
         employeeProfile,
-        year: yearNumber,
-        month: monthNumber,
-        isFlexible: false,
+        templateStart,
+        templateEnd,
+        usesRotation,
+        rotationSlots,
+        isShiftWorker,
+        monthPrefix,
+        lastDayNumber,
+        calendar,
         allowanceTypes,
-        days,
-        summary: {
-            recordedDays,
-            workedMinutes: summaryWorkedMinutes,
-            presenceMinutes: summaryPresenceMinutes,
-            breakMinutes: summaryBreakMinutes,
-            balanceMinutes: summaryBalanceMinutes,
-            absenceMinutes: summaryAbsenceMinutes,
-            settledMinutes: summaryWorkedMinutes + summaryAbsenceMinutes,
-            allowances: summaryAllowances,
-            requiredMinutes: days.reduce(
-                (sum, day) => sum + (day.scheduledMinutes || 0), 0
-            ),            
-            absences: summaryAbsences
-        }
+        contractedMinutes,
+        absenceByDate,
+        rows
     };
+
+    return isFlexible
+        ? buildFlexibleMonth(monthContext)
+        : buildRecordedMonth(monthContext);
 };
 
 module.exports = { buildMonthlyReport };

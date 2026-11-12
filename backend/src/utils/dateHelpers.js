@@ -50,6 +50,24 @@ const today = () => {
     return date;
 };
 
+const WEEKEND_WEEKDAYS = [0, 6];
+
+const isWeekend = (isoDate) => WEEKEND_WEEKDAYS.includes(
+    startOfDay(isoDate).getDay()
+);
+
+const isWorkingDay = (isoDate, dayType) => {
+    if (dayType === 'transferred') {
+        return true;
+    }
+
+    if (dayType !== 'workday') {
+        return false;
+    }
+
+    return !isWeekend(isoDate);
+};
+
 const minutesBetween = (from, to) => Math.round(
     (parseDateTime(to) - parseDateTime(from)) / (1000 * 60)
 );
@@ -83,6 +101,8 @@ module.exports = {
     parseDateTime,
     startOfDay,
     today,
+    isWeekend,
+    isWorkingDay,
     minutesBetween,
     hoursBetween,
     overlapMinutes,
