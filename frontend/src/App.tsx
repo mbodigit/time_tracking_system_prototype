@@ -14,6 +14,7 @@ import { OrgPage } from "./pages/org-page/org-page";
 import { EmployeesPage } from "./pages/employees-page/employees-page";
 import { ConnectionGuard } from "./components/connection-guard/connection-guard";
 import { MasterDataPage } from "./pages/master-data-page/master-data-page";
+import { CompanyPage } from "./pages/company-page/company-page";
 
 const App = () => {
   return (
@@ -95,6 +96,14 @@ const App = () => {
               element={
                 <RequireRole roles={["Admin"]}>
                   <MasterDataPage />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/admin-company"
+              element={
+                <RequireRole roles={["HR-Bér"]}>
+                  <CompanyPage />
                 </RequireRole>
               }
             />

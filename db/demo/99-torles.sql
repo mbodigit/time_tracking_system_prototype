@@ -25,6 +25,7 @@ DELETE FROM UserGroups;
 DELETE FROM Shifts;
 DELETE FROM Departments;
 DELETE FROM Areas;
+DELETE FROM WorkLocations;
 
 UPDATE CompanySettings SET company_next_employee_code = 1
 WHERE company_settings_id = 1;
@@ -37,5 +38,6 @@ UNION ALL SELECT 'UserGroups',  COUNT(*) FROM UserGroups
 UNION ALL SELECT 'Shifts',      COUNT(*) FROM Shifts
 UNION ALL SELECT 'Departments', COUNT(*) FROM Departments
 UNION ALL SELECT 'Areas',       COUNT(*) FROM Areas
+UNION ALL SELECT 'WorkLocations', COUNT(*) FROM WorkLocations
 UNION ALL SELECT 'WorkingTimeTracking', COUNT(*) FROM WorkingTimeTracking
 UNION ALL SELECT 'Requests',    COUNT(*) FROM Requests;

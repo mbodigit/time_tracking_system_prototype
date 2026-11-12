@@ -4,7 +4,8 @@ export type MasterEntity =
   | "work-schedules"
   | "working-hours"
   | "core-hours"
-  | "cost-centers";
+  | "cost-centers"
+  | "work-locations";
 
 export type MasterValue = string | number | boolean | null;
 

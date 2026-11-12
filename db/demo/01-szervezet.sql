@@ -12,6 +12,27 @@ SET @nem_muszakos:= (SELECT work_schedule_id FROM WorkSchedules WHERE work_sched
 SET @kotetlen    := (SELECT work_schedule_id FROM WorkSchedules WHERE work_schedule_name = 'Kötetlen');
 SET @nyolc_ora   := (SELECT working_hour_id FROM WorkingHours WHERE working_hour_num = 8);
 
+INSERT INTO WorkLocations (
+  work_location_name, work_location_code, work_location_country,
+  work_location_postal_code, work_location_city, work_location_address
+)
+SELECT v.nev, v.kod, 'Magyarország', v.irsz, v.telepules, v.cim
+FROM (
+            SELECT 'Győri központ' AS nev, 'GY01' AS kod,
+                   '9027' AS irsz, 'Győr' AS telepules,
+                   'Ipari park utca 12.' AS cim
+  UNION ALL SELECT 'Mosonmagyaróvári telephely', 'MO01',
+                   '9200', 'Mosonmagyaróvár', 'Gyári út 4.'
+) v
+WHERE NOT EXISTS (
+  SELECT 1 FROM WorkLocations w WHERE w.work_location_name = v.nev
+);
+
+SET @telephely := (
+  SELECT work_location_id FROM WorkLocations
+  WHERE work_location_code = 'GY01'
+);
+
 INSERT INTO Areas (area_name)
 SELECT v.nev FROM (
             SELECT 'Tulajdonos' AS nev

@@ -29,11 +29,10 @@ CREATE TABLE IF NOT EXISTS WorkLocations (
   work_location_id            INT          NOT NULL AUTO_INCREMENT,
   work_location_name          VARCHAR(100) NOT NULL,
   work_location_code          VARCHAR(10)  NULL,
-  work_location_address_line1 VARCHAR(150) NULL,
-  work_location_address_line2 VARCHAR(150) NULL,
+  work_location_country       VARCHAR(100) NULL,
   work_location_postal_code   VARCHAR(10)  NULL,
   work_location_city          VARCHAR(100) NULL,
-  work_location_country       VARCHAR(100) NULL,
+  work_location_address       VARCHAR(150) NULL,
   PRIMARY KEY (work_location_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
@@ -67,7 +66,6 @@ CREATE TABLE IF NOT EXISTS CompanySettings (
   company_name              VARCHAR(150) NULL,
   company_address           VARCHAR(255) NULL,
   company_tax_number        VARCHAR(20)  NULL,
-  company_logo_url          TEXT         NULL,
   company_base_payroll_code VARCHAR(20)  NULL,
   company_next_employee_code INT         NOT NULL DEFAULT 1,
   PRIMARY KEY (company_settings_id),

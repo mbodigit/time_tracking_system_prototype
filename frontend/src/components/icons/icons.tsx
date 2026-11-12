@@ -94,6 +94,15 @@ export const IconLogout: React.FC<IconProps> = (p) => (
   </Svg>
 );
 
+export const IconBuilding: React.FC<IconProps> = (p) => (
+  <Svg {...p}>
+    <path d="M3 21h18" />
+    <path d="M5 21V5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v16" />
+    <path d="M16 9h3a2 2 0 0 1 2 2v10" />
+    <path d="M9 7h3M9 11h3M9 15h3" />
+  </Svg>
+);
+
 export const IconMenu: React.FC<IconProps> = (p) => (
   <Svg {...p}>
     <path d="M4 6h16M4 12h16M4 18h16" />

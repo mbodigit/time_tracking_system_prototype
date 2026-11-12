@@ -7,6 +7,7 @@ SET SQL_SAFE_UPDATES = 0;
 
 
 SET @koltseghely := (SELECT cost_center_id FROM CostCenters WHERE cost_center_code = 'KP');
+SET @telephely := (SELECT work_location_id FROM WorkLocations WHERE work_location_code = 'GY01');
 SET @allapot_aktiv := (SELECT employee_status_id FROM EmployeeStatus WHERE employee_status_name = 'Aktív');
 SET @nyolc_ora := (SELECT working_hour_id FROM WorkingHours WHERE working_hour_num = 8);
 SET @hash := '$2b$10$g75zPce2dGS2neU1Ldqp4eSLfKMTHy/in8cHJRV6j4uEm8coaIDpe';
@@ -18,13 +19,15 @@ INSERT INTO Employees (
   employee_break_minutes, employee_break_paid,
   employee_break_start, employee_break_end,
   employee_annual_leave_days,
-  employee_cost_center_id, employee_category_id, employee_status_id,
+  employee_cost_center_id, employee_work_location_id,
+  employee_category_id, employee_status_id,
   employee_user_group_id
 )
 SELECT v.kod, v.vnev, v.knev, v.nem, v.szuletes, v.email,
        w.work_schedule_id, @nyolc_ora, c.core_hour_id,
        v.szunet_perc, 0, v.szunet_kezd, v.szunet_veg,
-       25, @koltseghely, cat.employee_category_id, @allapot_aktiv, g.user_group_id
+       25, @koltseghely, @telephely,
+       cat.employee_category_id, @allapot_aktiv, g.user_group_id
 FROM (
             SELECT '00001' AS kod, 'Kovács' AS vnev, 'Bence' AS knev, 'Férfi' AS nem, '1962-02-02' AS szuletes, 'demo.tulajdonos@pelda.hu' AS email, 'Kötetlen' AS munkarend, NULL AS torzsido, NULL AS szunet_kezd, NULL AS szunet_veg, NULL AS szunet_perc, 'Szellemi' AS kategoria, 'Tulajdonos' AS csoport
   UNION ALL SELECT '00002', 'Szabó', 'Katalin', 'Nő', '1963-03-03', 'demo.ugyvezeto@pelda.hu', 'Kötetlen', NULL, NULL, NULL, NULL, 'Szellemi', 'Ügyvezetés'
