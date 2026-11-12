@@ -83,6 +83,8 @@ FROM (
                    'admin', '/admin-core-hours',   72
   UNION ALL SELECT 'admin.structure.view',   'Szervezet és csoportok megtekintése',
                    'admin', '/admin-org-structure', 73
+  UNION ALL SELECT 'admin.company',          'Vállalati adatok és telephelyek kezelése',
+                   'admin', '/admin-company', 74
 ) v
 JOIN Permissions szulo ON szulo.permission_key = v.szulo_kulcs
 WHERE NOT EXISTS (
@@ -142,7 +144,7 @@ JOIN Permissions p ON p.permission_key IN (
   'requests.submit', 'requests.approve',
   'reports.view', 'reports.export',
   'admin.employees', 'admin.users', 'admin.calendar',
-  'admin.structure.view'
+  'admin.structure.view', 'admin.company'
 )
 WHERE r.user_role_name = 'HR-Bér'
   AND NOT EXISTS (

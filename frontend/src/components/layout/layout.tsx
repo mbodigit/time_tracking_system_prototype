@@ -16,6 +16,7 @@ import {
   IconOrgChart,
   IconCalendar,
   IconKey,
+  IconBuilding,
   IconLogout,
   IconMenu,
 } from "../icons/icons";
@@ -109,6 +110,12 @@ const MENU_SECTIONS: MenuSection[] = [
         icon: IconCalendar,
         roles: ["HR-Bér"],
         needsEmployee: true,
+      },
+      {
+        to: "/admin-company",
+        label: "Vállalati adatok",
+        icon: IconBuilding,
+        roles: ["HR-Bér"],
       },
     ],
   },

@@ -64,6 +64,24 @@ const ENTITIES = {
             { table: 'Employees', column: 'employee_cost_center_id', label: 'dolgozó' },
             { table: 'UserGroups', column: 'user_group_cost_center_id', label: 'csoport' }
         ]
+    },
+    'work-locations': {
+        permission: 'admin.company',
+        table: 'WorkLocations',
+        idColumn: 'work_location_id',
+        orderBy: 'work_location_name',
+        label: 'telephely',
+        fields: [
+            { key: 'name', column: 'work_location_name', type: 'text', required: true, max: 100, label: 'megnevezés' },
+            { key: 'code', column: 'work_location_code', type: 'text', max: 10, label: 'kód' },
+            { key: 'country', column: 'work_location_country', type: 'text', max: 100, label: 'ország' },
+            { key: 'postalCode', column: 'work_location_postal_code', type: 'text', max: 10, label: 'irányítószám' },
+            { key: 'city', column: 'work_location_city', type: 'text', max: 100, label: 'település' },
+            { key: 'address', column: 'work_location_address', type: 'text', max: 150, label: 'cím' }
+        ],
+        references: [
+            { table: 'Employees', column: 'employee_work_location_id', label: 'dolgozó' }
+        ]
     }
 };
 
