@@ -66,7 +66,6 @@ CREATE TABLE IF NOT EXISTS CompanySettings (
   company_name              VARCHAR(150) NULL,
   company_address           VARCHAR(255) NULL,
   company_tax_number        VARCHAR(20)  NULL,
-  company_base_payroll_code VARCHAR(20)  NULL,
   company_next_employee_code INT         NOT NULL DEFAULT 1,
   PRIMARY KEY (company_settings_id),
   CONSTRAINT chk_company_single_row CHECK (company_settings_id = 1)

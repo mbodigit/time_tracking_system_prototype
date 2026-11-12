@@ -65,6 +65,26 @@ const ENTITIES = {
             { table: 'UserGroups', column: 'user_group_cost_center_id', label: 'csoport' }
         ]
     },
+    'payroll-codes': {
+        permission: 'admin.absences',
+        table: 'PayrollCodes',
+        idColumn: 'payroll_code_id',
+        orderBy: 'payroll_code',
+        label: 'bérkód',
+        fields: [
+            { key: 'code', column: 'payroll_code', type: 'text', required: true, max: 20, label: 'kód' },
+            { key: 'name', column: 'payroll_code_name', type: 'text', required: true, max: 100, label: 'megnevezés' }
+        ],
+        references: [
+            { table: 'Absences', column: 'absence_payroll_code_id', label: 'távolléti jogcím' },
+            { table: 'Allowances', column: 'allowance_payroll_code_id', label: 'pótlék' }
+        ],
+        protect: {
+            column: 'payroll_code_is_base',
+            message: 'A ledolgozott órák bérkódja nem törölhető, '
+                + 'mert a bérfeladás minden sora erre épül.'
+        }
+    },
     'work-locations': {
         permission: 'admin.company',
         table: 'WorkLocations',
@@ -281,6 +301,18 @@ const remove = async (req, res) => {
     }
 
     try {
+        if (entity.protect) {
+            const [protectedRows] = await pool.execute(
+                `SELECT ${entity.protect.column} AS protected
+                 FROM ${entity.table} WHERE ${entity.idColumn} = ?`,
+                [id]
+            );
+
+            if (protectedRows.length > 0 && protectedRows[0].protected) {
+                return res.status(409).json({ message: entity.protect.message });
+            }
+        }
+
         const counts = entity.references
             .map((ref) => `(SELECT COUNT(*) FROM ${ref.table} WHERE ${ref.column} = ?)`)
             .join(', ');

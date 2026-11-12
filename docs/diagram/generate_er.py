@@ -226,7 +226,7 @@ RESZDIAGRAMOK = [
     ("2-munkaido-parameterek", "Munkaidő-paraméterek",
      ["WorkSchedules", "WorkingHours", "CoreHours", "Absences",
       "AbsenceWorkSchedules", "Allowances", "WorkScheduleAllowances",
-      "ShiftRotations"], "dot"),
+      "ShiftRotations", "PayrollCodes"], "dot"),
 
     ("3-szervezet", "Szervezeti hierarchia és csoportok",
      ["Areas", "Departments", "Shifts", "UserGroups"], "dot"),

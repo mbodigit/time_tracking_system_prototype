@@ -11,11 +11,9 @@ http:
     data: |-
       {
         "name": "Bruno jogcim modositva",
-        "payrollCode": "BRJ2",
-        "category": "Szabadság",
+        "payrollCodeId": {{absFreeCodeId}},
         "isPaid": false,
         "isOpenEnded": true,
-        "recType": 1,
         "status": false,
         "sort": 910,
         "workScheduleIds": [{{absScheduleId}}]

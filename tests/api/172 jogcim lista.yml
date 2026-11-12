@@ -19,6 +19,8 @@ runtime:
       operator: isNotEmpty
     - expression: res.body.workSchedules
       operator: isNotEmpty
+    - expression: res.body.payrollCodes
+      operator: isNotEmpty
 
   actions:
     - type: set-variable
@@ -28,6 +30,22 @@ runtime:
         method: jsonq
       variable:
         name: absScheduleId
+        scope: runtime
+    - type: set-variable
+      phase: after-response
+      selector:
+        expression: res.body.payrollCodes[0].id
+        method: jsonq
+      variable:
+        name: absFreeCodeId
+        scope: runtime
+    - type: set-variable
+      phase: after-response
+      selector:
+        expression: res.body.absences[0].payrollCodeId
+        method: jsonq
+      variable:
+        name: absUsedCodeId
         scope: runtime
 
 settings:

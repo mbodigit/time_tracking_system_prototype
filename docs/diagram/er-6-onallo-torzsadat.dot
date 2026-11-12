@@ -57,8 +57,6 @@ graph ER {
   "CompanySettings" -- "CompanySettings__company_address" [len=0.8, weight=4];
   "CompanySettings__company_tax_number" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="company_tax_number"];
   "CompanySettings" -- "CompanySettings__company_tax_number" [len=0.8, weight=4];
-  "CompanySettings__company_base_payroll_code" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="company_base_payroll_code"];
-  "CompanySettings" -- "CompanySettings__company_base_payroll_code" [len=0.8, weight=4];
   "CompanySettings__company_next_employee_code" [shape=ellipse, style=filled, fillcolor="white", color="#999999", fontsize=8, label="company_next_employee_code"];
   "CompanySettings" -- "CompanySettings__company_next_employee_code" [len=0.8, weight=4];
 

@@ -3,8 +3,25 @@ const MILLISEC_PER_MINUTE = 60 * 1000;
 const SUNDAY = 0;
 const SATURDAY = 6;
 
+const isWithinHourRange = (hour, range) => {
+    if (!range) {
+        return false;
+    }
+
+    const { startHour, endHour } = range;
+
+    if (startHour === endHour) {
+        return true;
+    }
+
+    return startHour < endHour
+        ? (hour >= startHour && hour < endHour)
+        : (hour >= startHour || hour < endHour);
+};
+
 const getAllowanceKey = (
-    minute, referenceDay, dayType, isShiftWorker, isWithinSchedule, isOrdered
+    minute, referenceDay, dayType, isShiftWorker, isWithinSchedule, isOrdered,
+    shiftPremiumRange
 ) => {
     const weekday = referenceDay.getDay();
     const isTransferredWorkday = dayType === 'transferred';
@@ -17,9 +34,9 @@ const getAllowanceKey = (
     if (isWithinSchedule) {
         if (!isShiftWorker) return null;
 
-        const hour = minute.getHours();
-        if (hour >= 18 || hour < 6) return 'muszak';
-        return null;
+        return isWithinHourRange(minute.getHours(), shiftPremiumRange)
+            ? 'muszak'
+            : null;
     }
 
     return isOrdered ? 'tulora' : null;
@@ -38,7 +55,8 @@ const calculateAllowances = (input) => {
         breakStart,
         breakEnd,
         breakMinutes,
-        breakPaid
+        breakPaid,
+        shiftPremiumRange
     } = input;
 
     const allowances = {};
@@ -71,7 +89,8 @@ const calculateAllowances = (input) => {
 
         const key = getAllowanceKey(
             minute, referenceDay, effectiveDayType,
-            isShiftWorker, isWithinSchedule, Boolean(isOrdered)
+            isShiftWorker, isWithinSchedule, Boolean(isOrdered),
+            shiftPremiumRange
         );
 
         if (key) {

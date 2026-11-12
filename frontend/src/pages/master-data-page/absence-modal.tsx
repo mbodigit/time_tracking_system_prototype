@@ -5,6 +5,7 @@ import {
   deleteAbsence,
   type AbsencePayload,
   type AdminAbsence,
+  type PayrollCodeOption,
 } from "../../api/absenceAdmin";
 import { ApiError } from "../../api/client";
 import { Field, FormGrid } from "../../components/form-field/form-field";
@@ -13,12 +14,10 @@ const STATS_NAMES = ["Betegség", "Fizetett szabadság"];
 
 const EMPTY: AbsencePayload = {
   name: "",
-  payrollCode: "",
-  category: "Egyéb",
+  payrollCodeId: null,
   isPaid: true,
   isOpenEnded: false,
   needsApproval: true,
-  recType: 0,
   status: true,
   sort: 0,
   workScheduleIds: [],
@@ -26,12 +25,10 @@ const EMPTY: AbsencePayload = {
 
 const toForm = (absence: AdminAbsence): AbsencePayload => ({
   name: absence.name,
-  payrollCode: absence.payrollCode ?? "",
-  category: absence.category,
+  payrollCodeId: absence.payrollCodeId,
   isPaid: absence.isPaid,
   isOpenEnded: absence.isOpenEnded,
   needsApproval: absence.needsApproval,
-  recType: absence.recType,
   status: absence.status,
   sort: absence.sort,
   workScheduleIds: [...absence.workScheduleIds],
@@ -39,7 +36,7 @@ const toForm = (absence: AdminAbsence): AbsencePayload => ({
 
 interface AbsenceModalProps {
   absence: AdminAbsence | null;
-  categories: string[];
+  payrollCodes: PayrollCodeOption[];
   workSchedules: { id: number; name: string }[];
   onClose: () => void;
   onSaved: (message: string) => void;
@@ -47,7 +44,7 @@ interface AbsenceModalProps {
 
 export const AbsenceModal = ({
   absence,
-  categories,
+  payrollCodes,
   workSchedules,
   onClose,
   onSaved,
@@ -64,6 +61,19 @@ export const AbsenceModal = ({
 
   const isBusy = isSaving || isDeleting;
   const isStatsAbsence = absence !== null && STATS_NAMES.includes(absence.name);
+
+  const codeOptions =
+    absence?.payrollCodeId &&
+    !payrollCodes.some((item) => item.id === absence.payrollCodeId)
+      ? [
+          {
+            id: absence.payrollCodeId,
+            code: absence.payrollCode ?? "",
+            name: "jelenlegi",
+          },
+          ...payrollCodes,
+        ]
+      : payrollCodes;
 
   const patch = (changes: Partial<AbsencePayload>) =>
     setForm((current) => ({ ...current, ...changes }));
@@ -157,7 +167,7 @@ export const AbsenceModal = ({
             </div>
           )}
 
-          <FormGrid columns={3}>
+          <FormGrid columns={2}>
             <Field label="Megnevezés" span={2}>
               <input
                 type="text"
@@ -167,48 +177,33 @@ export const AbsenceModal = ({
               />
             </Field>
 
-            <Field label="Bérkód">
-              <input
-                type="text"
-                className="input input-sm input-bordered"
-                value={form.payrollCode}
-                onChange={(event) => patch({ payrollCode: event.target.value })}
-              />
-            </Field>
-
-            <Field label="Kategória">
+            <Field
+              label="Bérkód"
+              hint="Csak szabad bérkód választható."
+            >
               <select
                 className="select select-sm select-bordered"
-                value={form.category}
-                onChange={(event) => patch({ category: event.target.value })}
+                value={form.payrollCodeId ?? ""}
+                onChange={(event) =>
+                  patch({
+                    payrollCodeId: event.target.value
+                      ? Number(event.target.value)
+                      : null,
+                  })
+                }
               >
-                {categories.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
+                <option value="">Nincs</option>
+                {codeOptions.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.code} — {item.name}
                   </option>
                 ))}
               </select>
             </Field>
 
             <Field
-              label="Rögzítés módja"
-              hint="Akkor válaszd a munkaidő megadását, ha a jogcímnél a munkavégzés kezdetét és végét is rögzíteni kell."
-            >
-              <select
-                className="select select-sm select-bordered"
-                value={form.recType}
-                onChange={(event) =>
-                  patch({ recType: Number(event.target.value) })
-                }
-              >
-                <option value={0}>A teljes napot lefedi</option>
-                <option value={1}>Munkaidő rögzítése kötelező</option>
-              </select>
-            </Field>
-
-            <Field
               label="Sorrend"
-              hint="A választólistákban ez szerint jelenik meg."
+              hint="A választólisták ez szerint rendeznek."
             >
               <input
                 type="number"
@@ -221,56 +216,64 @@ export const AbsenceModal = ({
             </Field>
           </FormGrid>
 
-          <div className="flex flex-wrap gap-6">
-            <label className="flex cursor-pointer items-center gap-3">
-              <input
-                type="checkbox"
-                className="checkbox checkbox-sm"
-                checked={form.isPaid}
-                onChange={(event) => patch({ isPaid: event.target.checked })}
-              />
-              <span className="text-sm">Fizetett távollét</span>
-            </label>
+          <div className="space-y-2">
+            <p className="text-sm font-medium opacity-80">Tulajdonságok</p>
 
-            <label className="flex cursor-pointer items-center gap-3">
-              <input
-                type="checkbox"
-                className="checkbox checkbox-sm"
-                checked={form.isOpenEnded}
-                onChange={(event) =>
-                  patch({ isOpenEnded: event.target.checked })
-                }
-              />
-              <span className="text-sm">Nyitott végű (záró nap nélkül is)</span>
-            </label>
+            <div className="grid gap-2 rounded border border-base-300 px-3 py-2 sm:grid-cols-2">
+              <label className="flex cursor-pointer items-center gap-3">
+                <input
+                  type="checkbox"
+                  className="checkbox checkbox-sm"
+                  checked={form.isPaid}
+                  onChange={(event) => patch({ isPaid: event.target.checked })}
+                />
+                <span className="text-sm">Fizetett távollét</span>
+              </label>
 
-            <label className="flex cursor-pointer items-center gap-3">
-              <input
-                type="checkbox"
-                className="checkbox checkbox-sm"
-                checked={form.needsApproval}
-                onChange={(event) =>
-                  patch({ needsApproval: event.target.checked })
-                }
-              />
-              <span className="text-sm">
-                Elbírálást igényel (kikapcsolva a leadáskor azonnal jóváhagyott)
-              </span>
-            </label>
+              <label className="flex cursor-pointer items-center gap-3">
+                <input
+                  type="checkbox"
+                  className="checkbox checkbox-sm"
+                  checked={form.status}
+                  onChange={(event) => patch({ status: event.target.checked })}
+                />
+                <span className="text-sm">Aktív</span>
+              </label>
 
-            <label className="flex cursor-pointer items-center gap-3">
-              <input
-                type="checkbox"
-                className="checkbox checkbox-sm"
-                checked={form.status}
-                onChange={(event) => patch({ status: event.target.checked })}
-              />
-              <span className="text-sm">Aktív</span>
-            </label>
+              <label className="flex cursor-pointer items-center gap-3">
+                <input
+                  type="checkbox"
+                  className="checkbox checkbox-sm"
+                  checked={form.isOpenEnded}
+                  onChange={(event) =>
+                    patch({ isOpenEnded: event.target.checked })
+                  }
+                />
+                <span className="text-sm">Nyitott végű</span>
+              </label>
+
+              <label className="flex cursor-pointer items-center gap-3">
+                <input
+                  type="checkbox"
+                  className="checkbox checkbox-sm"
+                  checked={form.needsApproval}
+                  onChange={(event) =>
+                    patch({ needsApproval: event.target.checked })
+                  }
+                />
+                <span className="text-sm">Elbírálást igényel</span>
+              </label>
+            </div>
+
+            <p className="text-xs opacity-60">
+              A nyitott végű jogcím záró nap nélkül is leadható, és a lezárásig
+              minden eltelt napra érvényes. Az elbírálást nem igénylő jogcím a
+              leadáskor azonnal folyamatban lévő állapotba kerül.
+            </p>
           </div>
 
-          <div>
-            <p className="mb-2 text-sm font-medium opacity-80">
+          <div className="space-y-2">
+            <p className="text-sm font-medium opacity-80">
               Mely munkarendekben vehető igénybe
             </p>
 

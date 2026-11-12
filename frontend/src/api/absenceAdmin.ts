@@ -3,32 +3,35 @@ import { apiGet, apiPost, apiPatch, apiDelete } from "./client";
 export interface AdminAbsence {
   id: number;
   name: string;
+  payrollCodeId: number | null;
   payrollCode: string | null;
   isPaid: boolean;
-  category: string;
   isOpenEnded: boolean;
   needsApproval: boolean;
-  recType: number;
   status: boolean;
   sort: number;
   workScheduleIds: number[];
   workScheduleNames: string[];
 }
 
+export interface PayrollCodeOption {
+  id: number;
+  code: string;
+  name: string;
+}
+
 export interface AbsenceAdminData {
   absences: AdminAbsence[];
-  categories: string[];
+  payrollCodes: PayrollCodeOption[];
   workSchedules: { id: number; name: string }[];
 }
 
 export interface AbsencePayload {
   name: string;
-  payrollCode: string;
+  payrollCodeId: number | null;
   isPaid: boolean;
-  category: string;
   isOpenEnded: boolean;
   needsApproval: boolean;
-  recType: number;
   status: boolean;
   sort: number;
   workScheduleIds: number[];

@@ -8,6 +8,8 @@ const {
 const { buildLeaveBalance } = require('./leaveBalance');
 const { nameColumns, fullName } = require('../utils/employeeName');
 
+const SHIFT_PREMIUM_CODE = 'muszak';
+
 const toMonthResult = (monthContext, leave, extra) => ({
     employeeId: monthContext.employeeId,
     employeeCode: monthContext.employee.employee_code,
@@ -44,7 +46,6 @@ const buildFlexibleMonth = async (monthContext) => {
         const absence = absenceByDate[date];
         const coversDay = Boolean(absence)
             && isCovering(absence.request_status)
-            && absence.absence_rec_type === 0
             && isWorkDay;
 
         const absenceInfo = absence
@@ -141,7 +142,7 @@ const buildRecordedMonth = async (monthContext) => {
     const {
         employeeId, yearNumber, employee, templateStart, templateEnd,
         usesRotation, rotationSlots, isShiftWorker, monthPrefix, lastDayNumber,
-        calendar, contractedMinutes, absenceByDate, rows
+        calendar, contractedMinutes, absenceByDate, rows, shiftPremiumRange
     } = monthContext;
 
     const rowsByDate = {};
@@ -169,7 +170,7 @@ const buildRecordedMonth = async (monthContext) => {
         const isWorkingDayForAbsence = isWorkingDay(date, dayType);
 
         const absenceMinutes =
-            (isApprovedAbsence && absence.absence_rec_type === 0 && isWorkingDayForAbsence)
+            (isApprovedAbsence && isWorkingDayForAbsence)
                 ? contractedMinutes
                 : 0;
 
@@ -302,7 +303,8 @@ const buildRecordedMonth = async (monthContext) => {
             breakStart: row.wtt_brk_start ? parseDateTime(row.wtt_brk_start) : null,
             breakEnd: row.wtt_brk_end ? parseDateTime(row.wtt_brk_end) : null,
             breakMinutes,
-            breakPaid: Boolean(employee.employee_break_paid)
+            breakPaid: Boolean(employee.employee_break_paid),
+            shiftPremiumRange
         });
 
         const presenceMinutes = minutesBetween(
@@ -472,18 +474,33 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
     }
 
     const [allowanceRows] = await pool.execute(
-        `SELECT allowance_code, allowance_name, allowance_percent, allowance_payroll_code
-         FROM Allowances
-         WHERE allowance_code IS NOT NULL
-         ORDER BY allowance_percent, allowance_name`
+        `SELECT a.allowance_code, a.allowance_name, a.allowance_percent,
+                a.allowance_start_hour, a.allowance_end_hour,
+                pc.payroll_code
+         FROM Allowances a
+         LEFT JOIN PayrollCodes pc
+                ON pc.payroll_code_id = a.allowance_payroll_code_id
+         WHERE a.allowance_code IS NOT NULL
+         ORDER BY a.allowance_percent, a.allowance_name`
     );
 
     const allowanceTypes = allowanceRows.map((row) => ({
         code: row.allowance_code,
         name: row.allowance_name,
         percent: Number(row.allowance_percent),
-        payrollCode: row.allowance_payroll_code
+        payrollCode: row.payroll_code
     }));
+
+    const shiftPremiumRow = allowanceRows.find(
+        (row) => row.allowance_code === SHIFT_PREMIUM_CODE
+    );
+
+    const shiftPremiumRange = shiftPremiumRow
+        ? {
+            startHour: Number(String(shiftPremiumRow.allowance_start_hour).slice(0, 2)),
+            endHour: Number(String(shiftPremiumRow.allowance_end_hour).slice(0, 2))
+          }
+        : null;
 
     const contractedMinutes = (employee.working_hour_num || 0) * 60;
 
@@ -491,9 +508,11 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
         `SELECT r.request_start_date, r.request_status,
                 IF(a.absence_is_open_ended = 1 AND r.request_closed_at IS NULL, CURDATE(), r.request_end_date) AS request_end_date,
                 a.absence_id, a.absence_name, a.absence_is_paid,
-                a.absence_rec_type, a.absence_payroll_code
+                pc.payroll_code AS absence_payroll_code
          FROM Requests r
          JOIN Absences a ON a.absence_id = r.request_absence_id
+         LEFT JOIN PayrollCodes pc
+                ON pc.payroll_code_id = a.absence_payroll_code_id
          WHERE r.request_employee_id = ?
            AND r.request_status IN (${ACTIVE_SQL})
            AND r.request_start_date <= ?
@@ -536,6 +555,7 @@ const buildMonthlyReport = async (employeeId, yearNumber, monthNumber) => {
         lastDayNumber,
         calendar,
         allowanceTypes,
+        shiftPremiumRange,
         contractedMinutes,
         absenceByDate,
         rows

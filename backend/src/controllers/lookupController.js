@@ -71,7 +71,7 @@ const listAbsences = async (req, res) => {
 
         const [rows] = await pool.execute(
             `SELECT a.absence_id, a.absence_name, a.absence_is_paid,
-                    a.absence_category, a.absence_is_open_ended
+                    a.absence_is_open_ended
              FROM Absences a
              JOIN AbsenceWorkSchedules s ON s.absence_id = a.absence_id
              JOIN EmployeeSettings es ON es.employee_setting_work_schedule_id = s.work_schedule_id
@@ -86,7 +86,6 @@ const listAbsences = async (req, res) => {
                 id: row.absence_id,
                 name: row.absence_name,
                 isPaid: Boolean(row.absence_is_paid),
-                category: row.absence_category,
                 isOpenEnded: Boolean(row.absence_is_open_ended)
             }))
         });

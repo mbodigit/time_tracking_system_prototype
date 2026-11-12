@@ -11,11 +11,9 @@ http:
     data: |-
       {
         "name": "Bruno jogcim",
-        "payrollCode": "BRJ",
-        "category": "Egyéb",
+        "payrollCodeId": {{absFreeCodeId}},
         "isPaid": true,
         "isOpenEnded": false,
-        "recType": 0,
         "status": true,
         "sort": 900,
         "workScheduleIds": [{{absScheduleId}}]

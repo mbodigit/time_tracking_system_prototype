@@ -138,7 +138,6 @@ const create = async (req, res) => {
              JOIN Absences a ON a.absence_id = r.request_absence_id
              WHERE r.request_employee_id = ?
                AND r.request_status IN (${COVERING_SQL})
-               AND a.absence_rec_type = 0
                AND ? BETWEEN r.request_start_date AND IF(a.absence_is_open_ended = 1 AND r.request_closed_at IS NULL, CURDATE(), r.request_end_date)
              LIMIT 1`,
             [targetEmployeeId, workingDate]
@@ -621,7 +620,7 @@ const listDaily = async (req, res) => {
 
         const [absenceRows] = await pool.execute(
             `SELECT r.request_employee_id, r.request_status,
-                    a.absence_name, a.absence_rec_type
+                    a.absence_name
              FROM Requests r
              JOIN Absences a ON a.absence_id = r.request_absence_id
              WHERE r.request_status IN (${ACTIVE_SQL})
@@ -694,7 +693,6 @@ const listDaily = async (req, res) => {
                         name: absence.absence_name,
                         status: absence.request_status,
                         coversDay: isCovering(absence.request_status)
-                                   && absence.absence_rec_type === 0
                       }
                     : null,
                 isSelf: row.employee_id === req.user.employeeId
@@ -800,7 +798,6 @@ const createBulk = async (req, res) => {
                  JOIN Absences a ON a.absence_id = r.request_absence_id
                  WHERE r.request_employee_id = ?
                    AND r.request_status IN (${COVERING_SQL})
-                   AND a.absence_rec_type = 0
                    AND ? BETWEEN r.request_start_date AND r.request_end_date
                  LIMIT 1`,
                 [employeeId, workingDate]

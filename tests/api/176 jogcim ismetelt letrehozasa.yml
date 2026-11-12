@@ -11,13 +11,11 @@ http:
     data: |-
       {
         "name": "Bruno jogcim",
-        "payrollCode": "BRJ",
-        "category": "Egyéb",
+        "payrollCodeId": null,
         "isPaid": true,
         "isOpenEnded": false,
-        "recType": 0,
         "status": true,
-        "sort": 901,
+        "sort": 900,
         "workScheduleIds": [{{absScheduleId}}]
       }
   auth:
