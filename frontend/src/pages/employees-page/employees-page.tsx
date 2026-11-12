@@ -14,12 +14,10 @@ import {
   TablePager,
 } from "../../components/data-table/data-table";
 import { EmployeeModal } from "./employee-modal";
+import { EmployeeDetailsModal } from "./employee-details-modal";
 import { AccountModal, type Credentials } from "./account-modal";
 
 type Tab = "employees" | "accounts";
-
-const fullName = (employee: AdminEmployee) =>
-  `${employee.lastName} ${employee.firstName}`;
 
 const employeeSearchText = (employee: AdminEmployee) =>
   [
@@ -42,7 +40,7 @@ const employeeSortValue = (
   key: string,
 ): number | string => {
   if (key === "code") return employee.code;
-  if (key === "name") return fullName(employee);
+  if (key === "name") return employee.name;
   if (key === "group") return employee.groupName ?? "";
   if (key === "manager") return employee.managerName ?? "";
   if (key === "category") return employee.categoryName ?? "";
@@ -69,7 +67,7 @@ const accountSortValue = (
   key: string,
 ): number | string => {
   if (key === "username") return employee.username ?? "";
-  if (key === "name") return fullName(employee);
+  if (key === "name") return employee.name;
   if (key === "code") return employee.code;
   if (key === "role") return employee.userRoleName ?? "";
   if (key === "status") return employee.statusName ?? "";
@@ -78,12 +76,27 @@ const accountSortValue = (
   return "";
 };
 
-const rendszerFiokSora = (fiok: SystemAccount): AdminEmployee => ({
-  id: -fiok.userId,
+const systemAccountRow = (account: SystemAccount): AdminEmployee => ({
+  id: -account.userId,
   code: "—",
+  title: null,
   firstName: "fiók",
+  middleName: null,
   lastName: "Rendszer",
+  name: "Rendszer fiók",
+  birthDate: null,
+  birthPlace: null,
+  gender: null,
+  country: null,
+  postalCode: null,
+  city: null,
+  address: null,
   workEmail: null,
+  privateEmail: null,
+  workPhone: null,
+  privatePhone: null,
+  workLocationId: null,
+  workLocationName: null,
   groupId: null,
   groupName: null,
   categoryId: null,
@@ -106,12 +119,12 @@ const rendszerFiokSora = (fiok: SystemAccount): AdminEmployee => ({
   annualLeaveDays: null,
   managerId: null,
   managerName: null,
-  userId: fiok.userId,
-  username: fiok.username,
-  userActive: fiok.userActive,
-  userLocked: fiok.userLocked,
-  userRoleId: fiok.userRoleId,
-  userRoleName: fiok.userRoleName,
+  userId: account.userId,
+  username: account.username,
+  userActive: account.userActive,
+  userLocked: account.userLocked,
+  userRoleId: account.userRoleId,
+  userRoleName: account.userRoleName,
 });
 
 export const EmployeesPage = () => {
@@ -122,6 +135,9 @@ export const EmployeesPage = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [infoMessage, setInfoMessage] = useState("");
   const [credentials, setCredentials] = useState<Credentials | null>(null);
+  const [detailsEmployee, setDetailsEmployee] = useState<AdminEmployee | null>(
+    null,
+  );
   const [employeeModal, setEmployeeModal] = useState<{
     employee: AdminEmployee | null;
   } | null>(null);
@@ -141,18 +157,21 @@ export const EmployeesPage = () => {
         error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
       );
     }
+
+    try {
+      setOptions(await listEmployeeOptions());
+    } catch {
+      setOptions(null);
+    }
   }, []);
 
   useEffect(() => {
     load();
-    listEmployeeOptions()
-      .then(setOptions)
-      .catch(() => setOptions(null));
   }, [load]);
 
   const accountSource = useMemo(
     () => [
-      ...systemAccounts.map(rendszerFiokSora),
+      ...systemAccounts.map(systemAccountRow),
       ...employees.filter((employee) => employee.userId),
     ],
     [employees, systemAccounts],
@@ -327,7 +346,15 @@ export const EmployeesPage = () => {
               {employeeTable.rows.map((employee) => (
                 <tr key={employee.id} className="hover">
                   <td className="whitespace-nowrap">{employee.code}</td>
-                  <td className="whitespace-nowrap">{fullName(employee)}</td>
+                  <td className="whitespace-nowrap">
+                    <button
+                      type="button"
+                      className="link link-hover font-medium"
+                      onClick={() => setDetailsEmployee(employee)}
+                    >
+                      {employee.name}
+                    </button>
+                  </td>
                   <td>{employee.groupName ?? "-"}</td>
                   <td className="whitespace-nowrap">
                     {employee.managerName ?? "-"}
@@ -414,7 +441,7 @@ export const EmployeesPage = () => {
               {accountTable.rows.map((employee) => (
                 <tr key={employee.id} className="hover">
                   <td className="whitespace-nowrap">{employee.username}</td>
-                  <td className="whitespace-nowrap">{fullName(employee)}</td>
+                  <td className="whitespace-nowrap">{employee.name}</td>
                   <td className="whitespace-nowrap">{employee.code}</td>
                   <td>{employee.userRoleName ?? "-"}</td>
                   <td>{employee.statusName ?? "-"}</td>
@@ -456,6 +483,17 @@ export const EmployeesPage = () => {
 
           <TablePager table={accountTable} unit="fiók" />
         </div>
+      )}
+
+      {detailsEmployee && (
+        <EmployeeDetailsModal
+          employee={detailsEmployee}
+          onClose={() => setDetailsEmployee(null)}
+          onEdit={() => {
+            setEmployeeModal({ employee: detailsEmployee });
+            setDetailsEmployee(null);
+          }}
+        />
       )}
 
       {employeeModal && options && (

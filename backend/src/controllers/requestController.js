@@ -5,6 +5,7 @@ const { employeeAccessDenied, invalidId, serverError } = require('../utils/apiRe
 const {
     isIsoDate, parseDateTime, startOfDay, today, daysSince, hoursBetween
 } = require('../utils/dateHelpers');
+const { nameColumns, fullName } = require('../utils/employeeName');
 
 const URGENT_HOURS = 24;
 
@@ -24,7 +25,7 @@ const SELECT_FIELDS = `
     r.request_closed_at,
     IF(a.absence_is_open_ended = 1 AND r.request_closed_at IS NULL,
        CURDATE(), r.request_end_date) AS effective_end_date,
-    e.employee_code, e.employee_first_name, e.employee_last_name,
+    e.employee_code, ${nameColumns('e')},
     d.user_username AS decision_by_username
 `;
 
@@ -45,7 +46,7 @@ const toOutput = (row) => {
         id: row.request_id,
         employeeId: row.request_employee_id,
         employeeCode: row.employee_code,
-        employeeName: `${row.employee_last_name} ${row.employee_first_name}`,
+        employeeName: fullName(row),
         absenceId: row.request_absence_id,
         absenceName: row.absence_name,
         isPaid: Boolean(row.absence_is_paid),

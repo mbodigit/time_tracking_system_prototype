@@ -1,6 +1,7 @@
 const pool = require('../config/db');
 const { syncGroupManagers } = require('../services/groupManagerSync');
 const { invalidId, serverError } = require('../utils/apiResponse');
+const { nameColumns, fullName } = require('../utils/employeeName');
 
 const ENTITIES = {
     areas: {
@@ -67,7 +68,7 @@ const managerName = (row) => {
         return null;
     }
     return row.employee_last_name
-        ? `${row.employee_last_name} ${row.employee_first_name}`
+        ? fullName(row)
         : row.user_username;
 };
 
@@ -76,7 +77,7 @@ const tree = async (req, res) => {
         const [areaRows] = await pool.execute(
             `SELECT a.area_id, a.area_name, a.area_parent_id,
                     a.area_manager_id AS manager_user_id,
-                    u.user_username, e.employee_last_name, e.employee_first_name
+                    u.user_username, ${nameColumns('e')}
              FROM Areas a
              LEFT JOIN Users u     ON u.user_id     = a.area_manager_id
              LEFT JOIN Employees e ON e.employee_id = u.user_employee_id
@@ -86,7 +87,7 @@ const tree = async (req, res) => {
         const [departmentRows] = await pool.execute(
             `SELECT d.department_id, d.department_name, d.department_area_id,
                     d.department_manager_id AS manager_user_id,
-                    u.user_username, e.employee_last_name, e.employee_first_name
+                    u.user_username, ${nameColumns('e')}
              FROM Departments d
              LEFT JOIN Users u     ON u.user_id     = d.department_manager_id
              LEFT JOIN Employees e ON e.employee_id = u.user_employee_id
@@ -96,7 +97,7 @@ const tree = async (req, res) => {
         const [shiftRows] = await pool.execute(
             `SELECT s.shift_id, s.shift_name, s.shift_department_id,
                     s.shift_manager_id AS manager_user_id,
-                    u.user_username, e.employee_last_name, e.employee_first_name
+                    u.user_username, ${nameColumns('e')}
              FROM Shifts s
              LEFT JOIN Users u     ON u.user_id     = s.shift_manager_id
              LEFT JOIN Employees e ON e.employee_id = u.user_employee_id
@@ -105,7 +106,7 @@ const tree = async (req, res) => {
 
         const [managerRows] = await pool.execute(
             `SELECT u.user_id, u.user_username,
-                    e.employee_last_name, e.employee_first_name,
+                    ${nameColumns('e')},
                     COALESCE(
                       (SELECT a.area_name FROM Areas a
                         WHERE a.area_manager_id = u.user_id LIMIT 1),
@@ -193,7 +194,7 @@ const tree = async (req, res) => {
         const managers = managerRows.map((row) => ({
             id: row.user_id,
             name: row.employee_last_name
-                ? `${row.employee_last_name} ${row.employee_first_name}`
+                ? fullName(row)
                 : row.user_username,
             assignedUnit: row.assigned_unit
         }));

@@ -6,6 +6,7 @@ const {
 } = require('../utils/dateHelpers');
 const { loadRotationSlots, resolveRotation } = require('../services/shiftRotation');
 const { ACTIVE_SQL, COVERING_SQL, isCovering } = require('../services/requestStatus');
+const { nameColumns, fullName } = require('../utils/employeeName');
 const {
     employeeAccessDenied, employeeNotFound, invalidId, invalidYearMonth, serverError
 } = require('../utils/apiResponse');
@@ -589,7 +590,7 @@ const listDaily = async (req, res) => {
 
         const [employeeRows] = await pool.execute(
             `SELECT e.employee_id, e.employee_code,
-                    e.employee_last_name, e.employee_first_name,
+                    ${nameColumns('e')},
                     e.employee_core_start, e.employee_core_end,
                     e.employee_core_hour_id AS own_core_hour_id,
                     g.user_group_rotation_position, g.user_group_rotation_start,
@@ -673,7 +674,7 @@ const listDaily = async (req, res) => {
             return {
                 id: row.employee_id,
                 code: row.employee_code,
-                name: `${row.employee_last_name} ${row.employee_first_name}`,
+                name: fullName(row),
                 workSchedule: row.work_schedule_name,
                 isShiftWorker: Boolean(row.work_schedule_is_shift),
                 templateStart: templateStart ? String(templateStart).slice(0, 5) : null,

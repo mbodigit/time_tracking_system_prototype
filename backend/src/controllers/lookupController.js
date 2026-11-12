@@ -3,6 +3,7 @@ const {
     getAccessibleEmployeeIds, getAccessibleGroups, canAccessEmployee
 } = require('../services/employeeScope');
 const { employeeAccessDenied, serverError } = require('../utils/apiResponse');
+const { nameColumns, fullName } = require('../utils/employeeName');
 
 const listEmployees = async (req, res) => {
     try {
@@ -18,7 +19,7 @@ const listEmployees = async (req, res) => {
 
         const [rows] = await pool.execute(
             `SELECT e.employee_id, e.employee_code,
-                    e.employee_last_name, e.employee_first_name,
+                    ${nameColumns('e')},
                     e.employee_user_group_id, g.user_group_name,
                     w.work_schedule_name
              FROM Employees e
@@ -38,7 +39,7 @@ const listEmployees = async (req, res) => {
             employees: rows.map((row) => ({
                 id: row.employee_id,
                 code: row.employee_code,
-                name: `${row.employee_last_name} ${row.employee_first_name}`,
+                name: fullName(row),
                 groupId: row.employee_user_group_id,
                 groupName: row.user_group_name,
                 workSchedule: row.work_schedule_name,

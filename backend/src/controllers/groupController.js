@@ -1,6 +1,7 @@
 const pool = require('../config/db');
 const { coreHourLength, toIsoDate } = require('../utils/dateHelpers');
 const { serverError } = require('../utils/apiResponse');
+const { nameColumns, fullName } = require('../utils/employeeName');
 
 const list = async (req, res) => {
     try {
@@ -16,7 +17,7 @@ const list = async (req, res) => {
                     g.user_group_core_hour_id, ch.core_hour_name,
                     g.user_group_rotation_position, g.user_group_rotation_start,
                     g.user_group_manager_id, u.user_username,
-                    m.employee_last_name, m.employee_first_name,
+                    ${nameColumns('m')},
                     (SELECT COUNT(*)
                        FROM Employees emp
                        JOIN EmployeeStatus st
@@ -59,7 +60,7 @@ const list = async (req, res) => {
             rotationStart: toIsoDate(row.user_group_rotation_start),
             managerId: row.user_group_manager_id,
             managerName: row.employee_last_name
-                ? `${row.employee_last_name} ${row.employee_first_name}`
+                ? fullName(row)
                 : row.user_username,
             activeEmployees: row.active_employees
         }));
@@ -101,7 +102,7 @@ const options = async (req, res) => {
         );
         const [managers] = await pool.execute(
             `SELECT u.user_id, u.user_username, e.employee_id,
-                    e.employee_last_name, e.employee_first_name
+                    ${nameColumns('e')}
              FROM Users u
              JOIN UserRoles r      ON r.user_role_id   = u.user_role_id
              LEFT JOIN Employees e ON e.employee_id    = u.user_employee_id
@@ -144,7 +145,7 @@ const options = async (req, res) => {
                 id: row.user_id,
                 employeeId: row.employee_id,
                 name: row.employee_last_name
-                    ? `${row.employee_last_name} ${row.employee_first_name}`
+                    ? fullName(row)
                     : row.user_username
             }))
         });
@@ -428,7 +429,7 @@ const listAssignable = async (req, res) => {
     try {
         const [rows] = await pool.execute(
             `SELECT e.employee_id, e.employee_code,
-                    e.employee_last_name, e.employee_first_name,
+                    ${nameColumns('e')},
                     e.employee_user_group_id, g.user_group_name,
                     cat.employee_category_name, w.work_schedule_name
              FROM Employees e
@@ -445,7 +446,7 @@ const listAssignable = async (req, res) => {
             employees: rows.map((row) => ({
                 id: row.employee_id,
                 code: row.employee_code,
-                name: `${row.employee_last_name} ${row.employee_first_name}`,
+                name: fullName(row),
                 groupId: row.employee_user_group_id,
                 groupName: row.user_group_name,
                 categoryName: row.employee_category_name,
