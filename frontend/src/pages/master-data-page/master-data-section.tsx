@@ -16,6 +16,8 @@ import {
   toFormValue,
   type MasterField,
 } from "./master-data-modal";
+import { showToast } from "../../utils/toast";
+import { ActionButton, PlainButton } from "../../components/button/button";
 
 export interface EntityDef {
   key: MasterEntity;
@@ -31,20 +33,15 @@ interface MasterDataSectionProps {
 
 export const MasterDataSection = ({ entity }: MasterDataSectionProps) => {
   const [items, setItems] = useState<MasterItem[]>([]);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [infoMessage, setInfoMessage] = useState("");
   const [modal, setModal] = useState<{ item: MasterItem | null } | null>(null);
 
   const load = useCallback(async () => {
-    setErrorMessage("");
     try {
       const data = await listMasterData(entity.key);
       setItems(data.items);
     } catch (error) {
       setItems([]);
-      setErrorMessage(
-        error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
-      );
+      showToast(error instanceof ApiError ? error.message : "Ismeretlen hiba történt.", "error");
     }
   }, [entity]);
 
@@ -90,8 +87,7 @@ export const MasterDataSection = ({ entity }: MasterDataSectionProps) => {
   });
 
   const handleSaved = async (message: string) => {
-    setErrorMessage("");
-    setInfoMessage(message);
+    showToast(message);
     setModal(null);
     await load();
   };
@@ -115,29 +111,15 @@ export const MasterDataSection = ({ entity }: MasterDataSectionProps) => {
         <div className="ml-auto flex shrink-0 flex-col items-stretch gap-2">
           <TableSearch table={table} placeholder="Keresés..." />
 
-          <button
-            className="btn btn-sm btn-primary"
+          <ActionButton
             onClick={() => {
-              setInfoMessage("");
-              setModal({ item: null });
+                            setModal({ item: null });
             }}
           >
             Új {entity.title.toLowerCase()}
-          </button>
+          </ActionButton>
         </div>
       </div>
-
-      {errorMessage && (
-        <div className="alert alert-error py-2 text-sm">
-          <span>{errorMessage}</span>
-        </div>
-      )}
-
-      {infoMessage && (
-        <div className="alert alert-success py-2 text-sm">
-          <span>{infoMessage}</span>
-        </div>
-      )}
 
       <div className="overflow-x-auto">
         <table className="table table-sm">
@@ -163,15 +145,13 @@ export const MasterDataSection = ({ entity }: MasterDataSectionProps) => {
                   </td>
                 ))}
                 <td className="whitespace-nowrap text-right">
-                  <button
-                    className="btn btn-xs"
+                  <PlainButton size="xs"
                     onClick={() => {
-                      setInfoMessage("");
-                      setModal({ item });
+                                            setModal({ item });
                     }}
                   >
                     Szerkesztés
-                  </button>
+                  </PlainButton>
                 </td>
               </tr>
             ))}

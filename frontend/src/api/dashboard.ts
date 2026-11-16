@@ -1,23 +1,17 @@
 import { apiGet } from "./client";
-import type { AllowanceType } from "./timeEntries";
 
 interface DashboardSummary {
-  workedMinutes: number;
-  settledMinutes: number;
-  absenceMinutes: number;
   balanceMinutes: number;
-  minusMinutes: number;
-  allowances: Record<string, number>;
   absences: Record<string, { minutes: number; payrollCode: string | null }>;
 }
 
 export interface DashboardOverview {
   year: number;
   month: number;
-  allowanceTypes: AllowanceType[];
+  employeeName: string;
+  employeeCode: string;
+  dailyMinutes: number;
   current: DashboardSummary;
-  previous: DashboardSummary | null;
-  previousPeriod: { year: number; month: number };
   leave: {
     entitlementDays: number;
     usedDays: number;

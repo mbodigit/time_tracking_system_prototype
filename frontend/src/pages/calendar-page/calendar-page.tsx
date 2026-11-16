@@ -8,6 +8,8 @@ import {
 import { ApiError } from "../../api/client";
 import { Field } from "../../components/form-field/form-field";
 import { getWeekdayName, isWeekend } from "../../utils/datetime";
+import { showToast } from "../../utils/toast";
+import { ActionButton, PlainButton } from "../../components/button/button";
 
 const MONTH_NAMES = [
   "január",
@@ -30,20 +32,15 @@ export const CalendarPage = () => {
   const [date, setDate] = useState("");
   const [dayType, setDayType] = useState("Munkaszüneti nap");
   const [note, setNote] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
-  const [infoMessage, setInfoMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
   const load = useCallback(async () => {
-    setErrorMessage("");
     try {
       const data = await listCalendar(year);
       setCalendar(data);
     } catch (error) {
       setCalendar(null);
-      setErrorMessage(
-        error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
-      );
+      showToast(error instanceof ApiError ? error.message : "Ismeretlen hiba történt.", "error");
     }
   }, [year]);
 
@@ -52,40 +49,31 @@ export const CalendarPage = () => {
   }, [load]);
 
   const handleSave = async () => {
-    setErrorMessage("");
-    setInfoMessage("");
-
-    if (!date) {
-      setErrorMessage("A dátum megadása kötelező.");
+        if (!date) {
+      showToast("A dátum megadása kötelező.", "error");
       return;
     }
 
     setIsSaving(true);
     try {
       const response = await saveCalendarDay({ date, dayType, note });
-      setInfoMessage(response.message);
+      showToast(response.message);
       setNote("");
       await load();
     } catch (error) {
-      setErrorMessage(
-        error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
-      );
+      showToast(error instanceof ApiError ? error.message : "Ismeretlen hiba történt.", "error");
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleDelete = async (value: string) => {
-    setErrorMessage("");
-    setInfoMessage("");
-    try {
+        try {
       const response = await deleteCalendarDay(value);
-      setInfoMessage(response.message);
+      showToast(response.message);
       await load();
     } catch (error) {
-      setErrorMessage(
-        error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
-      );
+      showToast(error instanceof ApiError ? error.message : "Ismeretlen hiba történt.", "error");
     }
   };
 
@@ -94,7 +82,6 @@ export const CalendarPage = () => {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3 flex-wrap">
-        <h1 className="text-2xl font-bold">Központi naptár</h1>
 
         <div className="join ml-auto">
           <button
@@ -114,18 +101,6 @@ export const CalendarPage = () => {
           </button>
         </div>
       </div>
-
-      {errorMessage && (
-        <div className="alert alert-error text-sm py-2">
-          <span>{errorMessage}</span>
-        </div>
-      )}
-
-      {infoMessage && (
-        <div className="alert alert-success text-sm py-2">
-          <span>{infoMessage}</span>
-        </div>
-      )}
 
       <div className="card bg-base-200">
         <div className="card-body">
@@ -166,13 +141,12 @@ export const CalendarPage = () => {
               />
             </Field>
 
-            <button
-              className="btn btn-sm btn-primary"
+            <ActionButton
               onClick={handleSave}
               disabled={isSaving}
             >
               {isSaving ? "Mentés..." : "Mentés"}
-            </button>
+            </ActionButton>
           </div>
 
           <p className="text-sm opacity-70">
@@ -220,12 +194,11 @@ export const CalendarPage = () => {
                 </td>
                 <td>{day.note ?? "-"}</td>
                 <td>
-                  <button
-                    className="btn btn-xs"
+                  <PlainButton size="xs"
                     onClick={() => handleDelete(day.date)}
                   >
                     Törlés
-                  </button>
+                  </PlainButton>
                 </td>
               </tr>
             ))}

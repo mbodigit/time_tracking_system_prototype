@@ -1,5 +1,10 @@
 const WEEKDAY_NAMES = ["V", "H", "K", "Sze", "Cs", "P", "Szo"];
 
+const WEEKDAY_FULL_NAMES = [
+  "Vasárnap", "Hétfő", "Kedd", "Szerda",
+  "Csütörtök", "Péntek", "Szombat",
+];
+
 const MONTH_NAMES = [
   "január", "február", "március", "április", "május", "június",
   "július", "augusztus", "szeptember", "október", "november", "december",
@@ -24,6 +29,10 @@ export const getDayNumber = (date: string): number => {
 
 export const getWeekdayName = (date: string): string => {
   return WEEKDAY_NAMES[new Date(`${date}T00:00:00`).getDay()];
+};
+
+export const getWeekdayFullName = (date: string): string => {
+  return WEEKDAY_FULL_NAMES[new Date(`${date}T00:00:00`).getDay()];
 };
 
 export const isWeekend = (date: string): boolean => {

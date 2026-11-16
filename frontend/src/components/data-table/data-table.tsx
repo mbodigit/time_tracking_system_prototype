@@ -31,6 +31,9 @@ interface DataTableState<T> {
   rangeTo: number;
 }
 
+export const TABLE_CLASS =
+  "table table-sm [&_thead_th]:!bg-base-content/15 [&_thead_th]:!border-base-100 [&_td]:border-base-300 [&_th]:border-base-300 [&_td:not(:last-child)]:border-r [&_th:not(:last-child)]:border-r [&_tbody_tr]:border-b [&_tbody_tr]:border-base-300";
+
 export const useDataTable = <T,>({
   rows,
   searchText,

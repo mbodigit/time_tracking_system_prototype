@@ -1,4 +1,5 @@
 import type { AdminEmployee } from "../../api/employeeAdmin";
+import { ActionButton, CloseButton, GhostButton } from "../../components/button/button";
 
 interface EmployeeDetailsModalProps {
   employee: AdminEmployee;
@@ -44,14 +45,9 @@ export const EmployeeDetailsModal = ({
             {employee.groupName ? ` — ${employee.groupName}` : ""}
           </p>
         </div>
-        <button
-          type="button"
-          className="btn btn-sm btn-ghost btn-circle"
+        <CloseButton
           onClick={onClose}
-          aria-label="Bezárás"
-        >
-          ✕
-        </button>
+         />
       </div>
 
       <div className="space-y-5 overflow-y-auto px-6 py-4">
@@ -139,12 +135,12 @@ export const EmployeeDetailsModal = ({
       </div>
 
       <div className="flex items-center justify-end gap-2 border-t border-base-300 px-6 pb-5 pt-3">
-        <button className="btn btn-sm btn-ghost" onClick={onClose}>
+        <GhostButton onClick={onClose}>
           Bezárás
-        </button>
-        <button className="btn btn-sm btn-primary" onClick={onEdit}>
+        </GhostButton>
+        <ActionButton onClick={onEdit}>
           Szerkesztés
-        </button>
+        </ActionButton>
       </div>
     </div>
     <div className="modal-backdrop" onClick={onClose} />

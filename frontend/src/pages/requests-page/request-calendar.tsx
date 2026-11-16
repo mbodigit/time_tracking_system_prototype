@@ -7,6 +7,7 @@ import {
   isWeekend,
   shiftMonth,
 } from "../../utils/datetime";
+import { PlainButton } from "../../components/button/button";
 
 const WEEKDAYS = ["H", "K", "Sze", "Cs", "P", "Szo", "V"];
 
@@ -96,25 +97,23 @@ export const RequestCalendar = ({
   return (
     <div className="rounded-lg border border-base-300 p-3">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <button
-          type="button"
-          className="btn btn-xs"
+        <PlainButton
+          type="button" size="xs"
           onClick={() => setPeriod(shiftMonth(period.year, period.month, -1))}
         >
           {"<"}
-        </button>
+        </PlainButton>
 
         <span className="text-sm font-semibold">
           {formatMonth(period.year, period.month)}
         </span>
 
-        <button
-          type="button"
-          className="btn btn-xs"
+        <PlainButton
+          type="button" size="xs"
           onClick={() => setPeriod(shiftMonth(period.year, period.month, 1))}
         >
           {">"}
-        </button>
+        </PlainButton>
       </div>
 
       <div className="grid grid-cols-7 gap-1 text-center text-xs opacity-60">

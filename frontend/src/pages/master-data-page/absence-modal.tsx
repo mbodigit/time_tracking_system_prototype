@@ -9,6 +9,8 @@ import {
 } from "../../api/absenceAdmin";
 import { ApiError } from "../../api/client";
 import { Field, FormGrid } from "../../components/form-field/form-field";
+import { showToast } from "../../utils/toast";
+import { ActionButton, CloseButton, DangerButton, DeleteButton, GhostButton } from "../../components/button/button";
 
 const STATS_NAMES = ["Betegség", "Fizetett szabadság"];
 
@@ -54,7 +56,6 @@ export const AbsenceModal = ({
   const [form, setForm] = useState<AbsencePayload>(
     absence ? toForm(absence) : EMPTY,
   );
-  const [errorMessage, setErrorMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [askDelete, setAskDelete] = useState(false);
@@ -79,9 +80,7 @@ export const AbsenceModal = ({
     setForm((current) => ({ ...current, ...changes }));
 
   const fail = (error: unknown) =>
-    setErrorMessage(
-      error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
-    );
+    showToast(error instanceof ApiError ? error.message : "Ismeretlen hiba történt.", "error");
 
   const toggleSchedule = (id: number) =>
     setForm((current) => ({
@@ -92,7 +91,6 @@ export const AbsenceModal = ({
     }));
 
   const handleSave = async () => {
-    setErrorMessage("");
     setIsSaving(true);
 
     try {
@@ -113,7 +111,6 @@ export const AbsenceModal = ({
       return;
     }
 
-    setErrorMessage("");
     setIsDeleting(true);
 
     try {
@@ -139,24 +136,13 @@ export const AbsenceModal = ({
               <p className="mt-0.5 text-xs opacity-60">{absence.name}</p>
             )}
           </div>
-          <button
-            type="button"
-            className="btn btn-sm btn-ghost btn-circle"
+          <CloseButton
             onClick={onClose}
             disabled={isBusy}
-            aria-label="Bezárás"
-          >
-            ✕
-          </button>
+          />
         </div>
 
         <div className="space-y-5 overflow-y-auto px-6 py-5">
-          {errorMessage && (
-            <div className="alert alert-error py-2 text-sm">
-              <span>{errorMessage}</span>
-            </div>
-          )}
-
           {isStatsAbsence && (
             <div className="alert alert-warning py-2 text-sm">
               <span>
@@ -319,49 +305,44 @@ export const AbsenceModal = ({
           {absence ? (
             askDelete ? (
               <div className="flex gap-2">
-                <button
-                  className="btn btn-sm btn-error"
+                <DangerButton
                   onClick={handleDelete}
                   disabled={isBusy}
                 >
                   {isDeleting ? "Törlés..." : "Igen, törlöm"}
-                </button>
-                <button
-                  className="btn btn-sm btn-ghost"
+                </DangerButton>
+                <GhostButton
                   onClick={() => setAskDelete(false)}
                   disabled={isBusy}
                 >
                   Vissza
-                </button>
+                </GhostButton>
               </div>
             ) : (
-              <button
-                className="btn btn-sm btn-outline btn-error"
+              <DeleteButton
                 onClick={() => setAskDelete(true)}
                 disabled={isBusy}
               >
                 Törlés
-              </button>
+              </DeleteButton>
             )
           ) : (
             <span />
           )}
 
           <div className="flex gap-2">
-            <button
-              className="btn btn-sm btn-ghost"
+            <GhostButton
               onClick={onClose}
               disabled={isBusy}
             >
               Mégse
-            </button>
-            <button
-              className="btn btn-sm btn-primary"
+            </GhostButton>
+            <ActionButton
               onClick={handleSave}
               disabled={isBusy}
             >
               {isSaving ? "Mentés..." : isNew ? "Létrehozás" : "Módosítás"}
-            </button>
+            </ActionButton>
           </div>
         </div>
       </div>

@@ -6,14 +6,21 @@ import {
   type BulkResult,
 } from "../../api/timeEntries";
 import { ApiError } from "../../api/client";
-import { formatTime, getWeekdayName, isWeekend } from "../../utils/datetime";
+import {
+  formatTime,
+  getWeekdayFullName,
+  isWeekend,
+} from "../../utils/datetime";
 import {
   useDataTable,
   TableSearch,
   SortableHeader,
+  TABLE_CLASS,
   TablePager,
 } from "../../components/data-table/data-table";
 import { ALL_ROWS } from "../../components/data-table/data-table-config";
+import { showToast } from "../../utils/toast";
+import { ActionButton, PlainButton } from "../../components/button/button";
 
 const today = () => {
   const now = new Date();
@@ -27,11 +34,11 @@ const shiftDay = (date: string, offset: number) => {
 };
 
 const dailySearchText = (item: DailyEmployee) =>
-  [item.name, item.code, item.workSchedule].filter(Boolean).join(" ");
+  [item.name, item.code].filter(Boolean).join(" ");
 
 const dailySortValue = (item: DailyEmployee, key: string): number | string => {
+  if (key === "code") return item.code ?? "";
   if (key === "name") return item.name;
-  if (key === "schedule") return item.workSchedule ?? "";
   return "";
 };
 
@@ -53,12 +60,9 @@ export const GroupLogTab = () => {
     initialSortKey: "name",
     initialPageSize: ALL_ROWS,
   });
-  const [errorMessage, setErrorMessage] = useState("");
-  const [infoMessage, setInfoMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
   const load = useCallback(async () => {
-    setErrorMessage("");
     setResults([]);
     try {
       const data = await listDaily(date);
@@ -80,9 +84,7 @@ export const GroupLogTab = () => {
       setDraft(next);
     } catch (error) {
       setEmployees([]);
-      setErrorMessage(
-        error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
-      );
+      showToast(error instanceof ApiError ? error.message : "Ismeretlen hiba történt.", "error");
     }
   }, [date]);
 
@@ -123,9 +125,7 @@ export const GroupLogTab = () => {
   };
 
   const handleSave = async () => {
-    setErrorMessage("");
-    setInfoMessage("");
-    setResults([]);
+        setResults([]);
 
     const entries = employees
       .filter((item) => draft[item.id]?.start && draft[item.id]?.end)
@@ -150,20 +150,18 @@ export const GroupLogTab = () => {
       });
 
     if (entries.length === 0) {
-      setErrorMessage("Egyetlen dolgozóhoz sincs kitöltve kezdés és végzés.");
+      showToast("Egyetlen dolgozóhoz sincs kitöltve kezdés és végzés.", "error");
       return;
     }
 
     setIsSaving(true);
     try {
       const response = await createBulk(date, entries);
-      setInfoMessage(response.message);
+      showToast(response.message);
       setResults(response.results);
       await load();
     } catch (error) {
-      setErrorMessage(
-        error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
-      );
+      showToast(error instanceof ApiError ? error.message : "Ismeretlen hiba történt.", "error");
     } finally {
       setIsSaving(false);
     }
@@ -174,8 +172,8 @@ export const GroupLogTab = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="join">
+      <div className="grid w-fit grid-cols-2 gap-2">
+        <div className="join w-full">
           <button
             className="btn btn-sm join-item"
             onClick={() => setDate(shiftDay(date, -1))}
@@ -184,7 +182,7 @@ export const GroupLogTab = () => {
           </button>
           <input
             type="date"
-            className="input input-sm input-bordered join-item"
+            className="input input-sm input-bordered join-item grow"
             value={date}
             onChange={(event) => setDate(event.target.value)}
           />
@@ -196,55 +194,51 @@ export const GroupLogTab = () => {
           </button>
         </div>
 
-        <span className="badge badge-ghost">
-          {getWeekdayName(date)}
-          {dayType === "holiday" && " — munkaszüneti nap"}
-          {dayType === "restday" && " — pihenőnap"}
-          {dayType === "workday" && isWeekend(date) && " — hétvége"}
-        </span>
-
-        <button className="btn btn-sm ml-auto" onClick={fillFromTemplate}>
+        <PlainButton className="w-full" onClick={fillFromTemplate}>
           Kitöltés beosztás szerint
-        </button>
-        <button
-          className="btn btn-sm btn-primary"
+        </PlainButton>
+
+        <PlainButton className="w-full" onClick={() => setDate(today())}>
+          Aktuális nap
+        </PlainButton>
+
+        <ActionButton className="w-full"
           onClick={handleSave}
           disabled={isSaving}
         >
           {isSaving ? "Mentés..." : "Mentés"}
-        </button>
+        </ActionButton>
       </div>
 
-      {errorMessage && (
-        <div className="alert alert-error text-sm py-2">
-          <span>{errorMessage}</span>
-        </div>
-      )}
-
-      {infoMessage && (
-        <div className="alert alert-success text-sm py-2">
-          <span>{infoMessage}</span>
-        </div>
-      )}
+      <div className="text-sm opacity-70">
+        {getWeekdayFullName(date)}
+        {dayType === "holiday" && " — munkaszüneti nap"}
+        {dayType === "restday" && " — pihenőnap"}
+        {dayType === "workday" && isWeekend(date) && " — hétvége"}
+      </div>
 
       <TableSearch
         table={dailyTable}
         placeholder="Keresés dolgozó vagy kód szerint..."
       />
 
-      <div className="overflow-x-auto">
-        <table className="table table-sm">
+      <div className="overflow-x-auto rounded border border-base-300">
+        <table className={TABLE_CLASS}>
           <thead>
             <tr>
-              <SortableHeader table={dailyTable} field="name" label="Dolgozó" />
               <SortableHeader
                 table={dailyTable}
-                field="schedule"
-                label="Munkarend"
+                field="code"
+                label="Dolgozói kód"
               />
-              <th>Kezdés</th>
-              <th>Végzés</th>
-              <th>Szünet</th>
+              <SortableHeader
+                table={dailyTable}
+                field="name"
+                label="Dolgozó neve"
+              />
+              <th>Munkavégzés kezdete</th>
+              <th>Munkavégzés vége</th>
+              <th>Munkaközi szünet</th>
               <th>Állapot</th>
             </tr>
           </thead>
@@ -258,11 +252,8 @@ export const GroupLogTab = () => {
 
               return (
                 <tr key={item.id} className={blocked ? "opacity-50" : ""}>
-                  <td className="whitespace-nowrap">
-                    {item.name}
-                    <span className="text-xs opacity-60 ml-2">{item.code}</span>
-                  </td>
-                  <td className="text-sm">{item.workSchedule ?? "-"}</td>
+                  <td className="whitespace-nowrap">{item.code}</td>
+                  <td className="whitespace-nowrap">{item.name}</td>
                   <td>
                     <input
                       type="time"

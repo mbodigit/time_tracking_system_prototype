@@ -3,6 +3,7 @@ import { MasterDataSection, type EntityDef } from "./master-data-section";
 import { AbsencesSection } from "./absences-section";
 import { AllowancesSection } from "./allowances-section";
 import { currentPermissions, hasPermission } from "../../utils/access";
+import { TAB_LIST_CLASS, tabClass } from "../../components/tabs/tabs";
 
 const TAB_PERMISSION: Record<string, string> = {
   Bérkódok: "master_data.payroll_codes",
@@ -91,15 +92,13 @@ export const MasterDataPage = () => {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Törzsadatok</h1>
-
-      <div role="tablist" className="tabs tabs-bordered">
+      <div role="tablist" className={TAB_LIST_CLASS}>
         {visibleTabs.map(
           (name) => (
             <button
               key={name}
               role="tab"
-              className={`tab ${name === tab ? "tab-active" : ""}`}
+              className={tabClass(name === tab)}
               onClick={() => setTab(name)}
             >
               {name}

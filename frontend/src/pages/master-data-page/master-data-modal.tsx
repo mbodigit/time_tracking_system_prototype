@@ -9,6 +9,8 @@ import {
 } from "../../api/masterData";
 import { ApiError } from "../../api/client";
 import { Field, FormGrid } from "../../components/form-field/form-field";
+import { showToast } from "../../utils/toast";
+import { ActionButton, CloseButton, DangerButton, DeleteButton, GhostButton } from "../../components/button/button";
 
 export interface MasterField {
   key: string;
@@ -61,7 +63,6 @@ export const MasterDataModal = ({
     return initial;
   });
 
-  const [errorMessage, setErrorMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [askDelete, setAskDelete] = useState(false);
@@ -69,9 +70,7 @@ export const MasterDataModal = ({
   const isBusy = isSaving || isDeleting;
 
   const fail = (error: unknown) =>
-    setErrorMessage(
-      error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
-    );
+    showToast(error instanceof ApiError ? error.message : "Ismeretlen hiba történt.", "error");
 
   const buildPayload = (): Record<string, MasterValue> => {
     const payload: Record<string, MasterValue> = {};
@@ -92,7 +91,6 @@ export const MasterDataModal = ({
   };
 
   const handleSave = async () => {
-    setErrorMessage("");
     setIsSaving(true);
 
     try {
@@ -115,7 +113,6 @@ export const MasterDataModal = ({
       return;
     }
 
-    setErrorMessage("");
     setIsDeleting(true);
 
     try {
@@ -136,24 +133,13 @@ export const MasterDataModal = ({
           <h3 className="text-xl font-bold text-primary">
             {isNew ? `Új ${title.toLowerCase()}` : `${title} módosítása`}
           </h3>
-          <button
-            type="button"
-            className="btn btn-sm btn-ghost btn-circle"
+          <CloseButton
             onClick={onClose}
             disabled={isBusy}
-            aria-label="Bezárás"
-          >
-            ✕
-          </button>
+          />
         </div>
 
         <div className="space-y-5 px-6 py-5">
-          {errorMessage && (
-            <div className="alert alert-error py-2 text-sm">
-              <span>{errorMessage}</span>
-            </div>
-          )}
-
           <FormGrid columns={2}>
             {fields.map((field) =>
               field.type === "boolean" ? (
@@ -216,49 +202,44 @@ export const MasterDataModal = ({
           {item ? (
             askDelete ? (
               <div className="flex gap-2">
-                <button
-                  className="btn btn-sm btn-error"
+                <DangerButton
                   onClick={handleDelete}
                   disabled={isBusy}
                 >
                   {isDeleting ? "Törlés..." : "Igen, törlöm"}
-                </button>
-                <button
-                  className="btn btn-sm btn-ghost"
+                </DangerButton>
+                <GhostButton
                   onClick={() => setAskDelete(false)}
                   disabled={isBusy}
                 >
                   Vissza
-                </button>
+                </GhostButton>
               </div>
             ) : (
-              <button
-                className="btn btn-sm btn-outline btn-error"
+              <DeleteButton
                 onClick={() => setAskDelete(true)}
                 disabled={isBusy}
               >
                 Törlés
-              </button>
+              </DeleteButton>
             )
           ) : (
             <span />
           )}
 
           <div className="flex gap-2">
-            <button
-              className="btn btn-sm btn-ghost"
+            <GhostButton
               onClick={onClose}
               disabled={isBusy}
             >
               Mégse
-            </button>
-            <button
-              className="btn btn-sm btn-primary"
+            </GhostButton>
+            <ActionButton
               onClick={handleSave}
               disabled={isBusy}
             >
               {isSaving ? "Mentés..." : isNew ? "Létrehozás" : "Módosítás"}
-            </button>
+            </ActionButton>
           </div>
         </div>
       </div>

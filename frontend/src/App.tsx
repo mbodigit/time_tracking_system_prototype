@@ -16,6 +16,7 @@ import { ConnectionGuard } from "./components/connection-guard/connection-guard"
 import { MasterDataPage } from "./pages/master-data-page/master-data-page";
 import { CompanyPage } from "./pages/company-page/company-page";
 import { PermissionsPage } from "./pages/permissions-page/permissions-page";
+import { ToastHost } from "./components/toast/toast";
 
 const App = () => {
   return (
@@ -119,6 +120,8 @@ const App = () => {
           </Route>
         </Routes>
       </BrowserRouter>
+
+      <ToastHost />
     </ConnectionGuard>
   );
 };

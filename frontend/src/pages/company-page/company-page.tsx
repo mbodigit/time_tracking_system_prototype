@@ -5,6 +5,7 @@ import {
   type EntityDef,
 } from "../master-data-page/master-data-section";
 import { currentPermissions, hasPermission } from "../../utils/access";
+import { TAB_LIST_CLASS, tabClass } from "../../components/tabs/tabs";
 
 const WORK_LOCATIONS: EntityDef = {
   key: "work-locations",
@@ -40,24 +41,17 @@ export const CompanyPage = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-4 flex-wrap">
-        <h1 className="text-2xl font-bold">Vállalati adatok</h1>
-
-        <div
-          role="tablist"
-          className="tabs tabs-box tabs-sm bg-base-200 p-1 rounded-lg"
-        >
-          {visibleTabs.map((name) => (
-            <button
-              key={name}
-              role="tab"
-              className={`tab ${tab === name ? "tab-active" : ""}`}
-              onClick={() => setTab(name)}
-            >
-              {name}
-            </button>
-          ))}
-        </div>
+      <div role="tablist" className={TAB_LIST_CLASS}>
+        {visibleTabs.map((name) => (
+          <button
+            key={name}
+            role="tab"
+            className={tabClass(tab === name)}
+            onClick={() => setTab(name)}
+          >
+            {name}
+          </button>
+        ))}
       </div>
 
       {tab === COMPANY_TAB ? (

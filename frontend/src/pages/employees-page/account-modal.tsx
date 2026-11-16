@@ -11,6 +11,8 @@ import {
 } from "../../api/employeeAdmin";
 import { ApiError } from "../../api/client";
 import { Field } from "../../components/form-field/form-field";
+import { showToast } from "../../utils/toast";
+import { ActionButton, CloseButton, DangerButton, DeleteButton, GhostButton, PlainButton } from "../../components/button/button";
 
 export interface Credentials {
   username: string;
@@ -39,21 +41,17 @@ export const AccountModal = ({
   const [roleId, setRoleId] = useState<number | null>(
     employee?.userRoleId ?? roles[0]?.id ?? null,
   );
-  const [errorMessage, setErrorMessage] = useState("");
   const [isBusy, setIsBusy] = useState(false);
   const [askDisable, setAskDisable] = useState(false);
   const [askDelete, setAskDelete] = useState(false);
 
   const run = async <T,>(action: () => Promise<T>): Promise<T | null> => {
-    setErrorMessage("");
     setIsBusy(true);
 
     try {
       return await action();
     } catch (error) {
-      setErrorMessage(
-        error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
-      );
+      showToast(error instanceof ApiError ? error.message : "Ismeretlen hiba történt.", "error");
       return null;
     } finally {
       setIsBusy(false);
@@ -62,7 +60,7 @@ export const AccountModal = ({
 
   const handleCreate = async () => {
     if (!employeeId || !roleId) {
-      setErrorMessage("A dolgozó és a szerepkör megadása kötelező.");
+      showToast("A dolgozó és a szerepkör megadása kötelező.", "error");
       return;
     }
 
@@ -158,24 +156,13 @@ export const AccountModal = ({
               </p>
             )}
           </div>
-          <button
-            type="button"
-            className="btn btn-sm btn-ghost btn-circle"
+          <CloseButton
             onClick={onClose}
             disabled={isBusy}
-            aria-label="Bezárás"
-          >
-            ✕
-          </button>
+          />
         </div>
 
         <div className="space-y-3 px-6 py-4">
-          {errorMessage && (
-            <div className="alert alert-error py-2 text-sm">
-              <span>{errorMessage}</span>
-            </div>
-          )}
-
           {isNew && candidates.length === 0 && (
             <div className="alert alert-info py-2 text-sm">
               <span>
@@ -265,20 +252,18 @@ export const AccountModal = ({
           ) : (
             <>
               <div className="flex flex-wrap gap-2 pt-1">
-                <button
-                  className="btn btn-sm btn-primary"
+                <ActionButton
                   onClick={handleRole}
                   disabled={isBusy || roleId === employee?.userRoleId}
                 >
                   Szerepkör mentése
-                </button>
-                <button
-                  className="btn btn-sm"
+                </ActionButton>
+                <PlainButton
                   onClick={handlePassword}
                   disabled={isBusy}
                 >
                   Új jelszó generálása
-                </button>
+                </PlainButton>
                 {employee?.userLocked && (
                   <button
                     className="btn btn-sm btn-warning"
@@ -289,13 +274,12 @@ export const AccountModal = ({
                   </button>
                 )}
                 {employee?.userActive ? (
-                  <button
-                    className="btn btn-sm btn-outline btn-error"
+                  <DeleteButton
                     onClick={() => setAskDisable(true)}
                     disabled={isBusy || askDisable}
                   >
                     Letiltás
-                  </button>
+                  </DeleteButton>
                 ) : (
                   <button
                     className="btn btn-sm btn-outline"
@@ -318,20 +302,18 @@ export const AccountModal = ({
                       rögzítheti.
                     </p>
                     <div className="mt-2 flex gap-2">
-                      <button
-                        className="btn btn-sm btn-error"
+                      <DangerButton
                         onClick={() => handleActive(false)}
                         disabled={isBusy}
                       >
                         Igen, letiltom
-                      </button>
-                      <button
-                        className="btn btn-sm btn-ghost"
+                      </DangerButton>
+                      <GhostButton
                         onClick={() => setAskDisable(false)}
                         disabled={isBusy}
                       >
                         Vissza
-                      </button>
+                      </GhostButton>
                     </div>
                   </div>
                 </div>
@@ -359,20 +341,18 @@ export const AccountModal = ({
                       a rendszer elutasítja a törlést.
                     </p>
                     <div className="mt-2 flex gap-2">
-                      <button
-                        className="btn btn-sm btn-error"
+                      <DangerButton
                         onClick={handleDelete}
                         disabled={isBusy}
                       >
                         Igen, törlöm
-                      </button>
-                      <button
-                        className="btn btn-sm btn-ghost"
+                      </DangerButton>
+                      <GhostButton
                         onClick={() => setAskDelete(false)}
                         disabled={isBusy}
                       >
                         Vissza
-                      </button>
+                      </GhostButton>
                     </div>
                   </div>
                 </div>
@@ -385,31 +365,28 @@ export const AccountModal = ({
           {isNew ? (
             <span />
           ) : (
-            <button
-              className="btn btn-sm btn-outline btn-error"
+            <DeleteButton
               onClick={() => setAskDelete(true)}
               disabled={isBusy || askDelete}
             >
               Fiók törlése
-            </button>
+            </DeleteButton>
           )}
 
           <div className="flex gap-2">
-            <button
-              className="btn btn-sm btn-ghost"
+            <GhostButton
               onClick={onClose}
               disabled={isBusy}
             >
               Bezárás
-            </button>
+            </GhostButton>
             {isNew && (
-              <button
-                className="btn btn-sm btn-primary"
+              <ActionButton
                 onClick={handleCreate}
                 disabled={isBusy || candidates.length === 0}
               >
                 {isBusy ? "Létrehozás..." : "Fiók létrehozása"}
-              </button>
+              </ActionButton>
             )}
           </div>
         </div>

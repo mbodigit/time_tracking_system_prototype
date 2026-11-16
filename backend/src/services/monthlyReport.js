@@ -159,6 +159,7 @@ const buildRecordedMonth = async (monthContext) => {
     let summaryBalanceMinutes = 0;
     let summaryAbsenceMinutes = 0;
     let recordedDays = 0;
+    let workingDayCount = 0;
 
     for (let dayNumber = 1; dayNumber <= lastDayNumber; dayNumber++) {
         const date = `${monthPrefix}-${String(dayNumber).padStart(2, '0')}`;
@@ -196,6 +197,10 @@ const buildRecordedMonth = async (monthContext) => {
             : null;
 
         const isWorkDay = isWorkingDay(date, dayType);
+
+        if (isWorkDay) {
+            workingDayCount++;
+        }
 
         const rotated = usesRotation
             ? resolveRotation(
@@ -368,6 +373,7 @@ const buildRecordedMonth = async (monthContext) => {
                 absenceMinutes: summaryAbsenceMinutes,
                 settledMinutes: summaryWorkedMinutes + summaryAbsenceMinutes,
                 allowances: summaryAllowances,
+                frameMinutes: contractedMinutes * workingDayCount,
                 requiredMinutes: days.reduce(
                     (sum, day) => sum + (day.scheduledMinutes || 0), 0
                 ),

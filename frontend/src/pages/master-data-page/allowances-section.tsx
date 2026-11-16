@@ -7,26 +7,23 @@ import {
 import { ApiError } from "../../api/client";
 import { EmptyState } from "../../components/empty-state/empty-state";
 import { AllowanceModal } from "./allowance-modal";
+import { showToast } from "../../utils/toast";
+import { GhostButton } from "../../components/button/button";
 
 const toTime = (value: string) => String(value).slice(0, 5);
 
 export const AllowancesSection = () => {
   const [data, setData] = useState<AllowanceAdminData | null>(null);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [infoMessage, setInfoMessage] = useState("");
   const [modal, setModal] = useState<{ allowance: AdminAllowance } | null>(
     null,
   );
 
   const load = useCallback(async () => {
-    setErrorMessage("");
     try {
       setData(await listAllowanceAdmin());
     } catch (error) {
       setData(null);
-      setErrorMessage(
-        error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
-      );
+      showToast(error instanceof ApiError ? error.message : "Ismeretlen hiba történt.", "error");
     }
   }, []);
 
@@ -36,7 +33,7 @@ export const AllowancesSection = () => {
 
   const handleSaved = (message: string) => {
     setModal(null);
-    setInfoMessage(message);
+    showToast(message);
     load();
   };
 
@@ -46,18 +43,6 @@ export const AllowancesSection = () => {
         A pótlékok listája rögzített. A százalék, az idősáv, a bérkód és az
         érintett munkarendek módosíthatók.
       </p>
-
-      {errorMessage && (
-        <div className="alert alert-error text-sm py-2">
-          <span>{errorMessage}</span>
-        </div>
-      )}
-
-      {infoMessage && (
-        <div className="alert alert-success text-sm py-2">
-          <span>{infoMessage}</span>
-        </div>
-      )}
 
       {data && data.allowances.length === 0 && (
         <EmptyState message="Nincs felvett pótlék." />
@@ -91,12 +76,11 @@ export const AllowancesSection = () => {
                   </td>
                   <td>{allowance.workScheduleNames.join(", ") || "-"}</td>
                   <td className="text-right">
-                    <button
-                      className="btn btn-xs btn-ghost"
+                    <GhostButton size="xs"
                       onClick={() => setModal({ allowance })}
                     >
                       Szerkesztés
-                    </button>
+                    </GhostButton>
                   </td>
                 </tr>
               ))}
