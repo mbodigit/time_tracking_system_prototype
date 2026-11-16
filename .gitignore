@@ -104,5 +104,6 @@ vite.config.ts.timestamp-*
 temp
 ~$*
 docs/*Szakdolgozat*.docx
+docs/jegyzet/
 __pycache__/
 *.pyc

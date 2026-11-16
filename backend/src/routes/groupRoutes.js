@@ -23,25 +23,25 @@ router.get('/groups/members',
 
 router.patch('/groups/:id/members',
     authenticateToken,
-    authorizePermission('organisation'),
+    authorizePermission('organisation.edit'),
     groupController.updateMembers
 );
 
 router.post('/groups',
     authenticateToken,
-    authorizePermission('organisation'),
+    authorizePermission('organisation.edit'),
     groupController.create
 );
 
 router.patch('/groups/:id',
     authenticateToken,
-    authorizePermission('organisation'),
+    authorizePermission('organisation.edit'),
     groupController.update
 );
 
 router.delete('/groups/:id',
     authenticateToken,
-    authorizePermission('organisation'),
+    authorizePermission('organisation.edit'),
     groupController.remove
 );
 

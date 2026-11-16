@@ -1,0 +1,31 @@
+info:
+  name: szervezet modositasa hr fiokkal
+  type: http
+  seq: 211
+
+http:
+  method: POST
+  url: "{{baseUrl}}/org/areas"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "HR nem hozhat letre teruletet",
+        "managerId": null
+      }
+  auth:
+    type: bearer
+    token: "{{hrToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "403"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
