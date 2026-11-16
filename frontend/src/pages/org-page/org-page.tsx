@@ -49,7 +49,7 @@ const toDerived = (group: OrgGroup | null): DerivedGroup[] =>
   group ? [{ name: group.name, activeEmployees: group.activeEmployees }] : [];
 
 export const OrgPage = () => {
-  const canEdit = hasPermission(currentPermissions(), "organisation");
+  const canEdit = hasPermission(currentPermissions(), "organisation.edit");
 
   const [tree, setTree] = useState<OrgTree | null>(null);
   const [groups, setGroups] = useState<Group[]>([]);

@@ -11,19 +11,19 @@ router.get('/org',
 
 router.post('/org/:entity',
     authenticateToken,
-    authorizePermission('organisation'),
+    authorizePermission('organisation.edit'),
     orgController.create
 );
 
 router.patch('/org/:entity/:id',
     authenticateToken,
-    authorizePermission('organisation'),
+    authorizePermission('organisation.edit'),
     orgController.update
 );
 
 router.delete('/org/:entity/:id',
     authenticateToken,
-    authorizePermission('organisation'),
+    authorizePermission('organisation.edit'),
     orgController.remove
 );
 

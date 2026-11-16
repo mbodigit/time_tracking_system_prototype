@@ -73,6 +73,8 @@ FROM (
                    'master_data', 77
   UNION ALL SELECT 'company.settings',           'Cégadatok',
                    'company',     91
+  UNION ALL SELECT 'organisation.edit',          'Szerkesztés',
+                   'organisation', 61
   UNION ALL SELECT 'company.locations',          'Telephelyek',
                    'company',     92
 ) v
