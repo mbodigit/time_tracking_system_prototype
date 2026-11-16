@@ -9,6 +9,7 @@ const PASSWORD_ALPHABET =
     'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
 const PASSWORD_LENGTH = 12;
 const ADMIN_ROLE = 'Admin';
+const MANAGER_ROLE = 'Vezető';
 const GENDERS = ['Férfi', 'Nő', 'Egyéb'];
 
 const generatePassword = () => {
@@ -183,8 +184,9 @@ const options = async (req, res) => {
                  GROUP BY user_group_manager_id
              ) led ON led.user_group_manager_id = u.user_id
              LEFT JOIN UserGroups g ON g.user_group_id = led.user_group_id
-             WHERE r.user_role_name = 'Vezető'
-             ORDER BY e.employee_last_name, e.employee_first_name`
+             WHERE r.user_role_name = ?
+             ORDER BY e.employee_last_name, e.employee_first_name`,
+            [MANAGER_ROLE]
         );
         const [roles] = await pool.execute(
             `SELECT user_role_id, user_role_name FROM UserRoles ORDER BY user_role_id`
@@ -317,6 +319,41 @@ const validateEmployee = (body) => {
     return null;
 };
 
+const managerError = async (managerId) => {
+    if (!managerId) {
+        return null;
+    }
+
+    const [rows] = await pool.execute(
+        `SELECT u.user_status, r.user_role_name
+         FROM Employees e
+         LEFT JOIN Users     u ON u.user_employee_id = e.employee_id
+         LEFT JOIN UserRoles r ON r.user_role_id     = u.user_role_id
+         WHERE e.employee_id = ?`,
+        [managerId]
+    );
+
+    if (rows.length === 0) {
+        return 'A megadott közvetlen felettes nem létezik.';
+    }
+
+    if (!rows[0].user_role_name) {
+        return 'Közvetlen felettesnek csak olyan munkavállaló adható meg, '
+            + 'akihez tartozik felhasználói fiók.';
+    }
+
+    if (!rows[0].user_status) {
+        return 'A közvetlen felettes fiókja inaktív, ezért a hozzá tartozó '
+            + 'beosztottak kérelmeit nem tudná elbírálni.';
+    }
+
+    if (rows[0].user_role_name !== MANAGER_ROLE) {
+        return 'Közvetlen felettes csak vezetői szerepkörű munkavállaló lehet.';
+    }
+
+    return null;
+};
+
 const text = (value) => String(value ?? '').trim() || null;
 const id = (value) => Number(value) || null;
 
@@ -366,6 +403,12 @@ const create = async (req, res) => {
 
     if (validationError) {
         return res.status(400).json({ message: validationError });
+    }
+
+    const managerProblem = await managerError(id(body.managerId));
+
+    if (managerProblem) {
+        return res.status(400).json({ message: managerProblem });
     }
 
     const connection = await pool.getConnection();
@@ -425,6 +468,12 @@ const update = async (req, res) => {
 
     if (validationError) {
         return res.status(400).json({ message: validationError });
+    }
+
+    const managerProblem = await managerError(id(body.managerId));
+
+    if (managerProblem) {
+        return res.status(400).json({ message: managerProblem });
     }
 
     try {

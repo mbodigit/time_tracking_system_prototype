@@ -1,0 +1,39 @@
+info:
+  name: dolgozo felvetele nem vezetoi felettessel
+  type: http
+  seq: 212
+
+http:
+  method: POST
+  url: "{{baseUrl}}/admin/employees"
+  body:
+    type: json
+    data: |-
+      {
+        "lastName": "Bruno",
+        "firstName": "Felettes",
+        "costCenterId": {{empCostCenterId}},
+        "categoryId": {{empCategoryId}},
+        "statusId": {{empStatusId}},
+        "workScheduleId": {{empWorkScheduleId}},
+        "workingHourId": {{empWorkingHourId}},
+        "coreHourId": {{empCoreHourId}},
+        "annualLeaveDays": 25,
+        "managerId": {{idDolgozoM}}
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "400"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
