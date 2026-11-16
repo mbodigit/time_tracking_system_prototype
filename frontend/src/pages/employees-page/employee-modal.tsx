@@ -10,6 +10,9 @@ import {
 } from "../../api/employeeAdmin";
 import { ApiError } from "../../api/client";
 import { Field, FormGrid } from "../../components/form-field/form-field";
+import { showToast } from "../../utils/toast";
+import { TAB_LIST_CLASS, tabClass } from "../../components/tabs/tabs";
+import { ActionButton, CloseButton, DangerButton, DeleteButton, GhostButton } from "../../components/button/button";
 
 const SECTIONS = [
   "Személyes adatok",
@@ -136,7 +139,6 @@ export const EmployeeModal = ({
   const [form, setForm] = useState<EmployeePayload>(
     employee ? toForm(employee) : EMPTY_FORM,
   );
-  const [errorMessage, setErrorMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [askDelete, setAskDelete] = useState(false);
@@ -180,12 +182,9 @@ export const EmployeeModal = ({
   };
 
   const fail = (error: unknown) =>
-    setErrorMessage(
-      error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
-    );
+    showToast(error instanceof ApiError ? error.message : "Ismeretlen hiba történt.", "error");
 
   const handleSave = async () => {
-    setErrorMessage("");
     setIsSaving(true);
 
     try {
@@ -208,7 +207,6 @@ export const EmployeeModal = ({
       return;
     }
 
-    setErrorMessage("");
     setIsDeleting(true);
 
     try {
@@ -236,28 +234,25 @@ export const EmployeeModal = ({
               </p>
             )}
           </div>
-          <button
-            type="button"
-            className="btn btn-sm btn-ghost btn-circle"
+          <CloseButton
             onClick={onClose}
             disabled={isBusy}
-            aria-label="Bezárás"
-          >
-            ✕
-          </button>
+          />
         </div>
 
-        <div role="tablist" className="tabs tabs-bordered px-6 pt-3">
-          {SECTIONS.map((name, index) => (
-            <button
-              key={name}
-              role="tab"
-              className={`tab ${section === index ? "tab-active" : ""}`}
-              onClick={() => setSection(index)}
-            >
-              {name}
-            </button>
-          ))}
+        <div className="px-6 pt-3">
+          <div role="tablist" className={TAB_LIST_CLASS}>
+            {SECTIONS.map((name, index) => (
+              <button
+                key={name}
+                role="tab"
+                className={tabClass(section === index)}
+                onClick={() => setSection(index)}
+              >
+                {name}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="space-y-3 overflow-y-auto px-6 py-4">
@@ -507,20 +502,18 @@ export const EmployeeModal = ({
                     <> A jelenlegi {currentGroupName} csoport lecserélődne.</>
                   )}
                 </span>
-                <button
-                  type="button"
-                  className="btn btn-xs btn-primary"
+                <ActionButton
+                  type="button" size="xs"
                   onClick={acceptGroupSuggestion}
                 >
                   Igen
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-xs btn-ghost"
+                </ActionButton>
+                <GhostButton
+                  type="button" size="xs"
                   onClick={() => setIsSuggestionDismissed(true)}
                 >
                   Most nem
-                </button>
+                </GhostButton>
               </div>
             )}
 
@@ -646,61 +639,48 @@ export const EmployeeModal = ({
           )}
         </div>
 
-        {errorMessage && (
-          <div className="border-t border-base-300 px-6 pt-3">
-            <div className="alert alert-error py-2 text-sm">
-              <span>{errorMessage}</span>
-            </div>
-          </div>
-        )}
-
         <div className="flex items-center justify-between gap-2 border-t border-base-300 px-6 pb-5 pt-3">
           {employee ? (
             askDelete ? (
               <div className="flex gap-2">
-                <button
-                  className="btn btn-sm btn-error"
+                <DangerButton
                   onClick={handleDelete}
                   disabled={isBusy}
                 >
                   {isDeleting ? "Törlés..." : "Igen, törlöm"}
-                </button>
-                <button
-                  className="btn btn-sm btn-ghost"
+                </DangerButton>
+                <GhostButton
                   onClick={() => setAskDelete(false)}
                   disabled={isBusy}
                 >
                   Vissza
-                </button>
+                </GhostButton>
               </div>
             ) : (
-              <button
-                className="btn btn-sm btn-outline btn-error"
+              <DeleteButton
                 onClick={() => setAskDelete(true)}
                 disabled={isBusy}
               >
                 Törlés
-              </button>
+              </DeleteButton>
             )
           ) : (
             <span />
           )}
 
           <div className="flex gap-2">
-            <button
-              className="btn btn-sm btn-ghost"
+            <GhostButton
               onClick={onClose}
               disabled={isBusy}
             >
               Mégse
-            </button>
-            <button
-              className="btn btn-sm btn-primary"
+            </GhostButton>
+            <ActionButton
               onClick={handleSave}
               disabled={isBusy}
             >
               {isSaving ? "Mentés..." : isNew ? "Felvétel" : "Módosítás"}
-            </button>
+            </ActionButton>
           </div>
         </div>
       </div>

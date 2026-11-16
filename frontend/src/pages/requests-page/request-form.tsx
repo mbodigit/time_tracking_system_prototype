@@ -10,6 +10,8 @@ import { ApiError } from "../../api/client";
 import { Field, FormGrid } from "../../components/form-field/form-field";
 import { getCurrentUser } from "../../utils/auth";
 import { RequestCalendar } from "./request-calendar";
+import { showToast } from "../../utils/toast";
+import { ActionButton, CloseButton, GhostButton } from "../../components/button/button";
 
 interface Props {
   defaultDate?: string;
@@ -29,7 +31,6 @@ export const RequestForm = ({ defaultDate, onClose, onSaved }: Props) => {
   const [startDate, setStartDate] = useState(defaultDate ?? "");
   const [endDate, setEndDate] = useState("");
   const [message, setMessage] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -69,10 +70,9 @@ export const RequestForm = ({ defaultDate, onClose, onSaved }: Props) => {
   };
 
   const handleSubmit = async () => {
-    setErrorMessage("");
 
     if (!absenceId || !startDate) {
-      setErrorMessage("A jogcím és a kezdő nap megadása kötelező.");
+      showToast("A jogcím és a kezdő nap megadása kötelező.", "error");
       return;
     }
 
@@ -87,9 +87,7 @@ export const RequestForm = ({ defaultDate, onClose, onSaved }: Props) => {
       });
       onSaved();
     } catch (error) {
-      setErrorMessage(
-        error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
-      );
+      showToast(error instanceof ApiError ? error.message : "Ismeretlen hiba történt.", "error");
     } finally {
       setIsSaving(false);
     }
@@ -102,24 +100,13 @@ export const RequestForm = ({ defaultDate, onClose, onSaved }: Props) => {
           <h3 className="text-xl font-bold text-primary">
             Új távolléti kérelem
           </h3>
-          <button
-            type="button"
-            className="btn btn-sm btn-ghost btn-circle"
+          <CloseButton
             onClick={onClose}
             disabled={isSaving}
-            aria-label="Bezárás"
-          >
-            ✕
-          </button>
+          />
         </div>
 
         <div className="space-y-5 px-6 py-5">
-          {errorMessage && (
-            <div className="alert alert-error py-2 text-sm">
-              <span>{errorMessage}</span>
-            </div>
-          )}
-
           <FormGrid columns={2}>
             {employees.length > 1 && (
               <Field label="Dolgozó" span={2}>
@@ -211,20 +198,18 @@ export const RequestForm = ({ defaultDate, onClose, onSaved }: Props) => {
         </div>
 
         <div className="flex justify-end gap-2 border-t border-base-300 px-6 pb-5 pt-3">
-          <button
-            className="btn btn-sm btn-ghost"
+          <GhostButton
             onClick={onClose}
             disabled={isSaving}
           >
             Mégse
-          </button>
-          <button
-            className="btn btn-sm btn-primary"
+          </GhostButton>
+          <ActionButton
             onClick={handleSubmit}
             disabled={isSaving}
           >
             {isSaving ? "Mentés..." : "Kérelem leadása"}
-          </button>
+          </ActionButton>
         </div>
       </div>
       <div

@@ -15,25 +15,10 @@ const today = () => {
     return `${year}-${month}-${day}`;
 };
 
-const buildSummary = (report) => {
-    let minusMinutes = 0;
-
-    for (const day of report.days) {
-        if (day.balanceMinutes && day.balanceMinutes < 0) {
-            minusMinutes += day.balanceMinutes;
-        }
-    }
-
-    return {
-        workedMinutes: report.summary.workedMinutes,
-        settledMinutes: report.summary.settledMinutes,
-        absenceMinutes: report.summary.absenceMinutes,
-        balanceMinutes: report.summary.balanceMinutes,
-        minusMinutes,
-        allowances: report.summary.allowances,
-        absences: report.summary.absences
-    };
-};
+const buildSummary = (report) => ({
+    balanceMinutes: report.summary.balanceMinutes,
+    absences: report.summary.absences
+});
 
 const collectMissingRecordDays = (report, currentDate) => {
     if (report.isFlexible) {
@@ -114,21 +99,13 @@ const overview = async (req, res) => {
             return employeeNotFound(res);
         }
 
-        const previousDate = new Date(yearNumber, monthNumber - 2, 1);
-        const previousYear = previousDate.getFullYear();
-        const previousMonth = previousDate.getMonth() + 1;
-
-        const previousReport = await buildMonthlyReport(
-            employeeId, previousYear, previousMonth
-        );
-
         const response = {
             year: yearNumber,
             month: monthNumber,
-            allowanceTypes: currentReport.allowanceTypes,
+            employeeName: currentReport.employeeName,
+            employeeCode: currentReport.employeeCode,
+            dailyMinutes: (currentReport.employeeProfile.workingHourNum || 0) * 60,
             current: buildSummary(currentReport),
-            previous: previousReport ? buildSummary(previousReport) : null,
-            previousPeriod: { year: previousYear, month: previousMonth },
             leave: await buildLeaveBalance(employeeId, yearNumber),
             openItems: {
                 ownRequests: await buildOwnRequests(employeeId, currentDate),

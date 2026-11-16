@@ -4,16 +4,16 @@ import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { login } from "../../api/auth";
 import { ApiError } from "../../api/client";
+import { showToast } from "../../utils/toast";
+import { ActionButton } from "../../components/button/button";
 
 export const LoginPage = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    setErrorMessage("");
 
     try {
       const data = await login(username, password);
@@ -27,9 +27,7 @@ export const LoginPage = () => {
           : getLandingPath(data.user),
       );
     } catch (error) {
-      setErrorMessage(
-        error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
-      );
+      showToast(error instanceof ApiError ? error.message : "Ismeretlen hiba történt.", "error");
     }
   };
 
@@ -40,12 +38,6 @@ export const LoginPage = () => {
           <h1 className="text-2xl font-bold text-center">
             Munkaidő-nyilvántartás
           </h1>
-
-          {errorMessage && (
-            <div className="alert alert-error text-sm py-2">
-              <span>{errorMessage}</span>
-            </div>
-          )}
 
           <input
             className="input input-bordered w-full"
@@ -62,9 +54,9 @@ export const LoginPage = () => {
             onChange={(e) => setPassword(e.target.value)}
           />
 
-          <button className="btn btn-primary w-full" type="submit">
+          <ActionButton className="w-full" type="submit">
             Bejelentkezés
-          </button>
+          </ActionButton>
         </form>
       </div>
     </div>

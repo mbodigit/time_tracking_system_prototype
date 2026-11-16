@@ -6,21 +6,18 @@ import {
   type PermissionNode,
 } from "../../api/permissions";
 import { ApiError } from "../../api/client";
+import { showToast } from "../../utils/toast";
 
 export const PermissionsPage = () => {
   const [data, setData] = useState<PermissionMatrix | null>(null);
-  const [errorMessage, setErrorMessage] = useState("");
   const [savingKey, setSavingKey] = useState("");
 
   const load = useCallback(async () => {
-    setErrorMessage("");
     try {
       setData(await listPermissions());
     } catch (error) {
       setData(null);
-      setErrorMessage(
-        error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
-      );
+      showToast(error instanceof ApiError ? error.message : "Ismeretlen hiba történt.", "error");
     }
   }, []);
 
@@ -38,15 +35,12 @@ export const PermissionsPage = () => {
   ) => {
     const granted = !isGranted(roleName, node.key);
     setSavingKey(`${roleId}-${node.id}`);
-    setErrorMessage("");
 
     try {
       await setPermission(roleId, node.id, granted);
       await load();
     } catch (error) {
-      setErrorMessage(
-        error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
-      );
+      showToast(error instanceof ApiError ? error.message : "Ismeretlen hiba történt.", "error");
     } finally {
       setSavingKey("");
     }
@@ -59,20 +53,12 @@ export const PermissionsPage = () => {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Jogosultságok</h1>
-
       <p className="text-sm opacity-70">
         A sorok a rendszer lapjait és a lapokon belüli füleket mutatják, az
         oszlopok a szerepköröket. A jelölőnégyzet átállítása azonnal érvénybe
         lép, a felhasználók a következő lapváltáskor látják. Az adminisztrátor
         minden jogosultságot megkap, és ez nem vehető el tőle.
       </p>
-
-      {errorMessage && (
-        <div className="alert alert-error text-sm py-2">
-          <span>{errorMessage}</span>
-        </div>
-      )}
 
       {data && (
         <div className="overflow-x-auto">

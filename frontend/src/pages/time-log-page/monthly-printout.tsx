@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import type { MonthlyLog } from "../../api/timeEntries";
 import { formatMinutes, formatMonth } from "../../utils/datetime";
+import { ActionButton, GhostButton } from "../../components/button/button";
 
 interface MonthlyPrintoutProps {
   report: MonthlyLog;
@@ -21,6 +22,13 @@ const Sheet = ({ report }: { report: MonthlyLog }) => {
   const summary = report.summary;
   const absences = summary.absences ?? {};
 
+  const dailyMinutes = (report.employeeProfile?.workingHourNum ?? 0) * 60;
+
+  const toDays = (minutes: number): string =>
+    dailyMinutes > 0
+      ? `${Math.round((minutes / dailyMinutes) * 10) / 10} nap`
+      : formatMinutes(minutes);
+
   const allowanceRows = report.allowanceTypes
     .map((type) => ({
       label: `${type.name} (${type.percent}%)`,
@@ -31,6 +39,9 @@ const Sheet = ({ report }: { report: MonthlyLog }) => {
   const absenceRows = Object.entries(absences)
     .filter(([, value]) => value.minutes > 0)
     .map(([name, value]) => ({ label: name, minutes: value.minutes }));
+
+  const hasAbsence = absenceRows.length > 0;
+  const hasAllowance = allowanceRows.length > 0;
 
   return (
     <div className="bg-white text-sm text-black">
@@ -74,8 +85,8 @@ const Sheet = ({ report }: { report: MonthlyLog }) => {
       <table className="w-full border-collapse">
         <tbody>
           <Row
-            label="Havi munkaóra"
-            value={formatMinutes(summary.requiredMinutes ?? 0)}
+            label="Havi kötelező munkaóra"
+            value={formatMinutes(summary.frameMinutes ?? 0)}
           />
           <Row
             label="Összes elszámolt óra"
@@ -90,44 +101,50 @@ const Sheet = ({ report }: { report: MonthlyLog }) => {
             value={formatMinutes(summary.breakMinutes)}
           />
 
-          {allowanceRows.map((item) => (
-            <Row
-              key={item.label}
-              label={item.label}
-              value={formatMinutes(item.minutes)}
-            />
-          ))}
-
-          {absenceRows.map((item) => (
-            <Row
-              key={item.label}
-              label={item.label}
-              value={formatMinutes(item.minutes)}
-            />
-          ))}
-
           <Row label="Egyenleg" value={formatMinutes(summary.balanceMinutes)} />
         </tbody>
       </table>
 
-      {report.leave && (
-        <table className="mt-4 w-full border-collapse">
-          <tbody>
-            <Row
-              label="Éves szabadságkeret (nap)"
-              value={String(report.leave.entitlementDays)}
-            />
-            <Row
-              label="Felhasznált szabadság (nap)"
-              value={String(report.leave.usedDays)}
-            />
-            <Row
-              label="Fennmaradó szabadság (nap)"
-              value={String(report.leave.remainingDays)}
-            />
-          </tbody>
-        </table>
+      {hasAllowance && (
+        <>
+          <h2 className="mt-4 border border-black border-b-0 py-1 text-center text-base font-bold">
+            Bérpótlékok
+          </h2>
+
+          <table className="w-full border-collapse">
+            <tbody>
+              {allowanceRows.map((item) => (
+                <Row
+                  key={item.label}
+                  label={item.label}
+                  value={formatMinutes(item.minutes)}
+                />
+              ))}
+            </tbody>
+          </table>
+        </>
       )}
+
+      {hasAbsence && (
+        <>
+          <h2 className="mt-4 border border-black border-b-0 py-1 text-center text-base font-bold">
+            Felhasznált távolléti jogcímek
+          </h2>
+
+          <table className="w-full border-collapse">
+            <tbody>
+              {absenceRows.map((item) => (
+                <Row
+                  key={item.label}
+                  label={item.label}
+                  value={toDays(item.minutes)}
+                />
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+
 
       <div className="mt-20 flex justify-between gap-12 text-center">
         <div className="flex-1 border-t border-black pt-1">
@@ -177,12 +194,12 @@ export const MonthlyPrintout = ({ report, onClose }: MonthlyPrintoutProps) => {
             <h3 className="text-xl font-bold text-primary">Havi összesítő</h3>
 
             <div className="flex gap-2">
-              <button className="btn btn-sm btn-primary" onClick={handlePrint}>
+              <ActionButton onClick={handlePrint}>
                 Nyomtatás
-              </button>
-              <button className="btn btn-sm btn-ghost" onClick={onClose}>
+              </ActionButton>
+              <GhostButton onClick={onClose}>
                 Bezárás
-              </button>
+              </GhostButton>
             </div>
           </div>
 

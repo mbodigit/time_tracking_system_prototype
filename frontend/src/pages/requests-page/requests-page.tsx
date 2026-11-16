@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   listOwnRequests,
@@ -19,7 +19,11 @@ import {
   TableSearch,
   SortableHeader,
   TablePager,
+  TABLE_CLASS,
 } from "../../components/data-table/data-table";
+import { showToast } from "../../utils/toast";
+import { TAB_LIST_CLASS, tabClass } from "../../components/tabs/tabs";
+import { ActionButton, CloseButton, DangerButton, GhostButton, PlainButton } from "../../components/button/button";
 
 type Tab = "own" | "pending" | "ordered";
 
@@ -42,15 +46,6 @@ const statusLabel = (item: AbsenceRequest) => {
 
   return item.status;
 };
-
-const STATUS_FILTERS = [
-  "Mind",
-  "Függőben",
-  "Folyamatban",
-  "Jóváhagyva",
-  "Elutasítva",
-  "Visszavonva",
-];
 
 const formatStamp = (value: string | null) =>
   value ? String(value).slice(0, 16).replace("T", " ") : "-";
@@ -109,8 +104,6 @@ export const RequestsPage = () => {
   const [own, setOwn] = useState<AbsenceRequest[]>([]);
   const [managed, setManaged] = useState<AbsenceRequest[]>([]);
   const [employees, setEmployees] = useState<ScopeEmployee[]>([]);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [infoMessage, setInfoMessage] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [rejected, setRejected] = useState<AbsenceRequest | null>(null);
   const [rejectReason, setRejectReason] = useState("");
@@ -126,31 +119,12 @@ export const RequestsPage = () => {
   const [orderEmployeeId, setOrderEmployeeId] = useState(0);
   const [orderDate, setOrderDate] = useState("");
 
-  const [ownStatus, setOwnStatus] = useState("Mind");
-  const [managedStatus, setManagedStatus] = useState("Függőben");
-
-  const ownRows = useMemo(
-    () =>
-      ownStatus === "Mind"
-        ? own
-        : own.filter((item) => item.status === ownStatus),
-    [own, ownStatus],
-  );
-
-  const managedRows = useMemo(
-    () =>
-      managedStatus === "Mind"
-        ? managed
-        : managed.filter((item) => item.status === managedStatus),
-    [managed, managedStatus],
-  );
-
   const pendingCount = managed.filter(
     (item) => item.status === "Függőben",
   ).length;
 
   const ownTable = useDataTable({
-    rows: ownRows,
+    rows: own,
     searchText: ownSearchText,
     sortValue: ownSortValue,
     initialSortKey: "period",
@@ -158,7 +132,7 @@ export const RequestsPage = () => {
   });
 
   const managedTable = useDataTable({
-    rows: managedRows,
+    rows: managed,
     searchText: managedSearchText,
     sortValue: managedSortValue,
     initialSortKey: "period",
@@ -166,7 +140,6 @@ export const RequestsPage = () => {
   });
 
   const load = useCallback(async () => {
-    setErrorMessage("");
     try {
       const [ownData, employeeData] = await Promise.all([
         listOwnRequests(),
@@ -182,8 +155,9 @@ export const RequestsPage = () => {
         setOrderEmployeeId((current) => current || others[0].id);
       }
     } catch (error) {
-      setErrorMessage(
+      showToast(
         error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
+        "error",
       );
     }
   }, []);
@@ -195,15 +169,14 @@ export const RequestsPage = () => {
   const hasSubordinates = employees.some((item) => !item.isSelf);
 
   const runAction = async (action: () => Promise<{ message: string }>) => {
-    setErrorMessage("");
-    setInfoMessage("");
     try {
       const result = await action();
-      setInfoMessage(result.message);
+      showToast(result.message);
       await load();
     } catch (error) {
-      setErrorMessage(
+      showToast(
         error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
+        "error",
       );
     }
   };
@@ -245,12 +218,10 @@ export const RequestsPage = () => {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Kérelmek és elrendelések</h1>
-
-      <div role="tablist" className="tabs tabs-bordered">
+      <div role="tablist" className={TAB_LIST_CLASS}>
         <button
           role="tab"
-          className={`tab ${tab === "own" ? "tab-active" : ""}`}
+          className={tabClass(tab === "own")}
           onClick={() => setTab("own")}
         >
           Kérelmeim
@@ -258,7 +229,7 @@ export const RequestsPage = () => {
         {hasSubordinates && canApprove && (
           <button
             role="tab"
-            className={`tab ${tab === "pending" ? "tab-active" : ""}`}
+            className={tabClass(tab === "pending")}
             onClick={() => setTab("pending")}
           >
             Elbírálás
@@ -272,7 +243,7 @@ export const RequestsPage = () => {
         {hasSubordinates && canOrder && (
           <button
             role="tab"
-            className={`tab ${tab === "ordered" ? "tab-active" : ""}`}
+            className={tabClass(tab === "ordered")}
             onClick={() => setTab("ordered")}
           >
             Elrendelés
@@ -280,46 +251,19 @@ export const RequestsPage = () => {
         )}
       </div>
 
-      {errorMessage && (
-        <div className="alert alert-error text-sm py-2">
-          <span>{errorMessage}</span>
-        </div>
-      )}
-
-      {infoMessage && (
-        <div className="alert alert-success text-sm py-2">
-          <span>{infoMessage}</span>
-        </div>
-      )}
-
       {tab === "own" && (
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-3">
-            <TableSearch
-              table={ownTable}
-              placeholder="Keresés jogcím, elbíráló szerint..."
-            />
-            <select
-              className="select select-sm select-bordered"
-              value={ownStatus}
-              onChange={(event) => setOwnStatus(event.target.value)}
-            >
-              {STATUS_FILTERS.map((item) => (
-                <option key={item} value={item}>
-                  {item === "Mind" ? "Minden állapot" : item}
-                </option>
-              ))}
-            </select>
-            <button
-              className="btn btn-primary btn-sm ml-auto"
+            <TableSearch table={ownTable} placeholder="Keresés" />
+            <ActionButton
               onClick={() => setIsFormOpen(true)}
             >
               Új kérelem
-            </button>
+            </ActionButton>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="table table-sm">
+          <div className="overflow-x-auto rounded border border-base-300">
+            <table className={TABLE_CLASS}>
               <thead>
                 <tr>
                   <SortableHeader
@@ -386,14 +330,13 @@ export const RequestsPage = () => {
                     <td>
                       {(item.status === "Függőben" ||
                         item.status === "Folyamatban") && (
-                        <button
-                          className="btn btn-xs btn-ghost"
+                        <GhostButton size="xs"
                           onClick={() =>
                             runAction(() => withdrawRequest(item.id))
                           }
                         >
                           Visszavonás
-                        </button>
+                        </GhostButton>
                       )}
                     </td>
                   </tr>
@@ -401,46 +344,32 @@ export const RequestsPage = () => {
                 {ownTable.rows.length === 0 && (
                   <tr>
                     <td colSpan={8} className="text-center opacity-60">
-                      Nincs a szűrésnek megfelelő kérelem.
+                      Nincs megjeleníthető kérelem.
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
-
-            <TablePager table={ownTable} unit="kérelem" />
           </div>
+
+          <TablePager table={ownTable} unit="kérelem" />
         </div>
       )}
 
       {tab === "pending" && (
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-3">
-            <TableSearch
-              table={managedTable}
-              placeholder="Keresés dolgozó, jogcím, elbíráló szerint..."
-            />
-            <select
-              className="select select-sm select-bordered"
-              value={managedStatus}
-              onChange={(event) => setManagedStatus(event.target.value)}
-            >
-              {STATUS_FILTERS.map((item) => (
-                <option key={item} value={item}>
-                  {item === "Mind" ? "Minden állapot" : item}
-                </option>
-              ))}
-            </select>
+            <TableSearch table={managedTable} placeholder="Keresés" />
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="table table-sm">
+          <div className="overflow-x-auto rounded border border-base-300">
+            <table className={TABLE_CLASS}>
               <thead>
                 <tr>
                   <SortableHeader
                     table={managedTable}
                     field="employee"
-                    label="Dolgozó"
+                    label="Dolgozó neve"
                   />
                   <SortableHeader
                     table={managedTable}
@@ -520,16 +449,14 @@ export const RequestsPage = () => {
                           >
                             Jóváhagyás
                           </button>
-                          <button
-                            className="btn btn-xs btn-error"
+                          <DangerButton size="xs"
                             onClick={() => handleDecide(item, false)}
                           >
                             Elutasítás
-                          </button>
+                          </DangerButton>
                         </>
                       ) : canClose && item.isClosable ? (
-                        <button
-                          className="btn btn-xs"
+                        <PlainButton size="xs"
                           title="A nyitott végű távollét lezárása az igazolás szerinti utolsó nappal"
                           onClick={() => {
                             setCloseDate(item.endDate);
@@ -537,7 +464,7 @@ export const RequestsPage = () => {
                           }}
                         >
                           Lezárás
-                        </button>
+                        </PlainButton>
                       ) : (
                         <span className="text-sm opacity-60">lezárva</span>
                       )}
@@ -547,15 +474,15 @@ export const RequestsPage = () => {
                 {managedTable.rows.length === 0 && (
                   <tr>
                     <td colSpan={8} className="text-center opacity-60">
-                      Nincs a szűrésnek megfelelő kérelem.
+                      Nincs megjeleníthető kérelem.
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
-
-            <TablePager table={managedTable} unit="kérelem" />
           </div>
+
+          <TablePager table={managedTable} unit="kérelem" />
         </div>
       )}
 
@@ -596,15 +523,14 @@ export const RequestsPage = () => {
             </Field>
 
             <div className="flex gap-2">
-              <button
-                className="btn btn-primary btn-sm"
+              <ActionButton
                 disabled={!orderEmployeeId || !orderDate}
                 onClick={() =>
                   runAction(() => setOrdered(orderEmployeeId, orderDate, true))
                 }
               >
                 Elrendelés
-              </button>
+              </ActionButton>
               <button
                 className="btn btn-outline btn-sm"
                 disabled={!orderEmployeeId || !orderDate}
@@ -624,7 +550,7 @@ export const RequestsPage = () => {
           onClose={() => setIsFormOpen(false)}
           onSaved={() => {
             setIsFormOpen(false);
-            setInfoMessage("A kérelem rögzítésre került.");
+            showToast("A kérelem rögzítésre került.");
             load();
           }}
         />
@@ -643,14 +569,9 @@ export const RequestsPage = () => {
                   {closed.startDate}
                 </p>
               </div>
-              <button
-                type="button"
-                className="btn btn-sm btn-ghost btn-circle"
+              <CloseButton
                 onClick={() => setClosed(null)}
-                aria-label="Bezárás"
-              >
-                ✕
-              </button>
+               />
             </div>
 
             <div className="space-y-2 px-6 py-5">
@@ -666,25 +587,24 @@ export const RequestsPage = () => {
                 onChange={(event) => setCloseDate(event.target.value)}
               />
               <p className="text-xs opacity-60">
-                Az orvosi igazolás szerinti utolsó nap, amely a múltban is lehet.
-                A lezárás végleges: utána a távollét időszaka nem módosítható.
+                Az orvosi igazolás szerinti utolsó nap, amely a múltban is
+                lehet. A lezárás végleges: utána a távollét időszaka nem
+                módosítható.
               </p>
             </div>
 
             <div className="flex justify-end gap-2 border-t border-base-300 px-6 pb-5 pt-3">
-              <button
-                className="btn btn-sm btn-ghost"
+              <GhostButton
                 onClick={() => setClosed(null)}
               >
                 Mégse
-              </button>
-              <button
-                className="btn btn-sm btn-primary"
+              </GhostButton>
+              <ActionButton
                 disabled={!closeDate}
                 onClick={handleClose}
               >
                 Lezárás
-              </button>
+              </ActionButton>
             </div>
           </div>
         </div>
@@ -705,14 +625,9 @@ export const RequestsPage = () => {
                     ` – ${rejected.endDate}`}
                 </p>
               </div>
-              <button
-                type="button"
-                className="btn btn-sm btn-ghost btn-circle"
+              <CloseButton
                 onClick={() => setRejected(null)}
-                aria-label="Bezárás"
-              >
-                ✕
-              </button>
+               />
             </div>
 
             <div className="space-y-2 px-6 py-5">
@@ -733,19 +648,17 @@ export const RequestsPage = () => {
             </div>
 
             <div className="flex justify-end gap-2 border-t border-base-300 px-6 pb-5 pt-3">
-              <button
-                className="btn btn-sm btn-ghost"
+              <GhostButton
                 onClick={() => setRejected(null)}
               >
                 Mégse
-              </button>
-              <button
-                className="btn btn-sm btn-error"
+              </GhostButton>
+              <DangerButton
                 onClick={handleReject}
                 disabled={!rejectReason.trim()}
               >
                 Elutasítás
-              </button>
+              </DangerButton>
             </div>
           </div>
           <div className="modal-backdrop" onClick={() => setRejected(null)} />

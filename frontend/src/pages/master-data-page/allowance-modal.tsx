@@ -7,6 +7,8 @@ import {
 import type { PayrollCodeOption } from "../../api/absenceAdmin";
 import { ApiError } from "../../api/client";
 import { Field, FormGrid } from "../../components/form-field/form-field";
+import { showToast } from "../../utils/toast";
+import { ActionButton, CloseButton, GhostButton } from "../../components/button/button";
 
 const toTime = (value: string) => String(value).slice(0, 5);
 
@@ -35,7 +37,6 @@ export const AllowanceModal = ({
   onSaved,
 }: AllowanceModalProps) => {
   const [form, setForm] = useState<AllowancePayload>(toForm(allowance));
-  const [errorMessage, setErrorMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
   const patch = (changes: Partial<AllowancePayload>) =>
@@ -64,15 +65,12 @@ export const AllowanceModal = ({
     : payrollCodes;
 
   const handleSave = async () => {
-    setErrorMessage("");
     setIsSaving(true);
     try {
       const data = await updateAllowance(allowance.id, form);
       onSaved(data.message);
     } catch (error) {
-      setErrorMessage(
-        error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
-      );
+      showToast(error instanceof ApiError ? error.message : "Ismeretlen hiba történt.", "error");
     } finally {
       setIsSaving(false);
     }
@@ -90,24 +88,13 @@ export const AllowanceModal = ({
               Számítási kulcs: {allowance.code}
             </p>
           </div>
-          <button
-            type="button"
-            className="btn btn-sm btn-ghost btn-circle"
+          <CloseButton
             onClick={onClose}
             disabled={isSaving}
-            aria-label="Bezárás"
-          >
-            ✕
-          </button>
+          />
         </div>
 
         <div className="space-y-3 px-6 py-4">
-          {errorMessage && (
-            <div className="alert alert-error py-2 text-sm">
-              <span>{errorMessage}</span>
-            </div>
-          )}
-
           <FormGrid columns={2}>
             <Field label="Megnevezés" span={2}>
               <input
@@ -197,20 +184,18 @@ export const AllowanceModal = ({
         </div>
 
         <div className="flex items-center justify-end gap-2 border-t border-base-300 px-6 pb-5 pt-3">
-          <button
-            className="btn btn-sm btn-ghost"
+          <GhostButton
             onClick={onClose}
             disabled={isSaving}
           >
             Mégse
-          </button>
-          <button
-            className="btn btn-sm btn-primary"
+          </GhostButton>
+          <ActionButton
             onClick={handleSave}
             disabled={isSaving}
           >
             {isSaving ? "Mentés..." : "Módosítás"}
-          </button>
+          </ActionButton>
         </div>
       </div>
       <div className="modal-backdrop" onClick={isSaving ? undefined : onClose} />

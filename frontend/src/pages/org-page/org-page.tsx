@@ -26,6 +26,8 @@ import { ApiError } from "../../api/client";
 import { GroupModal, type GroupNode } from "./group-modal";
 import { UnitModal, type DerivedGroup, type UnitDraft } from "./unit-modal";
 import { currentPermissions, hasPermission } from "../../utils/access";
+import { showToast } from "../../utils/toast";
+import { ActionButton, GhostButton, PlainButton } from "../../components/button/button";
 
 interface UnitModalState {
   entity: OrgEntity;
@@ -52,15 +54,12 @@ export const OrgPage = () => {
   const [tree, setTree] = useState<OrgTree | null>(null);
   const [groups, setGroups] = useState<Group[]>([]);
   const [groupOptions, setGroupOptions] = useState<GroupOptions | null>(null);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [infoMessage, setInfoMessage] = useState("");
   const [unitModal, setUnitModal] = useState<UnitModalState | null>(null);
   const [groupModal, setGroupModal] = useState<GroupModalState | null>(null);
   const [staff, setStaff] = useState<AssignableEmployee[]>([]);
   const [openGroupId, setOpenGroupId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
-    setErrorMessage("");
     try {
       const [orgData, groupData, staffData] = await Promise.all([
         listOrg(),
@@ -72,9 +71,7 @@ export const OrgPage = () => {
       setStaff(staffData.employees);
     } catch (error) {
       setTree(null);
-      setErrorMessage(
-        error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
-      );
+      showToast(error instanceof ApiError ? error.message : "Ismeretlen hiba történt.", "error");
     }
   }, []);
 
@@ -118,18 +115,14 @@ export const OrgPage = () => {
   };
 
   const handleSaved = async (message: string) => {
-    setErrorMessage("");
-    setInfoMessage(message);
+    showToast(message);
     setUnitModal(null);
     setGroupModal(null);
     await load();
   };
 
   const openGroup = (group: OrgGroup | null, node: GroupNode) => {
-    setErrorMessage("");
-    setInfoMessage("");
-
-    if (!group) {
+        if (!group) {
       setGroupModal({ group: null, node });
       return;
     }
@@ -137,7 +130,7 @@ export const OrgPage = () => {
     const full = groups.find((item) => item.id === group.id) ?? null;
 
     if (!full) {
-      setErrorMessage("A csoport adatai nem érhetők el.");
+      showToast("A csoport adatai nem érhetők el.", "error");
       return;
     }
 
@@ -146,8 +139,7 @@ export const OrgPage = () => {
 
   const groupCell = (group: OrgGroup | null, node: GroupNode) => {
     const toggle = group ? (
-      <button
-        className="btn btn-xs btn-ghost ml-1"
+      <GhostButton size="xs" className="ml-1"
         onClick={() =>
           setOpenGroupId((current) =>
             current === group.id ? null : group.id,
@@ -156,7 +148,7 @@ export const OrgPage = () => {
         title="A csoport dolgozóinak megjelenítése"
       >
         {openGroupId === group.id ? "▲" : "▼"}
-      </button>
+      </GhostButton>
     ) : null;
 
     if (!canEdit) {
@@ -175,8 +167,7 @@ export const OrgPage = () => {
 
     if (!group) {
       return (
-        <button
-          className="btn btn-xs btn-ghost"
+        <GhostButton size="xs"
           onClick={() => openGroup(null, node)}
           disabled={!groupOptions || !node.managerName}
           title={
@@ -186,14 +177,13 @@ export const OrgPage = () => {
           }
         >
           + Csoport létrehozása
-        </button>
+        </GhostButton>
       );
     }
 
     return (
       <span className="inline-flex items-center">
-        <button
-          className="btn btn-xs"
+        <PlainButton size="xs"
           onClick={() => openGroup(group, node)}
           disabled={!groupOptions}
         >
@@ -206,7 +196,7 @@ export const OrgPage = () => {
               {group.status}
             </span>
           )}
-        </button>
+        </PlainButton>
         {toggle}
       </span>
     );
@@ -254,9 +244,9 @@ export const OrgPage = () => {
         {canEdit && (
           <>
             {extra}
-            <button className="btn btn-xs ml-1" onClick={onEdit}>
+            <PlainButton size="xs" className="ml-1" onClick={onEdit}>
               Szerkesztés
-            </button>
+            </PlainButton>
           </>
         )}
       </td>
@@ -394,8 +384,7 @@ export const OrgPage = () => {
             parentRequired: true,
             derivedGroups: derivedOfDepartment(department),
           }),
-        <button
-          className="btn btn-xs btn-ghost"
+        <GhostButton size="xs"
           onClick={() =>
             setUnitModal({
               entity: "shifts",
@@ -415,7 +404,7 @@ export const OrgPage = () => {
           }
         >
           + Műszak
-        </button>,
+        </GhostButton>,
       ),
       ...department.shifts.map((shift) =>
         renderShift(shift, area, department, depth + 1, own),
@@ -466,8 +455,7 @@ export const OrgPage = () => {
             derivedGroups: derivedOfArea(area),
           }),
         <>
-          <button
-            className="btn btn-xs btn-ghost"
+          <GhostButton size="xs"
             onClick={() =>
               setUnitModal({
                 entity: "areas",
@@ -485,9 +473,8 @@ export const OrgPage = () => {
             }
           >
             + Terület
-          </button>
-          <button
-            className="btn btn-xs btn-ghost ml-1"
+          </GhostButton>
+          <GhostButton size="xs" className="ml-1"
             onClick={() =>
               setUnitModal({
                 entity: "departments",
@@ -505,7 +492,7 @@ export const OrgPage = () => {
             }
           >
             + Részleg
-          </button>
+          </GhostButton>
         </>,
       ),
       ...departmentsOf(area).flatMap((department) =>
@@ -520,11 +507,9 @@ export const OrgPage = () => {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-2xl font-bold">Szervezet és csoportok</h1>
 
         {canEdit && (
-          <button
-            className="btn btn-sm btn-primary ml-auto"
+          <ActionButton className="ml-auto"
             onClick={() =>
               setUnitModal({
                 entity: "areas",
@@ -542,21 +527,9 @@ export const OrgPage = () => {
             }
           >
             Új terület
-          </button>
+          </ActionButton>
         )}
       </div>
-
-      {errorMessage && (
-        <div className="alert alert-error py-2 text-sm">
-          <span>{errorMessage}</span>
-        </div>
-      )}
-
-      {infoMessage && (
-        <div className="alert alert-success py-2 text-sm">
-          <span>{infoMessage}</span>
-        </div>
-      )}
 
       <p className="text-sm opacity-70">
         A szervezeti felépítés adja a hierarchiát: a vezető minden alatta lévő

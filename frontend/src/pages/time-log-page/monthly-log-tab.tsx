@@ -22,6 +22,9 @@ import { listEmployees, type ScopeEmployee } from "../../api/lookups";
 import { TimeEntryForm } from "./time-entry-form";
 import { RequestForm } from "../requests-page/request-form";
 import { MonthlyPrintout } from "./monthly-printout";
+import { TABLE_CLASS } from "../../components/data-table/data-table";
+import { showToast } from "../../utils/toast";
+import { ActionButton, PlainButton } from "../../components/button/button";
 
 const getDayLabel = (day: TimeEntryDay): string => {
   if (day.dayType === "holiday") return "Munkaszüneti nap";
@@ -46,7 +49,6 @@ const getRowClass = (day: TimeEntryDay): string => {
 export const MonthlyLogTab = () => {
   const [period, setPeriod] = useState(getCurrentMonth());
   const [log, setLog] = useState<MonthlyLog | null>(null);
-  const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [editedDay, setEditedDay] = useState<TimeEntryDay | null>(null);
   const [employees, setEmployees] = useState<ScopeEmployee[]>([]);
@@ -56,7 +58,6 @@ export const MonthlyLogTab = () => {
 
   const load = useCallback(async () => {
     setIsLoading(true);
-    setErrorMessage("");
     try {
       const data = await listMonth(
         period.year,
@@ -66,9 +67,7 @@ export const MonthlyLogTab = () => {
       setLog(data);
     } catch (error) {
       setLog(null);
-      setErrorMessage(
-        error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
-      );
+      showToast(error instanceof ApiError ? error.message : "Ismeretlen hiba történt.", "error");
     } finally {
       setIsLoading(false);
     }
@@ -86,12 +85,9 @@ export const MonthlyLogTab = () => {
 
   const otherEmployees = employees.filter((item) => !item.isSelf);
 
-  const summary = log?.summary;
   const allowanceTypes = log?.allowanceTypes ?? [];
-  const [allowancesShown, setAllowancesShown] = useState(false);
   const isFlexible = log?.isFlexible ?? false;
   const profile = log?.employeeProfile;
-  const leave = log?.leave;
   const isOtherEmployee = employeeId !== null;
 
   const timeRange = (start: string | null, end: string | null) =>
@@ -99,7 +95,50 @@ export const MonthlyLogTab = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
+      <div className="space-y-3">
+        <div className="grid w-fit grid-cols-2 gap-2">
+          <div className="join w-full">
+            <button
+              className="btn btn-sm join-item"
+              onClick={() =>
+                setPeriod(shiftMonth(period.year, period.month, -1))
+              }
+            >
+              {"<"}
+            </button>
+            <span className="btn btn-sm join-item no-animation pointer-events-none grow min-w-36">
+              {formatMonth(period.year, period.month)}
+            </span>
+            <button
+              className="btn btn-sm join-item"
+              onClick={() =>
+                setPeriod(shiftMonth(period.year, period.month, 1))
+              }
+            >
+              {">"}
+            </button>
+          </div>
+
+          <ActionButton className="w-full"
+            onClick={() => setIsRequestOpen(true)}
+          >
+            Kérelem leadása
+          </ActionButton>
+
+          <PlainButton className="w-full"
+            onClick={() => setPeriod(getCurrentMonth())}
+          >
+            Aktuális hónap
+          </PlainButton>
+
+          <PlainButton className="w-full"
+            onClick={() => setIsPrintOpen(true)}
+            disabled={!log}
+          >
+            Összesítő megtekintése
+          </PlainButton>
+        </div>
+
         {otherEmployees.length > 0 && (
           <select
             className="select select-sm select-bordered"
@@ -118,50 +157,7 @@ export const MonthlyLogTab = () => {
             ))}
           </select>
         )}
-
-        <div className="join ml-auto">
-          <button
-            className="btn btn-sm join-item"
-            onClick={() => setPeriod(shiftMonth(period.year, period.month, -1))}
-          >
-            {"<"}
-          </button>
-          <span className="btn btn-sm join-item no-animation pointer-events-none min-w-40">
-            {formatMonth(period.year, period.month)}
-          </span>
-          <button
-            className="btn btn-sm join-item"
-            onClick={() => setPeriod(shiftMonth(period.year, period.month, 1))}
-          >
-            {">"}
-          </button>
-        </div>
-        <button
-          className="btn btn-sm"
-          onClick={() => setPeriod(getCurrentMonth())}
-        >
-          Aktuális hónap
-        </button>
-        <button
-          className="btn btn-sm btn-primary"
-          onClick={() => setIsRequestOpen(true)}
-        >
-          Kérelem leadása
-        </button>
-        <button
-          className="btn btn-sm"
-          onClick={() => setIsPrintOpen(true)}
-          disabled={!log}
-        >
-          Összesítő nyomtatása
-        </button>
       </div>
-
-      {errorMessage && (
-        <div className="alert alert-error text-sm py-2">
-          <span>{errorMessage}</span>
-        </div>
-      )}
 
       {isOtherEmployee && profile && (
         <div className="card bg-base-200">
@@ -222,81 +218,6 @@ export const MonthlyLogTab = () => {
         </div>
       )}
 
-      {leave && (
-        <div className="stats stats-horizontal bg-base-200">
-          <div className="stat py-3">
-            <div className="stat-title">Éves szabadságkeret</div>
-            <div className="stat-value text-2xl">
-              {leave.entitlementDays} nap
-            </div>
-          </div>
-          <div className="stat py-3">
-            <div className="stat-title">Felhasznált szabadság</div>
-            <div className="stat-value text-2xl">{leave.usedDays} nap</div>
-          </div>
-          <div className="stat py-3">
-            <div className="stat-title">Maradék szabadság</div>
-            <div
-              className={`stat-value text-2xl ${
-                leave.remainingDays < 0 ? "text-error" : ""
-              }`}
-            >
-              {leave.remainingDays} nap
-            </div>
-          </div>
-        </div>
-      )}
-
-      {summary && (
-        <div className="stats stats-horizontal bg-base-200">
-          <div className="stat py-3">
-            <div className="stat-title">Rögzített napok</div>
-            <div className="stat-value text-2xl">{summary.recordedDays}</div>
-          </div>
-          <div className="stat py-3">
-            <div className="stat-title">Ledolgozott munkaidő</div>
-            <div className="stat-value text-2xl">
-              {formatMinutes(summary.workedMinutes)}
-            </div>
-          </div>
-          <div className="stat py-3">
-            <div className="stat-title">Szünet</div>
-            <div className="stat-value text-2xl">
-              {formatMinutes(summary.breakMinutes)}
-            </div>
-          </div>
-          <div className="stat py-3">
-            <div className="stat-title">Jogcímmel fedett</div>
-            <div className="stat-value text-2xl">
-              {formatMinutes(summary.absenceMinutes)}
-            </div>
-          </div>
-          <div className="stat py-3">
-            <div className="stat-title">Elszámolt összesen</div>
-            <div className="stat-value text-2xl">
-              {formatMinutes(summary.settledMinutes)}
-            </div>
-          </div>
-          <div className="stat py-3">
-            <div className="stat-title">Egyenleg</div>
-            <div className="stat-value text-2xl">
-              {formatSignedMinutes(summary.balanceMinutes)}
-            </div>
-          </div>
-
-          {allowanceTypes
-            .filter((tipus) => summary.allowances[tipus.code])
-            .map((tipus) => (
-              <div className="stat py-3" key={tipus.code}>
-                <div className="stat-title">{tipus.name}</div>
-                <div className="stat-value text-2xl">
-                  {formatMinutes(summary.allowances[tipus.code])}
-                </div>
-              </div>
-            ))}
-        </div>
-      )}
-
       {isLoading && <span className="loading loading-spinner" />}
 
       {isFlexible && (
@@ -312,10 +233,11 @@ export const MonthlyLogTab = () => {
       )}
 
       {log && (
-        <div className="overflow-x-auto">
-          <table className="table table-sm table-pin-rows">
+        <div className="overflow-x-auto rounded border border-base-300">
+          <table className={`${TABLE_CLASS} table-pin-rows`}>
             <thead>
               <tr>
+                <th />
                 <th>Nap</th>
                 <th>Jelleg</th>
                 <th>Beosztás</th>
@@ -328,34 +250,28 @@ export const MonthlyLogTab = () => {
                 <th>Egyenleg</th>
                 <th>Jogcím</th>
                 <th>Elszámolt</th>
-                <th />
-                <th>
-                  <button
-                    className="btn btn-xs btn-ghost"
-                    onClick={() => setAllowancesShown((current) => !current)}
-                    title={
-                      allowancesShown
-                        ? "A pótlékoszlopok elrejtése"
-                        : "A pótlékoszlopok megjelenítése"
-                    }
-                  >
-                    {allowancesShown ? "◀ Pótlékok" : "Pótlékok ▶"}
-                  </button>
-                </th>
-                {allowancesShown &&
-                  allowanceTypes.map((tipus) => (
-                    <th key={tipus.code}>
-                      {tipus.name}
-                      <div className="font-normal opacity-60">
-                        {tipus.percent}%
-                      </div>
-                    </th>
-                  ))}
+                {allowanceTypes.map((tipus) => (
+                  <th key={tipus.code}>
+                    {tipus.name}
+                    <div className="font-normal opacity-80">
+                      {tipus.percent}%
+                    </div>
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {log.days.map((day) => (
                 <tr key={day.date} className={getRowClass(day)}>
+                  <td>
+                    {!isFlexible && (
+                      <PlainButton size="xs"
+                        onClick={() => setEditedDay(day)}
+                      >
+                        {day.id ? "Módosítás" : "Rögzítés"}
+                      </PlainButton>
+                    )}
+                  </td>
                   <td className="whitespace-nowrap">
                     {getDayNumber(day.date)}. ({getWeekdayName(day.date)})
                   </td>
@@ -435,23 +351,11 @@ export const MonthlyLogTab = () => {
                         ? "0:00"
                         : "-"}
                   </td>
-                  <td>
-                    {!isFlexible && (
-                      <button
-                        className="btn btn-xs"
-                        onClick={() => setEditedDay(day)}
-                      >
-                        {day.id ? "Módosítás" : "Rögzítés"}
-                      </button>
-                    )}
-                  </td>
-                  <td />
-                  {allowancesShown &&
-                    allowanceTypes.map((tipus) => (
-                      <td key={tipus.code}>
-                        {formatMinutes(day.allowances[tipus.code] ?? 0)}
-                      </td>
-                    ))}
+                  {allowanceTypes.map((tipus) => (
+                    <td key={tipus.code}>
+                      {formatMinutes(day.allowances[tipus.code] ?? 0)}
+                    </td>
+                  ))}
                 </tr>
               ))}
             </tbody>

@@ -40,7 +40,11 @@ import {
   TableSearch,
   SortableHeader,
   TablePager,
+  TABLE_CLASS,
 } from "../../components/data-table/data-table";
+import { showToast } from "../../utils/toast";
+import { TAB_LIST_CLASS, tabClass } from "../../components/tabs/tabs";
+import { ActionButton, GhostButton, PlainButton } from "../../components/button/button";
 
 const MEASURES: {
   key: keyof StatisticsRow;
@@ -89,7 +93,6 @@ export const ReportsPage = () => {
   const [employees, setEmployees] = useState<ScopeEmployee[]>([]);
   const [groupOptions, setGroupOptions] = useState<ScopeGroup[]>([]);
 
-  const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -97,7 +100,6 @@ export const ReportsPage = () => {
 
   const load = useCallback(async () => {
     setIsLoading(true);
-    setErrorMessage("");
     try {
       const data = await listMonthlyReport(
         period.year,
@@ -108,9 +110,7 @@ export const ReportsPage = () => {
       setReport(data);
     } catch (error) {
       setReport(null);
-      setErrorMessage(
-        error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
-      );
+      showToast(error instanceof ApiError ? error.message : "Ismeretlen hiba történt.", "error");
     } finally {
       setIsLoading(false);
     }
@@ -177,16 +177,13 @@ export const ReportsPage = () => {
       .then(setStatistics)
       .catch((error) => {
         setStatistics(null);
-        setErrorMessage(
-          error instanceof ApiError
+        showToast(error instanceof ApiError
             ? error.message
-            : "Ismeretlen hiba történt.",
-        );
+            : "Ismeretlen hiba történt.", "error");
       });
   }, [tab, period, dimension, employeeId, groupId]);
 
   const handleExport = async () => {
-    setErrorMessage("");
     setIsExporting(true);
     try {
       await downloadPayroll(
@@ -196,9 +193,7 @@ export const ReportsPage = () => {
         groupId ?? undefined,
       );
     } catch (error) {
-      setErrorMessage(
-        error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
-      );
+      showToast(error instanceof ApiError ? error.message : "Ismeretlen hiba történt.", "error");
     } finally {
       setIsExporting(false);
     }
@@ -262,31 +257,31 @@ export const ReportsPage = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-4 flex-wrap">
-        <h1 className="text-2xl font-bold">Riport és bérfeladás</h1>
-
-        <div
-          role="tablist"
-          className="tabs tabs-box tabs-sm bg-base-200 p-1 rounded-lg"
+      <div role="tablist" className={TAB_LIST_CLASS}>
+        <button
+          role="tab"
+          className={tabClass(tab === "employees")}
+          onClick={() => setTab("employees")}
         >
-          <button
-            role="tab"
-            className={`tab ${tab === "employees" ? "tab-active" : ""}`}
-            onClick={() => setTab("employees")}
-          >
-            Dolgozói bontás
-          </button>
-          <button
-            role="tab"
-            className={`tab ${tab === "statistics" ? "tab-active" : ""}`}
-            onClick={() => setTab("statistics")}
-          >
-            Statisztika
-          </button>
-        </div>
+          Dolgozói bontás
+        </button>
+        <button
+          role="tab"
+          className={tabClass(tab === "statistics")}
+          onClick={() => setTab("statistics")}
+        >
+          Statisztika
+        </button>
       </div>
 
-      <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex flex-wrap items-center gap-3">
+        {tab === "employees" && (
+          <TableSearch
+            table={reportTable}
+            placeholder="Keresés névre vagy dolgozói kódra..."
+          />
+        )}
+
         <select
           className="select select-sm select-bordered"
           value={groupId ?? ""}
@@ -324,15 +319,14 @@ export const ReportsPage = () => {
         </select>
 
         {(groupId !== null || employeeId !== null) && (
-          <button
-            className="btn btn-sm btn-ghost"
+          <GhostButton
             onClick={() => {
               setGroupId(null);
               setEmployeeId(null);
             }}
           >
             Szűrés törlése
-          </button>
+          </GhostButton>
         )}
 
         <div className="join ml-auto">
@@ -354,21 +348,14 @@ export const ReportsPage = () => {
         </div>
 
         {canExport && (
-          <button
-            className="btn btn-sm btn-primary"
+          <ActionButton
             onClick={handleExport}
             disabled={isExporting}
           >
             {isExporting ? "Előállítás..." : "Bérfeladási CSV letöltése"}
-          </button>
+          </ActionButton>
         )}
       </div>
-
-      {errorMessage && (
-        <div className="alert alert-error text-sm py-2">
-          <span>{errorMessage}</span>
-        </div>
-      )}
 
       {isLoading && <span className="loading loading-spinner" />}
 
@@ -385,14 +372,8 @@ export const ReportsPage = () => {
 
       {tab === "employees" && report && reportTable.allRows.length > 0 && (
         <>
-          <TableSearch
-            table={reportTable}
-            placeholder="Keresés névre vagy dolgozói kódra"
-            className="input input-sm input-bordered w-72"
-          />
-
-          <div className="overflow-x-auto">
-            <table className="table table-sm table-pin-rows">
+          <div className="overflow-x-auto rounded border border-base-300">
+            <table className={`${TABLE_CLASS} table-pin-rows`}>
               <thead>
                 <tr>
                   <SortableHeader
@@ -501,9 +482,9 @@ export const ReportsPage = () => {
                 </tfoot>
               )}
             </table>
-
-            <TablePager table={reportTable} unit="fő" />
           </div>
+
+          <TablePager table={reportTable} unit="fő" />
         </>
       )}
 
@@ -629,12 +610,11 @@ export const ReportsPage = () => {
                       <h2 className="card-title text-base">
                         {selectedRow.key}
                       </h2>
-                      <button
-                        className="btn btn-xs ml-auto"
+                      <PlainButton size="xs" className="ml-auto"
                         onClick={() => setSelectedKey(null)}
                       >
                         Kijelölés törlése
-                      </button>
+                      </PlainButton>
                     </div>
 
                     <div className="stats stats-horizontal bg-base-100 w-full overflow-x-auto">

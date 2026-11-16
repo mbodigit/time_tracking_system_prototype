@@ -4,20 +4,20 @@ import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { changePassword } from "../../api/auth";
 import { ApiError } from "../../api/client";
+import { showToast } from "../../utils/toast";
+import { ActionButton } from "../../components/button/button";
 
 export const ChangePasswordPage = () => {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newPasswordAgain, setNewPasswordAgain] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    setErrorMessage("");
 
     if (newPassword !== newPasswordAgain) {
-      setErrorMessage("A két új jelszó nem egyezik.");
+      showToast("A két új jelszó nem egyezik.", "error");
       return;
     }
 
@@ -28,9 +28,7 @@ export const ChangePasswordPage = () => {
       localStorage.setItem("user", JSON.stringify(data.user));
       navigate(getLandingPath(data.user), { replace: true });
     } catch (error) {
-      setErrorMessage(
-        error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
-      );
+      showToast(error instanceof ApiError ? error.message : "Ismeretlen hiba történt.", "error");
     }
   };
 
@@ -43,12 +41,6 @@ export const ChangePasswordPage = () => {
           <p className="text-sm text-center opacity-70">
             Az alapértelmezett jelszót meg kell változtatnod a folytatáshoz.
           </p>
-
-          {errorMessage && (
-            <div className="alert alert-error text-sm py-2">
-              <span>{errorMessage}</span>
-            </div>
-          )}
 
           <input
             className="input input-bordered w-full"
@@ -74,9 +66,9 @@ export const ChangePasswordPage = () => {
             onChange={(e) => setNewPasswordAgain(e.target.value)}
           />
 
-          <button className="btn btn-primary w-full" type="submit">
+          <ActionButton className="w-full" type="submit">
             Jelszó módosítása
-          </button>
+          </ActionButton>
         </form>
       </div>
     </div>

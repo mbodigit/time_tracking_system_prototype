@@ -16,6 +16,9 @@ import {
 import { EmployeeModal } from "./employee-modal";
 import { EmployeeDetailsModal } from "./employee-details-modal";
 import { AccountModal, type Credentials } from "./account-modal";
+import { showToast } from "../../utils/toast";
+import { TAB_LIST_CLASS, tabClass } from "../../components/tabs/tabs";
+import { ActionButton, PlainButton } from "../../components/button/button";
 
 type Tab = "employees" | "accounts";
 
@@ -132,8 +135,6 @@ export const EmployeesPage = () => {
   const [systemAccounts, setSystemAccounts] = useState<SystemAccount[]>([]);
   const [options, setOptions] = useState<EmployeeOptions | null>(null);
   const [tab, setTab] = useState<Tab>("employees");
-  const [errorMessage, setErrorMessage] = useState("");
-  const [infoMessage, setInfoMessage] = useState("");
   const [credentials, setCredentials] = useState<Credentials | null>(null);
   const [detailsEmployee, setDetailsEmployee] = useState<AdminEmployee | null>(
     null,
@@ -153,9 +154,7 @@ export const EmployeesPage = () => {
     } catch (error) {
       setEmployees([]);
       setSystemAccounts([]);
-      setErrorMessage(
-        error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
-      );
+      showToast(error instanceof ApiError ? error.message : "Ismeretlen hiba történt.", "error");
     }
 
     try {
@@ -200,8 +199,7 @@ export const EmployeesPage = () => {
   const activeTable = tab === "employees" ? employeeTable : accountTable;
 
   const handleSaved = async (message: string, next?: Credentials) => {
-    setErrorMessage("");
-    setInfoMessage(message);
+    showToast(message);
     setCredentials(next ?? null);
     setEmployeeModal(null);
     setAccountModal(null);
@@ -211,7 +209,6 @@ export const EmployeesPage = () => {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-2xl font-bold">Dolgozók és fiókok</h1>
 
         <div className="ml-auto">
           <TableSearch
@@ -225,16 +222,14 @@ export const EmployeesPage = () => {
         </div>
 
         {tab === "employees" ? (
-          <button
-            className="btn btn-sm btn-primary"
+          <ActionButton
             onClick={() => setEmployeeModal({ employee: null })}
             disabled={!options}
           >
             Új dolgozó
-          </button>
+          </ActionButton>
         ) : (
-          <button
-            className="btn btn-sm btn-primary"
+          <ActionButton
             onClick={() => setAccountModal({ employee: null })}
             disabled={!options || candidates.length === 0}
             title={
@@ -244,38 +239,26 @@ export const EmployeesPage = () => {
             }
           >
             Új fiók
-          </button>
+          </ActionButton>
         )}
       </div>
 
-      <div role="tablist" className="tabs tabs-bordered">
+      <div role="tablist" className={TAB_LIST_CLASS}>
         <button
           role="tab"
-          className={`tab ${tab === "employees" ? "tab-active" : ""}`}
+          className={tabClass(tab === "employees")}
           onClick={() => setTab("employees")}
         >
           Dolgozók ({employeeTable.filtered})
         </button>
         <button
           role="tab"
-          className={`tab ${tab === "accounts" ? "tab-active" : ""}`}
+          className={tabClass(tab === "accounts")}
           onClick={() => setTab("accounts")}
         >
           Fiókok ({accountTable.filtered})
         </button>
       </div>
-
-      {errorMessage && (
-        <div className="alert alert-error py-2 text-sm">
-          <span>{errorMessage}</span>
-        </div>
-      )}
-
-      {infoMessage && (
-        <div className="alert alert-success py-2 text-sm">
-          <span>{infoMessage}</span>
-        </div>
-      )}
 
       {credentials && (
         <div className="alert alert-warning text-sm">
@@ -378,13 +361,12 @@ export const EmployeesPage = () => {
                     )}
                   </td>
                   <td className="whitespace-nowrap text-right">
-                    <button
-                      className="btn btn-xs"
+                    <PlainButton size="xs"
                       onClick={() => setEmployeeModal({ employee })}
                       disabled={!options}
                     >
                       Szerkesztés
-                    </button>
+                    </PlainButton>
                   </td>
                 </tr>
               ))}
@@ -460,13 +442,12 @@ export const EmployeesPage = () => {
                     )}
                   </td>
                   <td className="whitespace-nowrap text-right">
-                    <button
-                      className="btn btn-xs"
+                    <PlainButton size="xs"
                       onClick={() => setAccountModal({ employee })}
                       disabled={!options}
                     >
                       Kezelés
-                    </button>
+                    </PlainButton>
                   </td>
                 </tr>
               ))}

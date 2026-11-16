@@ -12,6 +12,8 @@ import {
   TablePager,
 } from "../../components/data-table/data-table";
 import { AbsenceModal } from "./absence-modal";
+import { showToast } from "../../utils/toast";
+import { ActionButton, PlainButton } from "../../components/button/button";
 
 const searchText = (absence: AdminAbsence) =>
   [
@@ -33,21 +35,16 @@ const sortValue = (absence: AdminAbsence, key: string): number | string => {
 
 export const AbsencesSection = () => {
   const [data, setData] = useState<AbsenceAdminData | null>(null);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [infoMessage, setInfoMessage] = useState("");
   const [modal, setModal] = useState<{ absence: AdminAbsence | null } | null>(
     null,
   );
 
   const load = useCallback(async () => {
-    setErrorMessage("");
     try {
       setData(await listAbsenceAdmin());
     } catch (error) {
       setData(null);
-      setErrorMessage(
-        error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
-      );
+      showToast(error instanceof ApiError ? error.message : "Ismeretlen hiba történt.", "error");
     }
   }, []);
 
@@ -63,8 +60,7 @@ export const AbsencesSection = () => {
   });
 
   const handleSaved = async (message: string) => {
-    setErrorMessage("");
-    setInfoMessage(message);
+    showToast(message);
     setModal(null);
     await load();
   };
@@ -85,30 +81,16 @@ export const AbsencesSection = () => {
             placeholder="Keresés megnevezés, kategória szerint..."
           />
 
-          <button
-            className="btn btn-sm btn-primary"
+          <ActionButton
             onClick={() => {
-              setInfoMessage("");
-              setModal({ absence: null });
+                            setModal({ absence: null });
             }}
             disabled={!data}
           >
             Új jogcím
-          </button>
+          </ActionButton>
         </div>
       </div>
-
-      {errorMessage && (
-        <div className="alert alert-error py-2 text-sm">
-          <span>{errorMessage}</span>
-        </div>
-      )}
-
-      {infoMessage && (
-        <div className="alert alert-success py-2 text-sm">
-          <span>{infoMessage}</span>
-        </div>
-      )}
 
       <div className="overflow-x-auto">
         <table className="table table-sm">
@@ -154,15 +136,13 @@ export const AbsencesSection = () => {
                   </span>
                 </td>
                 <td className="whitespace-nowrap text-right">
-                  <button
-                    className="btn btn-xs"
+                  <PlainButton size="xs"
                     onClick={() => {
-                      setInfoMessage("");
-                      setModal({ absence });
+                                            setModal({ absence });
                     }}
                   >
                     Szerkesztés
-                  </button>
+                  </PlainButton>
                 </td>
               </tr>
             ))}

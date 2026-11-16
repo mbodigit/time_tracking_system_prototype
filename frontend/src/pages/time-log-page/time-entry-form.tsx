@@ -8,6 +8,8 @@ import {
 import { ApiError } from "../../api/client";
 import { Field } from "../../components/form-field/form-field";
 import { currentPermissions, hasPermission } from "../../utils/access";
+import { showToast } from "../../utils/toast";
+import { ActionButton, DeleteButton, GhostButton } from "../../components/button/button";
 
 interface FormDefaults {
   coreStart: string | null;
@@ -138,7 +140,6 @@ export const TimeEntryForm = ({
     day.scheduleFromEntry ? toInputTime(day.scheduleEnd) : "",
   );
   const [note, setNote] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -169,26 +170,22 @@ export const TimeEntryForm = ({
       return;
     }
 
-    setErrorMessage("");
     setIsDeleting(true);
 
     try {
       await deleteEntry(day.id);
       onSaved();
     } catch (error) {
-      setErrorMessage(
-        error instanceof ApiError ? error.message : "A törlés nem sikerült.",
-      );
+      showToast(error instanceof ApiError ? error.message : "A törlés nem sikerült.", "error");
     } finally {
       setIsDeleting(false);
     }
   };
 
   const handleSubmit = async () => {
-    setErrorMessage("");
 
     if (!workStart || !workEnd) {
-      setErrorMessage("A munkavégzés kezdete és vége kötelező.");
+      showToast("A munkavégzés kezdete és vége kötelező.", "error");
       return;
     }
 
@@ -197,10 +194,8 @@ export const TimeEntryForm = ({
 
       if (offset < BREAK_EARLIEST_MINUTES || offset > BREAK_LATEST_MINUTES) {
         const window = breakWindow(workStart);
-        setErrorMessage(
-          `A munkaközi szünetet legalább három, legfeljebb hat óra munkavégzést ` +
-            `követően kell kiadni, ebben az esetben ${window.from} és ${window.to} között.`,
-        );
+        showToast(`A munkaközi szünetet legalább három, legfeljebb hat óra munkavégzést ` +
+            `követően kell kiadni, ebben az esetben ${window.from} és ${window.to} között.`, "error");
         return;
       }
     }
@@ -257,9 +252,7 @@ export const TimeEntryForm = ({
       }
       onSaved();
     } catch (error) {
-      setErrorMessage(
-        error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
-      );
+      showToast(error instanceof ApiError ? error.message : "Ismeretlen hiba történt.", "error");
     } finally {
       setIsSaving(false);
     }
@@ -271,12 +264,6 @@ export const TimeEntryForm = ({
         <h3 className="font-bold text-lg">
           {day.date} - {day.id ? "munkaidő módosítása" : "munkaidő rögzítése"}
         </h3>
-
-        {errorMessage && (
-          <div className="alert alert-error text-sm py-2">
-            <span>{errorMessage}</span>
-          </div>
-        )}
 
         <div className="flex gap-3">
           <Field label="Munkavégzés kezdete" grow>
@@ -334,15 +321,14 @@ export const TimeEntryForm = ({
 
         {canSetSchedule && (
           <div>
-          <button
-            type="button"
-            className="btn btn-xs btn-ghost px-0"
+          <GhostButton
+            type="button" size="xs" className="px-0"
             onClick={() => setScheduleShown((current) => !current)}
           >
             {scheduleShown
               ? "▲ Aznapi beosztás elrejtése"
               : "▼ Aznapi beosztás módosítása"}
-          </button>
+          </GhostButton>
           </div>
         )}
 
@@ -367,9 +353,8 @@ export const TimeEntryForm = ({
                 />
               </Field>
 
-              <button
-                type="button"
-                className="btn btn-sm btn-ghost self-end"
+              <GhostButton
+                type="button" className="self-end"
                 disabled={!scheduleStart && !scheduleEnd}
                 title="A két mező kiürítése"
                 onClick={() => {
@@ -378,7 +363,7 @@ export const TimeEntryForm = ({
                 }}
               >
                 Ürítés
-              </button>
+              </GhostButton>
             </div>
 
             <p className="text-xs opacity-70">
@@ -414,28 +399,25 @@ export const TimeEntryForm = ({
 
         <div className="modal-action">
           {day.id && (
-            <button
-              className="btn btn-outline btn-error mr-auto"
+            <DeleteButton className="mr-auto"
               onClick={handleDelete}
               disabled={isSaving || isDeleting}
             >
               {isDeleting ? "Törlés..." : "Nap törlése"}
-            </button>
+            </DeleteButton>
           )}
-          <button
-            className="btn btn-ghost"
+          <GhostButton
             onClick={onClose}
             disabled={isSaving || isDeleting}
           >
             Mégse
-          </button>
-          <button
-            className="btn btn-primary"
+          </GhostButton>
+          <ActionButton
             onClick={handleSubmit}
             disabled={isSaving || isDeleting}
           >
             {isSaving ? "Mentés..." : "Mentés"}
-          </button>
+          </ActionButton>
         </div>
       </div>
     </div>

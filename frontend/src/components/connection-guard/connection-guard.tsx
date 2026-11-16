@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { pingServer, subscribeConnection } from "../../api/client";
+import { ActionButton, GhostButton } from "../../components/button/button";
 
 const RETRY_MS = 5000;
 
@@ -70,18 +71,16 @@ export const ConnectionGuard = ({ children }: ConnectionGuardProps) => {
               adatok elavultak lehetnek.
             </span>
             <div className="flex gap-2">
-              <button
-                className="btn btn-xs btn-primary"
+              <ActionButton size="xs"
                 onClick={() => window.location.reload()}
               >
                 Frissítés
-              </button>
-              <button
-                className="btn btn-xs btn-ghost"
+              </ActionButton>
+              <GhostButton size="xs"
                 onClick={() => setWasOffline(false)}
               >
                 Bezárás
-              </button>
+              </GhostButton>
             </div>
           </div>
         )}
@@ -111,13 +110,12 @@ export const ConnectionGuard = ({ children }: ConnectionGuardProps) => {
               : "Újrapróbálkozás néhány másodpercenként."}
           </p>
 
-          <button
-            className="btn btn-sm btn-primary"
+          <ActionButton
             onClick={retryNow}
             disabled={isChecking}
           >
             Próbálkozás most
-          </button>
+          </ActionButton>
         </div>
       </div>
     </div>

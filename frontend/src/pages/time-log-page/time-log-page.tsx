@@ -3,6 +3,7 @@ import { listEmployees } from "../../api/lookups";
 import { currentPermissions, hasPermission } from "../../utils/access";
 import { MonthlyLogTab } from "./monthly-log-tab";
 import { GroupLogTab } from "./group-log-tab";
+import { TAB_LIST_CLASS, tabClass } from "../../components/tabs/tabs";
 
 export const TimeLogPage = () => {
   const [tab, setTab] = useState<"own" | "group">("own");
@@ -21,26 +22,24 @@ export const TimeLogPage = () => {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Munkaidő rögzítése</h1>
-
-      <div role="tablist" className="tabs tabs-bordered">
-        <button
-          role="tab"
-          className={`tab ${tab === "own" ? "tab-active" : ""}`}
-          onClick={() => setTab("own")}
-        >
-          Egyéni
-        </button>
-        {canGroupLog && (
+      {canGroupLog && (
+        <div role="tablist" className={TAB_LIST_CLASS}>
           <button
             role="tab"
-            className={`tab ${tab === "group" ? "tab-active" : ""}`}
+            className={tabClass(tab === "own")}
+            onClick={() => setTab("own")}
+          >
+            Egyéni
+          </button>
+          <button
+            role="tab"
+            className={tabClass(tab === "group")}
             onClick={() => setTab("group")}
           >
             Csoportos
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {tab === "group" && canGroupLog ? <GroupLogTab /> : <MonthlyLogTab />}
     </div>

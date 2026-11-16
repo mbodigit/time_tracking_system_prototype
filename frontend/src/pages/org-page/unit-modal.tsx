@@ -8,6 +8,8 @@ import {
 } from "../../api/org";
 import { ApiError } from "../../api/client";
 import { Field, FormGrid } from "../../components/form-field/form-field";
+import { showToast } from "../../utils/toast";
+import { ActionButton, CloseButton, DangerButton, DeleteButton, GhostButton } from "../../components/button/button";
 
 export interface UnitDraft {
   id: number;
@@ -57,7 +59,6 @@ export const UnitModal = ({
   const [managerId, setManagerId] = useState<number | null>(
     unit?.managerId ?? null,
   );
-  const [errorMessage, setErrorMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [askDelete, setAskDelete] = useState(false);
@@ -74,20 +75,17 @@ export const UnitModal = ({
   );
 
   const fail = (error: unknown) =>
-    setErrorMessage(
-      error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
-    );
+    showToast(error instanceof ApiError ? error.message : "Ismeretlen hiba történt.", "error");
 
   const handleSave = async () => {
-    setErrorMessage("");
 
     if (!name.trim()) {
-      setErrorMessage("A megnevezés megadása kötelező.");
+      showToast("A megnevezés megadása kötelező.", "error");
       return;
     }
 
     if (parentRequired && !selectedParentId) {
-      setErrorMessage(`A felettes ${parentLabel.toLowerCase()} megadása kötelező.`);
+      showToast(`A felettes ${parentLabel.toLowerCase()} megadása kötelező.`, "error");
       return;
     }
 
@@ -117,7 +115,6 @@ export const UnitModal = ({
       return;
     }
 
-    setErrorMessage("");
     setIsDeleting(true);
 
     try {
@@ -141,24 +138,13 @@ export const UnitModal = ({
             </h3>
             {unit && <p className="mt-0.5 text-xs opacity-60">{unit.name}</p>}
           </div>
-          <button
-            type="button"
-            className="btn btn-sm btn-ghost btn-circle"
+          <CloseButton
             onClick={onClose}
             disabled={isBusy}
-            aria-label="Bezárás"
-          >
-            ✕
-          </button>
+          />
         </div>
 
         <div className="space-y-5 px-6 py-5">
-          {errorMessage && (
-            <div className="alert alert-error py-2 text-sm">
-              <span>{errorMessage}</span>
-            </div>
-          )}
-
           <FormGrid columns={2}>
             <Field label="Megnevezés" span={2}>
               <input
@@ -266,49 +252,44 @@ export const UnitModal = ({
           {unit ? (
             askDelete ? (
               <div className="flex gap-2">
-                <button
-                  className="btn btn-sm btn-error"
+                <DangerButton
                   onClick={handleDelete}
                   disabled={isBusy}
                 >
                   {isDeleting ? "Törlés..." : "Igen, törlöm"}
-                </button>
-                <button
-                  className="btn btn-sm btn-ghost"
+                </DangerButton>
+                <GhostButton
                   onClick={() => setAskDelete(false)}
                   disabled={isBusy}
                 >
                   Vissza
-                </button>
+                </GhostButton>
               </div>
             ) : (
-              <button
-                className="btn btn-sm btn-outline btn-error"
+              <DeleteButton
                 onClick={() => setAskDelete(true)}
                 disabled={isBusy}
               >
                 Törlés
-              </button>
+              </DeleteButton>
             )
           ) : (
             <span />
           )}
 
           <div className="flex gap-2">
-            <button
-              className="btn btn-sm btn-ghost"
+            <GhostButton
               onClick={onClose}
               disabled={isBusy}
             >
               Mégse
-            </button>
-            <button
-              className="btn btn-sm btn-primary"
+            </GhostButton>
+            <ActionButton
               onClick={handleSave}
               disabled={isBusy}
             >
               {isSaving ? "Mentés..." : isNew ? "Létrehozás" : "Módosítás"}
-            </button>
+            </ActionButton>
           </div>
         </div>
       </div>

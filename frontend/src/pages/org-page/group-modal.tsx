@@ -12,6 +12,9 @@ import {
 } from "../../api/groups";
 import { ApiError } from "../../api/client";
 import { Field, FormGrid } from "../../components/form-field/form-field";
+import { showToast } from "../../utils/toast";
+import { TAB_LIST_CLASS, tabClass } from "../../components/tabs/tabs";
+import { ActionButton, CloseButton, DangerButton, DeleteButton, GhostButton, PlainButton } from "../../components/button/button";
 
 export interface GroupNode {
   areaId: number;
@@ -82,7 +85,7 @@ const PersonList = ({
         checked={people.length > 0 && selected.length === people.length}
         onChange={onToggleAll}
         disabled={people.length === 0}
-      />
+          />
       <span className="text-sm font-semibold">
         {title} ({people.length})
       </span>
@@ -150,7 +153,6 @@ export const GroupModal = ({
   const [pickedMembers, setPickedMembers] = useState<number[]>([]);
   const [pickedCandidates, setPickedCandidates] = useState<number[]>([]);
 
-  const [errorMessage, setErrorMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteStep, setDeleteStep] = useState<"members" | "group" | null>(
@@ -180,9 +182,7 @@ export const GroupModal = ({
     setForm((current) => ({ ...current, ...changes }));
 
   const fail = (error: unknown) =>
-    setErrorMessage(
-      error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
-    );
+    showToast(error instanceof ApiError ? error.message : "Ismeretlen hiba történt.", "error");
 
   const workingHour = options.workingHours.find(
     (item) => item.id === form.workingHourId,
@@ -235,7 +235,6 @@ export const GroupModal = ({
   });
 
   const handleSave = async () => {
-    setErrorMessage("");
     setIsSaving(true);
 
     const payload: GroupPayload = {
@@ -275,7 +274,6 @@ export const GroupModal = ({
   };
 
   const handleDeleteClick = () => {
-    setErrorMessage("");
     setDeleteStep(savedMemberIds.length > 0 ? "members" : "group");
   };
 
@@ -284,7 +282,6 @@ export const GroupModal = ({
       return;
     }
 
-    setErrorMessage("");
     setIsDeleting(true);
 
     try {
@@ -306,7 +303,6 @@ export const GroupModal = ({
       return;
     }
 
-    setErrorMessage("");
     setIsDeleting(true);
 
     try {
@@ -330,41 +326,32 @@ export const GroupModal = ({
             </h3>
             <p className="mt-0.5 text-xs opacity-60">{node.path}</p>
           </div>
-          <button
-            type="button"
-            className="btn btn-sm btn-ghost btn-circle"
+          <CloseButton
             onClick={onClose}
             disabled={isBusy}
-            aria-label="Bezárás"
-          >
-            ✕
-          </button>
+          />
         </div>
 
-        <div role="tablist" className="tabs tabs-bordered px-6 pt-2">
-          <button
-            role="tab"
-            className={`tab ${tab === "data" ? "tab-active" : ""}`}
-            onClick={() => setTab("data")}
-          >
-            Adatok
-          </button>
-          <button
-            role="tab"
-            className={`tab ${tab === "members" ? "tab-active" : ""}`}
-            onClick={() => setTab("members")}
-          >
-            Tagok ({memberIds.length})
-          </button>
+        <div className="px-6 pt-2">
+          <div role="tablist" className={TAB_LIST_CLASS}>
+            <button
+              role="tab"
+              className={tabClass(tab === "data")}
+              onClick={() => setTab("data")}
+            >
+              Adatok
+            </button>
+            <button
+              role="tab"
+              className={tabClass(tab === "members")}
+              onClick={() => setTab("members")}
+            >
+              Tagok ({memberIds.length})
+            </button>
+          </div>
         </div>
 
         <div className="space-y-3 overflow-y-auto px-6 py-4">
-          {errorMessage && (
-            <div className="alert alert-error py-2 text-sm">
-              <span>{errorMessage}</span>
-            </div>
-          )}
-
           {tab === "data" && (
             <>
               <div className="rounded border border-base-300 bg-base-200 px-3 py-2 text-sm">
@@ -559,22 +546,20 @@ export const GroupModal = ({
                 />
 
                 <div className="flex flex-row justify-center gap-2 md:mt-16 md:flex-col">
-                  <button
-                    className="btn btn-sm"
+                  <PlainButton
                     onClick={removePicked}
                     disabled={pickedMembers.length === 0}
                     title="Kijelöltek eltávolítása a csoportból"
                   >
                     →
-                  </button>
-                  <button
-                    className="btn btn-sm"
+                  </PlainButton>
+                  <PlainButton
                     onClick={addPicked}
                     disabled={pickedCandidates.length === 0}
                     title="Kijelöltek hozzáadása a csoporthoz"
                   >
                     ←
-                  </button>
+                  </PlainButton>
                 </div>
 
                 <PersonList
@@ -622,13 +607,12 @@ export const GroupModal = ({
                   >
                     {isDeleting ? "Eltávolítás..." : "Igen, eltávolítom"}
                   </button>
-                  <button
-                    className="btn btn-sm btn-ghost"
+                  <GhostButton
                     onClick={() => setDeleteStep(null)}
                     disabled={isBusy}
                   >
                     Mégse
-                  </button>
+                  </GhostButton>
                 </div>
               </div>
             </div>
@@ -643,20 +627,18 @@ export const GroupModal = ({
                   még szükség lehet rá, inkább állítsd Inaktív állapotra.
                 </p>
                 <div className="mt-2 flex gap-2">
-                  <button
-                    className="btn btn-sm btn-error"
+                  <DangerButton
                     onClick={handleDelete}
                     disabled={isBusy}
                   >
                     {isDeleting ? "Törlés..." : "Igen, törlöm"}
-                  </button>
-                  <button
-                    className="btn btn-sm btn-ghost"
+                  </DangerButton>
+                  <GhostButton
                     onClick={() => setDeleteStep(null)}
                     disabled={isBusy}
                   >
                     Mégse
-                  </button>
+                  </GhostButton>
                 </div>
               </div>
             </div>
@@ -665,32 +647,29 @@ export const GroupModal = ({
 
         <div className="flex items-center justify-between gap-2 border-t border-base-300 px-6 pb-5 pt-3">
           {group ? (
-            <button
-              className="btn btn-sm btn-outline btn-error"
+            <DeleteButton
               onClick={handleDeleteClick}
               disabled={isBusy || deleteStep !== null}
             >
               Törlés
-            </button>
+            </DeleteButton>
           ) : (
             <span />
           )}
 
           <div className="flex gap-2">
-            <button
-              className="btn btn-sm btn-ghost"
+            <GhostButton
               onClick={onClose}
               disabled={isBusy}
             >
               Mégse
-            </button>
-            <button
-              className="btn btn-sm btn-primary"
+            </GhostButton>
+            <ActionButton
               onClick={handleSave}
               disabled={isBusy}
             >
               {isSaving ? "Mentés..." : isNew ? "Létrehozás" : "Módosítás"}
-            </button>
+            </ActionButton>
           </div>
         </div>
       </div>

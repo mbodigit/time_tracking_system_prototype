@@ -6,6 +6,8 @@ import {
 } from "../../api/company";
 import { ApiError } from "../../api/client";
 import { Field } from "../../components/form-field/form-field";
+import { showToast } from "../../utils/toast";
+import { ActionButton } from "../../components/button/button";
 
 const EMPTY_FORM: CompanyPayload = {
   name: "",
@@ -15,8 +17,6 @@ const EMPTY_FORM: CompanyPayload = {
 
 export const CompanySettingsSection = () => {
   const [form, setForm] = useState<CompanyPayload>(EMPTY_FORM);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [infoMessage, setInfoMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -30,9 +30,7 @@ export const CompanySettingsSection = () => {
         });
       })
       .catch((error) =>
-        setErrorMessage(
-          error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
-        ),
+        showToast(error instanceof ApiError ? error.message : "Ismeretlen hiba történt.", "error"),
       )
       .finally(() => setIsLoading(false));
   }, []);
@@ -41,16 +39,12 @@ export const CompanySettingsSection = () => {
     setForm((previous) => ({ ...previous, ...changes }));
 
   const handleSave = async () => {
-    setErrorMessage("");
-    setInfoMessage("");
-    setIsSaving(true);
+        setIsSaving(true);
     try {
       const data = await updateCompany(form);
-      setInfoMessage(data.message);
+      showToast(data.message);
     } catch (error) {
-      setErrorMessage(
-        error instanceof ApiError ? error.message : "Ismeretlen hiba történt.",
-      );
+      showToast(error instanceof ApiError ? error.message : "Ismeretlen hiba történt.", "error");
     } finally {
       setIsSaving(false);
     }
@@ -66,18 +60,6 @@ export const CompanySettingsSection = () => {
         A cég adatai a bérfeladási exportban és a havi nyomtatványon jelennek
         meg.
       </p>
-
-      {errorMessage && (
-        <div className="alert alert-error text-sm py-2">
-          <span>{errorMessage}</span>
-        </div>
-      )}
-
-      {infoMessage && (
-        <div className="alert alert-success text-sm py-2">
-          <span>{infoMessage}</span>
-        </div>
-      )}
 
       <div className="grid gap-4 md:grid-cols-2">
         <Field label="Cégnév" span={2}>
@@ -105,13 +87,12 @@ export const CompanySettingsSection = () => {
         </Field>
       </div>
 
-      <button
-        className="btn btn-sm btn-primary"
+      <ActionButton
         onClick={handleSave}
         disabled={isSaving}
       >
         {isSaving ? "Mentés..." : "Mentés"}
-      </button>
+      </ActionButton>
     </div>
   );
 };
