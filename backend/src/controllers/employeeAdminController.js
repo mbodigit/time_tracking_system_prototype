@@ -4,6 +4,7 @@ const pool = require('../config/db');
 const { coreHourLength, isIsoDate } = require('../utils/dateHelpers');
 const { employeeNotFound, serverError } = require('../utils/apiResponse');
 const { nameColumns, fullName } = require('../utils/employeeName');
+const { coreHourMismatch, groupWorkingHourId } = require('../services/coreHourRule');
 
 const PASSWORD_ALPHABET =
     'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
@@ -354,6 +355,13 @@ const managerError = async (managerId) => {
     return null;
 };
 
+const coreHourError = async (body) => {
+    const workingHourId = id(body.workingHourId)
+        || await groupWorkingHourId(id(body.groupId));
+
+    return coreHourMismatch(workingHourId, id(body.coreHourId));
+};
+
 const text = (value) => String(value ?? '').trim() || null;
 const id = (value) => Number(value) || null;
 
@@ -409,6 +417,12 @@ const create = async (req, res) => {
 
     if (managerProblem) {
         return res.status(400).json({ message: managerProblem });
+    }
+
+    const coreHourProblem = await coreHourError(body);
+
+    if (coreHourProblem) {
+        return res.status(400).json({ message: coreHourProblem });
     }
 
     const connection = await pool.getConnection();
@@ -474,6 +488,12 @@ const update = async (req, res) => {
 
     if (managerProblem) {
         return res.status(400).json({ message: managerProblem });
+    }
+
+    const coreHourProblem = await coreHourError(body);
+
+    if (coreHourProblem) {
+        return res.status(400).json({ message: coreHourProblem });
     }
 
     try {

@@ -2,6 +2,7 @@ const pool = require('../config/db');
 const { coreHourLength, toIsoDate } = require('../utils/dateHelpers');
 const { serverError } = require('../utils/apiResponse');
 const { nameColumns, fullName } = require('../utils/employeeName');
+const { coreHourMismatch } = require('../services/coreHourRule');
 
 const list = async (req, res) => {
     try {
@@ -263,6 +264,15 @@ const prepare = async (body, groupId) => {
 
     if (Number(body.shiftId) && !Number(body.departmentId)) {
         return { error: 'Műszak csak részleg megadása mellett vehető fel.' };
+    }
+
+    const coreHourProblem = await coreHourMismatch(
+        Number(body.workingHourId) || null,
+        Number(body.coreHourId) || null
+    );
+
+    if (coreHourProblem) {
+        return { error: coreHourProblem };
     }
 
     const resolved = await resolveManagerId(body);

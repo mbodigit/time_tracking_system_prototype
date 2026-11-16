@@ -1,0 +1,39 @@
+info:
+  name: dolgozo felvetele nem illeszkedo torzsidovel
+  type: http
+  seq: 213
+
+http:
+  method: POST
+  url: "{{baseUrl}}/admin/employees"
+  body:
+    type: json
+    data: |-
+      {
+        "lastName": "Bruno",
+        "firstName": "Torzsido",
+        "costCenterId": {{empCostCenterId}},
+        "categoryId": {{empCategoryId}},
+        "statusId": {{empStatusId}},
+        "workScheduleId": {{empWorkScheduleId}},
+        "workingHourId": {{empWorkingHourShort}},
+        "coreHourId": {{empCoreHourId}},
+        "annualLeaveDays": 25,
+        "managerId": {{empManagerId}}
+      }
+  auth:
+    type: bearer
+    token: "{{adminToken}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "400"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

@@ -78,10 +78,18 @@ runtime:
     - type: set-variable
       phase: after-response
       selector:
-        expression: res.body.workingHours[0].id
+        expression: res.body.workingHours[3].id
         method: jsonq
       variable:
         name: empWorkingHourId
+        scope: runtime
+    - type: set-variable
+      phase: after-response
+      selector:
+        expression: res.body.workingHours[0].id
+        method: jsonq
+      variable:
+        name: empWorkingHourShort
         scope: runtime
     - type: set-variable
       phase: after-response
