@@ -62,6 +62,33 @@ const breakWindow = (workStart: string): { from: string; to: string } => ({
   to: toTime(toMinutes(workStart) + BREAK_LATEST_MINUTES),
 });
 
+const breakRuleText = (
+  workStart: string,
+  workEnd: string,
+  allowedMinutes: number | null,
+): string => {
+  const window = breakWindow(workStart);
+
+  const parts = [
+    `A munkaközi szünetet a jogszabály szerint legalább három, legfeljebb hat ` +
+      `óra munkavégzést követően kell kiadni, ebben az esetben ${window.from} ` +
+      `és ${window.to} között.`,
+  ];
+
+  if (workEnd) {
+    parts.push(`A szünet vége legkésőbb ${workEnd} lehet.`);
+  }
+
+  if (allowedMinutes) {
+    parts.push(
+      `A szünet hossza a dolgozó adatlapja szerint legfeljebb ` +
+        `${allowedMinutes} perc.`,
+    );
+  }
+
+  return parts.join(" ");
+};
+
 const breakOffsetMinutes = (workStart: string, breakStart: string): number => {
   const offset = toMinutes(breakStart) - toMinutes(workStart);
   return offset < 0 ? offset + 1440 : offset;
@@ -116,6 +143,8 @@ export const TimeEntryForm = ({
     : templateFits
       ? templateBreak
       : toTime(toMinutes(initialWorkStart) + BREAK_EARLIEST_MINUTES);
+
+  const allowedBreakMinutes = defaults?.breakMinutes ?? null;
 
   const suggestedBreakEnd =
     suggestedBreakStart && defaults?.breakMinutes
@@ -190,12 +219,39 @@ export const TimeEntryForm = ({
     }
 
     if (breakStart && breakEnd) {
+      if (breakEnd === breakStart) {
+        showToast(
+          "A munkaközi szünet vége legalább egy perccel későbbi legyen a kezdeténél.",
+          "error",
+        );
+        return;
+      }
+
       const offset = breakOffsetMinutes(workStart, breakStart);
 
       if (offset < BREAK_EARLIEST_MINUTES || offset > BREAK_LATEST_MINUTES) {
-        const window = breakWindow(workStart);
-        showToast(`A munkaközi szünetet legalább három, legfeljebb hat óra munkavégzést ` +
-            `követően kell kiadni, ebben az esetben ${window.from} és ${window.to} között.`, "error");
+        showToast(breakRuleText(workStart, workEnd, allowedBreakMinutes), "error");
+        return;
+      }
+
+      if (breakOffsetMinutes(workStart, breakEnd)
+        > breakOffsetMinutes(workStart, workEnd)) {
+        showToast(breakRuleText(workStart, workEnd, allowedBreakMinutes), "error");
+        return;
+      }
+
+      const breakLength =
+        breakOffsetMinutes(workStart, breakEnd)
+        - breakOffsetMinutes(workStart, breakStart);
+
+      if (!allowedBreakMinutes || breakLength > allowedBreakMinutes) {
+        showToast(
+          allowedBreakMinutes
+            ? breakRuleText(workStart, workEnd, allowedBreakMinutes)
+            : "A dolgozó adatlapján nincs munkaközi szünet megadva, "
+              + "ezért szünet nem rögzíthető.",
+          "error",
+        );
         return;
       }
     }
@@ -313,9 +369,7 @@ export const TimeEntryForm = ({
 
         {workStart && (
           <p className="text-xs opacity-70">
-            A munkaközi szünetet a jogszabály szerint legalább három, legfeljebb hat
-            óra munkavégzést követően kell kiadni, ebben az esetben{" "}
-            {breakWindow(workStart).from} és {breakWindow(workStart).to} között.
+            {breakRuleText(workStart, workEnd, allowedBreakMinutes)}
           </p>
         )}
 

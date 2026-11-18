@@ -16,7 +16,7 @@ const BACKDATE_LIMIT_DAYS = 3;
 const BREAK_EARLIEST_MINUTES = 3 * 60;
 const BREAK_LATEST_MINUTES = 6 * 60;
 
-const breakTimingError = (workStart, breakStart) => {
+const breakTimingError = (workStart, workEnd, breakStart, breakEnd) => {
     const offset = Math.round(
         (parseDateTime(breakStart).getTime() - parseDateTime(workStart).getTime()) / (1000 * 60)
     );
@@ -24,6 +24,38 @@ const breakTimingError = (workStart, breakStart) => {
     if (offset < BREAK_EARLIEST_MINUTES || offset > BREAK_LATEST_MINUTES) {
         return 'A munkaközi szünetet legalább három, legfeljebb hat óra '
             + 'munkavégzést követően kell kiadni.';
+    }
+
+    if (breakEnd && workEnd
+        && parseDateTime(breakEnd).getTime() > parseDateTime(workEnd).getTime()) {
+        return 'A munkaközi szünet nem érhet véget a munkavégzés vége után.';
+    }
+
+    return null;
+};
+
+const breakLengthError = (allowedMinutes, breakStart, breakEnd) => {
+    if (!breakStart || !breakEnd) {
+        return null;
+    }
+
+    if (!allowedMinutes) {
+        return 'A dolgozó adatlapján nincs munkaközi szünet megadva, '
+            + 'ezért szünet nem rögzíthető.';
+    }
+
+    const minutes = Math.round(
+        (parseDateTime(breakEnd).getTime() - parseDateTime(breakStart).getTime()) / (1000 * 60)
+    );
+
+    if (minutes < 1) {
+        return 'A munkaközi szünet vége legalább egy perccel későbbi legyen '
+            + 'a kezdeténél.';
+    }
+
+    if (minutes > allowedMinutes) {
+        return `A munkaközi szünet a dolgozó adatlapja szerint legfeljebb `
+            + `${allowedMinutes} perc lehet, a rögzített szünet ${minutes} perc.`;
     }
 
     return null;
@@ -78,7 +110,7 @@ const create = async (req, res) => {
     }
 
     if (breakStart) {
-        const breakError = breakTimingError(workStart, breakStart);
+        const breakError = breakTimingError(workStart, workEnd, breakStart, breakEnd);
 
         if (breakError) {
             return res.status(400).json({ message: breakError });
@@ -177,23 +209,39 @@ const create = async (req, res) => {
 
         const isBreakWorkingDay = isWorkingDay(workingDate, workingDateType);
 
-        if (!breakStartValue && !breakEndValue && isBreakWorkingDay) {
-            const [template] = await pool.execute(
-                `SELECT
-                    employee_break_start, employee_break_end
-                 FROM Employees
-                 WHERE employee_id = ?`,
-                [targetEmployeeId]
-            );
+        const [template] = await pool.execute(
+            `SELECT employee_break_start, employee_break_end, employee_break_minutes
+             FROM Employees
+             WHERE employee_id = ?`,
+            [targetEmployeeId]
+        );
 
+        const allowedBreakMinutes = template.length > 0
+            ? template[0].employee_break_minutes
+            : null;
+
+        const lengthError = breakLengthError(
+            allowedBreakMinutes, breakStartValue, breakEndValue
+        );
+
+        if (lengthError) {
+            return res.status(400).json({ message: lengthError });
+        }
+
+        if (!breakStartValue && !breakEndValue && isBreakWorkingDay) {
             if (template.length > 0 && template[0].employee_break_start) {
                 const workStartTime = toSqlDateTime(workStart).slice(11, 19);
                 const breakDate = String(template[0].employee_break_start) < workStartTime
                     ? addDays(workingDate, 1)
                     : workingDate;
 
-                breakStartValue = `${breakDate} ${template[0].employee_break_start}`;
-                breakEndValue = `${breakDate} ${template[0].employee_break_end}`;
+                const templateStart = `${breakDate} ${template[0].employee_break_start}`;
+                const templateEnd = `${breakDate} ${template[0].employee_break_end}`;
+
+                if (!breakTimingError(workStart, workEnd, templateStart, templateEnd)) {
+                    breakStartValue = templateStart;
+                    breakEndValue = templateEnd;
+                }
             }
         }
 
@@ -266,10 +314,13 @@ const update = async (req, res) => {
 
     try {
         const [existing] = await pool.execute(
-            `SELECT wtt_employee_id, wtt_working_date,
-                    wtt_working_start, wtt_working_end
-             FROM WorkingTimeTracking
-             WHERE wtt_id = ?`,
+            `SELECT w.wtt_employee_id, w.wtt_working_date,
+                    w.wtt_working_start, w.wtt_working_end,
+                    w.wtt_brk_start, w.wtt_brk_end,
+                    e.employee_break_minutes
+             FROM WorkingTimeTracking w
+             JOIN Employees e ON e.employee_id = w.wtt_employee_id
+             WHERE w.wtt_id = ?`,
             [entryId]
         );
 
@@ -360,10 +411,23 @@ const update = async (req, res) => {
         }
 
         if (newStart && req.body.breakStart) {
-            const breakError = breakTimingError(newStart, req.body.breakStart);
+            const newBreakEnd = req.body.breakEnd !== undefined
+                ? req.body.breakEnd : entry.wtt_brk_end;
+
+            const breakError = breakTimingError(
+                newStart, newEnd, req.body.breakStart, newBreakEnd
+            );
 
             if (breakError) {
                 return res.status(400).json({ message: breakError });
+            }
+
+            const lengthError = breakLengthError(
+                entry.employee_break_minutes, req.body.breakStart, newBreakEnd
+            );
+
+            if (lengthError) {
+                return res.status(400).json({ message: lengthError });
             }
         }
 
@@ -776,7 +840,8 @@ const createBulk = async (req, res) => {
 
             const [schedule] = await pool.execute(
                 `SELECT w.work_schedule_name,
-                        e.employee_break_start, e.employee_break_end
+                        e.employee_break_start, e.employee_break_end,
+                        e.employee_break_minutes
                  FROM Employees e
                  JOIN EmployeeSettings s ON s.employee_id = e.employee_id
                  JOIN WorkSchedules w ON w.work_schedule_id = s.employee_setting_work_schedule_id
@@ -821,10 +886,22 @@ const createBulk = async (req, res) => {
             let breakEndValue = breakEnd ? toSqlDateTime(breakEnd) : null;
 
             if (breakStartValue) {
-                const breakError = breakTimingError(workStart, breakStartValue);
+                const breakError = breakTimingError(
+                    workStart, workEnd, breakStartValue, breakEndValue
+                );
 
                 if (breakError) {
                     results.push({ employeeId, status: 'error', message: breakError });
+                    continue;
+                }
+
+                const lengthError = breakLengthError(
+                    schedule.length > 0 ? schedule[0].employee_break_minutes : null,
+                    breakStartValue, breakEndValue
+                );
+
+                if (lengthError) {
+                    results.push({ employeeId, status: 'error', message: lengthError });
                     continue;
                 }
             }
@@ -838,8 +915,13 @@ const createBulk = async (req, res) => {
                     ? addDays(workingDate, 1)
                     : workingDate;
 
-                breakStartValue = `${breakDate} ${schedule[0].employee_break_start}`;
-                breakEndValue = `${breakDate} ${schedule[0].employee_break_end}`;
+                const templateStart = `${breakDate} ${schedule[0].employee_break_start}`;
+                const templateEnd = `${breakDate} ${schedule[0].employee_break_end}`;
+
+                if (!breakTimingError(workStart, workEnd, templateStart, templateEnd)) {
+                    breakStartValue = templateStart;
+                    breakEndValue = templateEnd;
+                }
             }
 
             if (existing.length > 0) {
