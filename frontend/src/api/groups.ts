@@ -41,7 +41,7 @@ export interface GroupOptions {
   departments: DependentOption[];
   shifts: DependentOption[];
   costCenters: Option[];
-  workSchedules: Option[];
+  workSchedules: (Option & { isShift: boolean })[];
   workingHours: (Option & { num: number })[];
   coreHours: (Option & { hours: number })[];
   managers: (Option & { employeeId: number | null })[];

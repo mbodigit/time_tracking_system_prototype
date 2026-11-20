@@ -188,6 +188,11 @@ export const GroupModal = ({
     (item) => item.id === form.workingHourId,
   );
 
+  const isShiftSchedule = Boolean(
+    options.workSchedules.find((item) => item.id === form.workScheduleId)
+      ?.isShift,
+  );
+
   const coreHours = workingHour
     ? options.coreHours.filter((item) => item.hours === workingHour.num)
     : [];
@@ -408,9 +413,22 @@ export const GroupModal = ({
                   <select
                     className="select select-sm select-bordered"
                     value={form.workScheduleId ?? ""}
-                    onChange={(event) =>
-                      patch({ workScheduleId: toNumber(event.target.value) })
-                    }
+                    onChange={(event) => {
+                      const nextId = toNumber(event.target.value);
+                      const nextIsShift = Boolean(
+                        options.workSchedules.find(
+                          (item) => item.id === nextId,
+                        )?.isShift,
+                      );
+
+                      patch({
+                        workScheduleId: nextId,
+                        rotationPosition: nextIsShift
+                          ? form.rotationPosition
+                          : null,
+                        rotationStart: nextIsShift ? form.rotationStart : null,
+                      });
+                    }}
                   >
                     <option value="">Nincs</option>
                     {options.workSchedules.map((item) => (
@@ -468,11 +486,16 @@ export const GroupModal = ({
 
                 <Field
                   label="Műszakrotáció pozíciója"
-                  hint="Üresen hagyva a csoport beosztása a törzsidő marad."
+                  hint={
+                    isShiftSchedule
+                      ? "Üresen hagyva a csoport beosztása a törzsidő marad."
+                      : "Csak műszakos munkarendű csoportnál adható meg."
+                  }
                 >
                   <select
                     className="select select-sm select-bordered"
                     value={form.rotationPosition ?? ""}
+                    disabled={!isShiftSchedule}
                     onChange={(event) =>
                       patch({
                         rotationPosition: toNumber(event.target.value),
@@ -497,7 +520,7 @@ export const GroupModal = ({
                     type="date"
                     className="input input-sm input-bordered"
                     value={form.rotationStart ?? ""}
-                    disabled={form.rotationPosition === null}
+                    disabled={!isShiftSchedule || form.rotationPosition === null}
                     onChange={(event) =>
                       patch({ rotationStart: event.target.value || null })
                     }

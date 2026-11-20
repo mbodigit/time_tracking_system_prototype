@@ -45,6 +45,22 @@ runtime:
       variable:
         name: managerUserId
         scope: runtime
+    - type: set-variable
+      phase: after-response
+      selector:
+        expression: res.body.workSchedules[1].id
+        method: jsonq
+      variable:
+        name: shiftScheduleId
+        scope: runtime
+    - type: set-variable
+      phase: after-response
+      selector:
+        expression: res.body.workSchedules[0].id
+        method: jsonq
+      variable:
+        name: flexScheduleId
+        scope: runtime
 
 settings:
   encodeUrl: true
