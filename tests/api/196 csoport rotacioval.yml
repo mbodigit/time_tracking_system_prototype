@@ -15,6 +15,7 @@ http:
         "areaId": {{areaId}},
         "costCenterId": {{costCenterId}},
         "managerId": {{managerUserId}},
+        "workScheduleId": {{shiftScheduleId}},
         "rotationPosition": 1,
         "rotationStart": "2026-01-05"
       }

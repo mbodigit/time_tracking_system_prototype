@@ -90,7 +90,7 @@ const options = async (req, res) => {
              FROM CostCenters ORDER BY cost_center_name`
         );
         const [workSchedules] = await pool.execute(
-            `SELECT work_schedule_id, work_schedule_name
+            `SELECT work_schedule_id, work_schedule_name, work_schedule_is_shift
              FROM WorkSchedules ORDER BY work_schedule_name`
         );
         const [workingHours] = await pool.execute(
@@ -130,7 +130,8 @@ const options = async (req, res) => {
             })),
             workSchedules: workSchedules.map((row) => ({
                 id: row.work_schedule_id,
-                name: row.work_schedule_name
+                name: row.work_schedule_name,
+                isShift: Boolean(row.work_schedule_is_shift)
             })),
             workingHours: workingHours.map((row) => ({
                 id: row.working_hour_id,
@@ -260,6 +261,21 @@ const prepare = async (body, groupId) => {
             error: 'A műszakrotációhoz a pozíciót és a ciklus kezdő hetét '
                 + 'együtt kell megadni.'
         };
+    }
+
+    if (hasPosition) {
+        const [schedules] = await pool.execute(
+            `SELECT work_schedule_is_shift FROM WorkSchedules
+             WHERE work_schedule_id = ?`,
+            [Number(body.workScheduleId) || 0]
+        );
+
+        if (schedules.length === 0 || !schedules[0].work_schedule_is_shift) {
+            return {
+                error: 'Műszakrotáció csak műszakos munkarendű csoportnál '
+                    + 'adható meg, mert más munkarendben nincs heti váltás.'
+            };
+        }
     }
 
     if (Number(body.shiftId) && !Number(body.departmentId)) {
