@@ -84,6 +84,20 @@ INSERT IGNORE INTO WorkingTimeTracking (
   900001, @muszakos_dolgozo, '2026-01-05', '2026-01-05 08:00:00', '2026-01-05 16:00:00'
 );
 
+DELETE FROM Requests WHERE request_id = 900002;
+
+INSERT INTO Requests (
+  request_id, request_employee_id, request_absence_id,
+  request_start_date, request_end_date,
+  request_status, request_message, request_created_at
+)
+SELECT 900002, @muszakos_dolgozo, a.absence_id,
+       DATE_SUB(CURDATE(), INTERVAL 5 DAY), DATE_SUB(CURDATE(), INTERVAL 5 DAY),
+       'Függőben', 'Bruno teszt lejart kerelem',
+       DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+FROM Absences a
+WHERE a.absence_name = 'Fizetett szabadság';
+
 DROP TEMPORARY TABLE bruno_alanyok;
 
 SET SQL_SAFE_UPDATES = @elozo;
@@ -97,3 +111,6 @@ SELECT 'Bruno maradek' AS ellenorzes,
 
 SELECT wtt_id, wtt_employee_id, wtt_working_date
 FROM WorkingTimeTracking WHERE wtt_id = 900001;
+
+SELECT request_id, request_start_date, request_status
+FROM Requests WHERE request_id = 900002;
