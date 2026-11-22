@@ -105,5 +105,6 @@ temp
 ~$*
 docs/*Szakdolgozat*.docx
 docs/jegyzet/
+docs/SZEÁMISZ*.docx
 __pycache__/
 *.pyc
