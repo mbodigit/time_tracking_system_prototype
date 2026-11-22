@@ -5,6 +5,10 @@ SET NAMES utf8mb4;
 SET @elozo := @@SQL_SAFE_UPDATES;
 SET SQL_SAFE_UPDATES = 0;
 
+UPDATE Users
+SET user_failed_attempts = 0, user_locked_at = NULL
+WHERE user_failed_attempts > 0 OR user_locked_at IS NOT NULL;
+
 DROP TEMPORARY TABLE IF EXISTS bruno_alanyok;
 
 CREATE TEMPORARY TABLE bruno_alanyok (employee_id INT NOT NULL PRIMARY KEY) ENGINE=InnoDB;
@@ -107,7 +111,8 @@ SELECT 'Bruno maradek' AS ellenorzes,
        (SELECT COUNT(*) FROM Absences WHERE absence_name LIKE 'Bruno%')    AS jogcim,
        (SELECT COUNT(*) FROM CoreHours WHERE core_hour_name LIKE 'Bruno%') AS torzsido,
        (SELECT COUNT(*) FROM Areas WHERE area_name LIKE 'Bruno%')          AS terulet,
-       (SELECT COUNT(*) FROM PayrollCodes WHERE payroll_code = 'BRJ')       AS szabad_berkod;
+       (SELECT COUNT(*) FROM PayrollCodes WHERE payroll_code = 'BRJ')       AS szabad_berkod,
+       (SELECT COUNT(*) FROM Users WHERE user_locked_at IS NOT NULL)        AS zarolt_fiok;
 
 SELECT wtt_id, wtt_employee_id, wtt_working_date
 FROM WorkingTimeTracking WHERE wtt_id = 900001;
