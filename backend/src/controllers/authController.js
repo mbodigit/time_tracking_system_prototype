@@ -10,6 +10,12 @@ const MAX_FAILED_ATTEMPTS = 3;
 const LOCKED_MESSAGE = 'A fiók zárolva van három sikertelen bejelentkezési '
     + 'kísérlet miatt. Kérem forduljon a HR osztályhoz új jelszóért.';
 
+const invalidCredentials = (res) =>
+    res.status(401).json({message: 'Hibás felhasználónév vagy jelszó!'});
+
+const lockedAccount = (res) =>
+    res.status(423).json({message: LOCKED_MESSAGE});
+
 const login = async (req, res) => {
     const {username, password} = req.body;
 
@@ -32,13 +38,13 @@ const login = async (req, res) => {
             WHERE u.user_username = ?`, [username]
             );
         if (userQueryRows.length === 0){
-            return res.status(401).json({message: 'Hibás felhasználónév vagy jelszó!'});
+            return invalidCredentials(res);
         }
 
         const user = userQueryRows[0];
 
         if (user.user_locked_at) {
-            return res.status(423).json({message: LOCKED_MESSAGE});
+            return lockedAccount(res);
         }
 
         const isPasswordValid = await bcrypt.compare(password, user.user_password_hash);
@@ -53,14 +59,7 @@ const login = async (req, res) => {
                 [failedAttempts, isLocked ? new Date() : null, user.user_id]
             );
 
-            const remaining = MAX_FAILED_ATTEMPTS - failedAttempts;
-
-            return res.status(isLocked ? 423 : 401).json({
-                message: isLocked
-                    ? LOCKED_MESSAGE
-                    : 'Hibás felhasználónév vagy jelszó! Még '
-                      + `${remaining} próbálkozása maradt a fiók zárolásáig.`
-            });
+            return isLocked ? lockedAccount(res) : invalidCredentials(res);
         }
 
         if (user.user_failed_attempts > 0) {

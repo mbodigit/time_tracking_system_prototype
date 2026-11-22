@@ -1,0 +1,32 @@
+info:
+  name: nem letezo felhasznalonev azonos uzenet
+  type: http
+  seq: 221
+
+http:
+  method: POST
+  url: "{{baseUrl}}/login"
+  body:
+    type: json
+    data: |-
+      {
+        "username": "nem.letezo.fiok",
+        "password": "RosszJelszo01"
+      }
+  auth: inherit
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "401"
+    - expression: res.body.message
+      operator: eq
+      value: "Hibás felhasználónév vagy jelszó!"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

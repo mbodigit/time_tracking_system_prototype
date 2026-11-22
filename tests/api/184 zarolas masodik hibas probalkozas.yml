@@ -22,7 +22,7 @@ runtime:
       value: "401"
     - expression: res.body.message
       operator: contains
-      value: "Még 1 próbálkozása maradt"
+      value: "Hibás felhasználónév vagy jelszó!"
 
 settings:
   encodeUrl: true
