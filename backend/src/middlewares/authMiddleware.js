@@ -36,15 +36,8 @@ const authenticateToken = (req, res, next) => {
         });
     }
 
-    const PASSWORD_CHANGE_ALLOWED = [
-        {method: 'GET', path: '/api/me'},
-        {method: 'PATCH', path: '/api/me/password'}
-    ];
-
     const path = req.originalUrl.split('?')[0];
-    const isAllowed = PASSWORD_CHANGE_ALLOWED.some(
-        (allowed) => allowed.method === req.method && allowed.path === path
-    );
+    const isAllowed = req.method === 'PATCH' && path === '/api/me/password';
 
     if (req.user.mustChangePassword && !isAllowed){
         return res.status(403).json({
