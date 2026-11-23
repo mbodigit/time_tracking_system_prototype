@@ -17,6 +17,9 @@ interface MenuItem {
 
 const APPLICATION_NAME = "Munkaidő-nyilvántartó rendszer";
 
+const samePermissions = (stored: string[], fresh: string[]) =>
+  stored.length === fresh.length && stored.every((key) => fresh.includes(key));
+
 const MENU_ITEMS: MenuItem[] = [
   { to: "/dashboard", label: "Áttekintő", needsEmployee: true },
   { to: "/time-log", label: "Munkaidő rögzítése", needsEmployee: true },
@@ -48,13 +51,17 @@ export const Layout: React.FC = () => {
 
   useEffect(() => {
     getMe()
-      .then((data) => {
-        setCurrentUser((previous) =>
-          previous && previous.fullName === data.user.fullName
-            ? previous
-            : data.user,
-        );
-        saveCurrentUser(data.user);
+      .then(({ user }) => {
+        const stored = getCurrentUser();
+
+        if (!stored || samePermissions(stored.permissions, user.permissions)) {
+          return;
+        }
+
+        const refreshed = { ...stored, permissions: user.permissions };
+
+        saveCurrentUser(refreshed);
+        setCurrentUser(refreshed);
       })
       .catch(() => undefined);
   }, [location.pathname]);
